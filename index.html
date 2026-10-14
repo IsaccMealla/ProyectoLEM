@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#191b22">
+  <meta name="description" content="Explora la Revolución de 1809 en La Paz a través de una experiencia educativa de realidad aumentada creada por Unifranz.">
+  <title>Historia Viva AR | Plaza Murillo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js" defer></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js" defer></script>
+  <script src="js/main.js" defer></script>
+  <script src="js/ar-experience.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="Historia Viva AR, inicio">
+      <span class="brand-mark" aria-hidden="true">HV</span>
+      <span class="brand-name">HISTORIA <span>VIVA</span><small>UNIFRANZ · LA PAZ</small></span>
+    </a>
+    <nav class="main-nav" aria-label="Navegación principal">
+      <a href="#cronologia">Cronología</a>
+      <a href="#contexto">Contexto</a>
+      <a href="#visita">Tu visita</a>
+    </nav>
+    <button class="header-cta" type="button" data-open-ar><span aria-hidden="true">◉</span> Vivir en AR</button>
+  </header>
+
+  <main id="contenido">
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> LA PAZ · 16 DE JULIO DE 1809</p>
+        <h1 id="hero-title">Una ciudad.<br>Una voz que <em>cambió</em><br>la historia.</h1>
+        <p class="hero-intro">Vuelve al corazón de la revolución paceña. Conoce a quienes imaginaron un futuro libre y descubre su historia en realidad aumentada.</p>
+        <div class="hero-actions">
+          <button class="button button-gold" type="button" data-open-ar>Iniciar experiencia AR <span aria-hidden="true">↗</span></button>
+          <a class="button button-outline" href="#cronologia">Explorar historia <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA<br>DE HISTORIA Y DERECHO</span></div>
+      </div>
+      <div class="hero-art" role="img" aria-label="Ilustración editorial de la plaza y el perfil de Pedro Domingo Murillo">
+        <div class="art-frame">
+          <div class="art-sun"></div>
+          <div class="art-skyline skyline-back" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="art-building" aria-hidden="true"><div class="building-roof"></div><div class="building-face"><span></span><span></span><span></span><span></span><span></span></div></div>
+          <div class="art-statue" aria-hidden="true"><div class="statue-head"></div><div class="statue-body"></div><div class="statue-pedestal"></div></div>
+          <div class="art-caption"><span>01 / 04</span><span>PLAZA MURILLO · LA PAZ</span></div>
+          <div class="art-date">1809</div>
+        </div>
+        <div class="hero-stamp">LA HISTORIA<br>COBRA VIDA <span>✳</span></div>
+      </div>
+      <div class="hero-bottom"><span>16°29′ S · 68°08′ O</span><span>DESLIZA PARA DESCUBRIR</span><span>01 — 04</span></div>
+    </section>
+
+    <section class="timeline-section section-pad" id="cronologia" aria-labelledby="timeline-title">
+      <div class="section-heading">
+        <div><p class="eyebrow eyebrow-dark"><span></span> EL CAMINO A LA LIBERTAD</p><h2 id="timeline-title">Cuatro momentos.<br><em>Un nuevo horizonte.</em></h2></div>
+        <p class="section-aside">La revolución no ocurrió en un instante. Fue el resultado de ideas, decisiones y voces que se encontraron en las calles de La Paz.</p>
+      </div>
+      <div class="timeline-track" role="list" aria-label="Hitos de la Revolución de 1809">
+        <article class="timeline-item" role="listitem">
+          <button class="timeline-trigger is-active" type="button" aria-expanded="true" aria-controls="event-1"><span class="timeline-dot"></span><span class="timeline-year">1805</span><span class="timeline-title">Ideas en movimiento</span></button>
+          <div class="timeline-detail" id="event-1"><p>Circulan en Charcas y La Paz ideas de soberanía popular, en un contexto de crisis de la monarquía española.</p><span>EL CONTEXTO</span></div>
+        </article>
+        <article class="timeline-item" role="listitem">
+          <button class="timeline-trigger" type="button" aria-expanded="false" aria-controls="event-2"><span class="timeline-dot"></span><span class="timeline-year">16 JUL</span><span class="timeline-title">La revolución paceña</span></button>
+          <div class="timeline-detail" id="event-2" hidden><p>Tras la procesión de la Virgen del Carmen, los insurgentes toman el cuartel y convocan al cabildo abierto en la plaza.</p><span>LA INSURRECCIÓN</span></div>
+        </article>
+        <article class="timeline-item" role="listitem">
+          <button class="timeline-trigger" type="button" aria-expanded="false" aria-controls="event-3"><span class="timeline-dot"></span><span class="timeline-year">22 JUL</span><span class="timeline-title">La Junta Tuitiva</span></button>
+          <div class="timeline-detail" id="event-3" hidden><p>Se instala la Junta Tuitiva de los Derechos del Pueblo, un gobierno local impulsado por criollos; la representación política de la época fue limitada.</p><span>EL GOBIERNO PROPIO</span></div>
+        </article>
+        <article class="timeline-item" role="listitem">
+          <button class="timeline-trigger" type="button" aria-expanded="false" aria-controls="event-4"><span class="timeline-dot"></span><span class="timeline-year">27 JUL</span><span class="timeline-title">La Proclama</span></button>
+          <div class="timeline-detail" id="event-4" hidden><p>La proclama expresa el rechazo a la opresión y la aspiración de gobernarse por sí mismos. Su autoría exacta sigue siendo debatida.</p><span>LA PALABRA</span></div>
+        </article>
+      </div>
+      <p class="historical-note">Las fechas y procesos se presentan como referencia histórica; la cronología de 1809 continúa siendo objeto de estudio.</p>
+    </section>
+
+    <section class="context-section" id="contexto" aria-labelledby="context-title">
+      <div class="context-art" aria-hidden="true"><div class="context-sun"></div><div class="context-lines"></div><div class="context-seal">LP<br><small>1809</small></div><span class="context-coordinate">PLAZA MAYOR · SEDE DE LA AUDIENCIA</span></div>
+      <div class="context-copy">
+        <p class="eyebrow"><span></span> HISTORIA · DERECHO · PATRIMONIO</p>
+        <h2 id="context-title">Una plaza que<br>fue <em>escenario y símbolo.</em></h2>
+        <p>La actual Plaza Murillo fue el centro político y cívico de la ciudad. En julio de 1809, sus calles se convirtieron en escenario de una disputa sobre autoridad, representación y futuro.</p>
+        <div class="fact-list">
+          <article class="fact-row"><span class="fact-number">01</span><div><h3>Un cabildo abierto</h3><p>La reunión pública amplió la discusión política más allá de las autoridades coloniales.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
+          <article class="fact-row"><span class="fact-number">02</span><div><h3>La Junta Tuitiva</h3><p>Su nombre invocaba la protección de los derechos del pueblo; su representación política fue limitada.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
+          <article class="fact-row"><span class="fact-number">03</span><div><h3>Memoria compartida</h3><p>La revolución forma parte del patrimonio histórico boliviano y de una historia con múltiples protagonistas.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
+        </div>
+        <p class="legal-note"><span aria-hidden="true">§</span> Una lectura histórica y jurídica: los lenguajes de soberanía y derechos de 1809 pertenecen a su época y no equivalen, sin matices, a las categorías constitucionales actuales.</p>
+      </div>
+    </section>
+
+    <section class="visit-section section-pad" id="visita" aria-labelledby="visit-title">
+      <div class="visit-heading"><div><p class="eyebrow eyebrow-dark"><span></span> TU RECORRIDO</p><h2 id="visit-title">La historia está<br><em>a un marcador de distancia.</em></h2></div><p>Prepara tu móvil y encuentra el marcador HIRO para comenzar el recorrido inmersivo.</p></div>
+      <div class="steps-grid">
+        <article class="visit-step"><span class="step-index">01</span><div class="step-icon" aria-hidden="true">▧</div><h3>Abre la experiencia</h3><p>Escanea el código QR desde tu móvil para entrar a Historia Viva AR.</p></article>
+        <article class="visit-step"><span class="step-index">02</span><div class="step-icon" aria-hidden="true">◉</div><h3>Activa la cámara</h3><p>Acepta el permiso de cámara. La experiencia funciona desde el navegador.</p></article>
+        <article class="visit-step"><span class="step-index">03</span><div class="step-icon" aria-hidden="true">⌗</div><h3>Encuentra el marcador</h3><p>Apunta hacia el marcador HIRO impreso y colocado en la Unifranz.</p></article>
+        <article class="visit-step"><span class="step-index">04</span><div class="step-icon" aria-hidden="true">▷</div><h3>Explora y escucha</h3><p>Observa la recreación 3D y activa la narración para escuchar la proclama.</p></article>
+      </div>
+      <div class="visit-callout"><div><span class="callout-label">LISTO PARA COMENZAR</span><h3>Tu próxima parada: 1809.</h3></div><button class="button button-dark" type="button" data-open-ar>Iniciar experiencia AR <span aria-hidden="true">↗</span></button></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><a class="brand brand-footer" href="#inicio"><span class="brand-mark" aria-hidden="true">HV</span><span class="brand-name">HISTORIA <span>VIVA</span><small>UNIFRANZ · LA PAZ</small></span></a><p>Un proyecto colaborativo de<br><strong>Ingeniería en Sistemas + Derecho</strong></p><span class="footer-date">LA PAZ, BOLIVIA</span></footer>
+
+  <section class="ar-view" id="ar-view" aria-label="Experiencia de realidad aumentada" aria-hidden="true" inert>
+    <div class="ar-loading" id="ar-loading" role="status"><span class="loader-mark">HV</span><p>Preparando la experiencia…</p><small>Permite el acceso a la cámara para continuar</small></div>
+    <template id="ar-scene-template">
+      <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; colorManagement: true" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
+        <a-assets timeout="10000"><a-asset-item id="murillo-model" src="assets/models/murillo_placeholder.glb"></a-asset-item></a-assets>
+        <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
+          <a-entity gltf-model="#murillo-model" position="0 0 0" scale="0.72 0.72 0.72" animation="property: rotation; to: 0 360 0; loop: true; dur: 24000; easing: linear"></a-entity>
+          <a-entity position="0 1.55 0" text="value: PEDRO DOMINGO MURILLO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
+        </a-marker>
+        <a-entity camera></a-entity>
+      </a-scene>
+    </template>
+    <div class="ar-hud">
+      <div class="ar-topbar"><div class="ar-brand"><span class="brand-mark">HV</span><span>HISTORIA VIVA <small>EXPERIENCIA AR</small></span></div><button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button></div>
+      <div class="ar-title"><span class="ar-live-dot"></span><div><p>16 DE JULIO DE 1809</p><h2>Revolución de 1809<br><span>Pedro Domingo Murillo</span></h2></div></div>
+      <div class="ar-bottom-controls"><button class="ar-control" type="button" id="audio-toggle" aria-pressed="false"><span class="control-icon" id="audio-icon" aria-hidden="true">▶</span><span id="audio-label">Escuchar proclama</span></button><button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details"><span class="control-icon" aria-hidden="true">i</span><span>Detalles</span></button></div>
+      <aside class="ar-details" id="ar-details" hidden><button class="details-close" type="button" aria-label="Cerrar detalles">×</button><p class="eyebrow"><span></span> LA JUNTA TUITIVA</p><h3>Una nueva voz política.</h3><p>El 16 de julio de 1809, la insurrección paceña abrió un proceso de gobierno local. La Junta Tuitiva expresó aspiraciones de autonomía en un tiempo de crisis monárquica.</p><span class="details-source">HISTORIA VIVA · UNIFRANZ</span></aside>
+      <p class="ar-hint" id="ar-hint">Busca el marcador HIRO para activar la escena</p>
+    </div>
+    <audio id="proclamation-audio" preload="none" src="assets/audio/proclama_1809.mp3"></audio>
+  </section>
+</body>
+</html>
