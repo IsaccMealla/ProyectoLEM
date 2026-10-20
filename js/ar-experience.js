@@ -327,6 +327,12 @@
 
   // ─── Abrir / Cerrar AR ───
   function openAR() {
+    if (window.location.protocol === 'file:') {
+      alert('⚠️ Para usar la Realidad Aumentada (cámara y modelos 3D), debes abrir la página desde el servidor local:\n\nhttp://localhost:8080\n\nLos navegadores bloquean la cámara y los archivos 3D bajo "file://" por seguridad.');
+      window.location.href = 'http://localhost:8080';
+      return;
+    }
+
     audio.pause();
     updateAudioUI(false);
     markerFound = false;
