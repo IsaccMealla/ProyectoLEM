@@ -118,11 +118,13 @@
 
   // ─── Asegurar que el video de la cámara se visualice ───
   function attachArVideo() {
-    var video = document.getElementById('arjs-video') || document.querySelector('video:not(#narration-audio)');
-    if (!video) return;
+    var video = document.getElementById('arjs-video') ||
+                document.querySelector('body > video') ||
+                (arView ? arView.querySelector('video:not(#narration-audio)') : null);
+    if (!video || !arView) return;
 
-    if (video.parentElement !== arView && video.parentElement !== document.body) {
-      arView.appendChild(video);
+    if (video.parentElement !== arView) {
+      arView.insertBefore(video, arView.firstChild);
     }
 
     video.style.position = 'absolute';
@@ -135,10 +137,18 @@
     video.style.display = 'block';
     video.style.opacity = '1';
 
-    if (video.videoWidth > 0 && !loading.classList.contains('is-hidden')) {
+    if (video.paused && video.srcObject) {
+      video.play().catch(function () {});
+    }
+
+    if (video.videoWidth > 0 && loading) {
       loading.classList.add('is-hidden');
     }
   }
+
+  window.addEventListener('arjs-video-loaded', function () {
+    attachArVideo();
+  });
 
   // ─── Control de visualización del diálogo (visible / mini / hidden) ───
   function setDialogState(state) {

@@ -133,9 +133,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold-light); ou
 .site-footer > p strong { color: var(--white); font-weight: 500; }
 .footer-date { color: rgba(255,255,255,.45); font-size: 8px; letter-spacing: 1px; }
 
-.ar-view { position: fixed; z-index: 50; inset: 0; overflow: hidden; background: transparent; color: white; }
+.ar-view { position: fixed; z-index: 50; inset: 0; overflow: hidden; background: transparent !important; color: white; }
 .ar-view[aria-hidden="true"] { display: none; }
-.ar-view::before { content: ''; position: absolute; inset: 0; background: #0c0d12; z-index: 0; pointer-events: none; }
 
 /* Video de la cámara web generado por AR.js */
 #arjs-video,
@@ -143,7 +142,8 @@ video#arjs-video,
 .ar-view video,
 body > video {
   position: absolute !important;
-  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
