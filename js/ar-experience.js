@@ -7,6 +7,11 @@
   var hint = document.getElementById('ar-hint');
   var audio = document.getElementById('narration-audio');
 
+  // Badge de confirmación visual al detectar marcador
+  var detectionBadge = document.getElementById('ar-detection-badge');
+  var badgeSubtitle = document.getElementById('badge-subtitle');
+  var badgeTimeout = null;
+
   // Elementos del cuadro de diálogo
   var dialog = document.getElementById('ar-details');
   var dialogCloseBtn = document.getElementById('dialog-close');
@@ -38,61 +43,138 @@
   var markerFound = false;
   var arTimeout;
   var videoWatcher = null;
-  var dialogMinimized = false; // user explicitly minimized
+  var dialogMinimized = false; // usuario minimizó manualmente
+
+  // ─── Soporte de decodificador Draco (local + CDN) ───
+  function configureDracoSupport(sceneEl) {
+    if (window.AFRAME) {
+      var gltfSystem = AFRAME.systems && AFRAME.systems['gltf-model'];
+      if (gltfSystem && gltfSystem.schema && gltfSystem.schema.dracoDecoderPath) {
+        gltfSystem.schema.dracoDecoderPath.default = 'assets/draco/';
+      }
+    }
+    if (sceneEl && sceneEl.systems && sceneEl.systems['gltf-model']) {
+      var sys = sceneEl.systems['gltf-model'];
+      if (!sys.dracoLoader && window.THREE && THREE.DRACOLoader) {
+        try {
+          var draco = new THREE.DRACOLoader();
+          draco.setDecoderPath('assets/draco/');
+          sys.dracoLoader = draco;
+        } catch (e) {
+          console.warn('[Historia Viva] No se pudo inicializar DRACOLoader:', e);
+        }
+      }
+    }
+  }
+
+  // Ejecutar configuración inicial de Draco si AFRAME ya está listo
+  if (window.AFRAME) configureDracoSupport();
+  window.addEventListener('DOMContentLoaded', function () {
+    configureDracoSupport();
+  });
+
+  // ─── Badge de detección visual ───
+  function showDetectionBadge(title, subtitle, autoFadeMs) {
+    if (!detectionBadge) return;
+    clearTimeout(badgeTimeout);
+    detectionBadge.classList.remove('is-leaving');
+    detectionBadge.hidden = false;
+    detectionBadge.style.display = 'flex';
+    var strong = detectionBadge.querySelector('strong');
+    if (strong && title) strong.textContent = title;
+    if (badgeSubtitle && subtitle) badgeSubtitle.textContent = subtitle;
+
+    if (autoFadeMs) {
+      badgeTimeout = setTimeout(function () {
+        hideDetectionBadge();
+      }, autoFadeMs);
+    }
+  }
+
+  function hideDetectionBadge() {
+    if (!detectionBadge) return;
+    clearTimeout(badgeTimeout);
+    detectionBadge.classList.add('is-leaving');
+    badgeTimeout = setTimeout(function () {
+      detectionBadge.hidden = true;
+      detectionBadge.style.display = 'none';
+      detectionBadge.classList.remove('is-leaving');
+    }, 300);
+  }
 
   // ─── Detección de dispositivo ───
   function isMobileDevice() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
-  function configureCameraForDevice(sceneEl) {
-    if (isMobileDevice()) {
-      sceneEl.setAttribute('arjs', 'sourceType: webcam; facingMode: environment; debugUIEnabled: false;');
-    } else {
-      sceneEl.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false;');
-    }
+  // ─── Configurar cámara según laptop o móvil ───
+  function configureCameraForDevice(scene) {
+    var mobile = isMobileDevice();
+    var arjsAttr = mobile
+      ? 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;'
+      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best;';
+    scene.setAttribute('arjs', arjsAttr);
   }
 
-  // ─── Video de cámara (AR.js) ───
+  // ─── Asegurar que el video de la cámara se visualice ───
   function attachArVideo() {
-    var video = document.getElementById('arjs-video') ||
-                document.querySelector('body > video') ||
-                (arView ? arView.querySelector('video:not(#narration-audio)') : null);
+    var video = document.getElementById('arjs-video') || document.querySelector('video:not(#narration-audio)');
+    if (!video) return;
 
-    if (video && arView) {
-      if (video.parentNode !== arView) {
-        arView.insertBefore(video, arScene || arView.firstChild);
-      }
-      video.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;display:block;opacity:1;';
-      if (video.paused && video.srcObject) {
-        video.play().catch(function () {});
-      }
-      if (loading) loading.classList.add('is-hidden');
+    if (video.parentElement !== arView && video.parentElement !== document.body) {
+      arView.appendChild(video);
+    }
+
+    video.style.position = 'absolute';
+    video.style.top = '0';
+    video.style.left = '0';
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    video.style.zIndex = '1';
+    video.style.display = 'block';
+    video.style.opacity = '1';
+
+    if (video.videoWidth > 0 && !loading.classList.contains('is-hidden')) {
+      loading.classList.add('is-hidden');
     }
   }
 
-  window.addEventListener('arjs-video-loaded', attachArVideo);
-
-  // ─── Visibilidad del diálogo / barra compacta ───
-  // Estado: 'visible' | 'hidden' | 'mini'
+  // ─── Control de visualización del diálogo (visible / mini / hidden) ───
   function setDialogState(state) {
     if (state === 'visible') {
-      if (dialog) { dialog.removeAttribute('hidden'); dialog.style.display = ''; }
-      if (bottomBar) bottomBar.hidden = true;
+      if (dialog) {
+        dialog.hidden = false;
+        dialog.style.display = '';
+      }
+      if (bottomBar) {
+        bottomBar.hidden = true;
+        bottomBar.style.display = 'none';
+      }
       dialogMinimized = false;
     } else if (state === 'mini') {
-      if (dialog) dialog.setAttribute('hidden', '');
-      if (bottomBar) bottomBar.hidden = false;
+      if (dialog) {
+        dialog.hidden = true;
+        dialog.style.display = 'none';
+      }
+      if (bottomBar) {
+        bottomBar.hidden = false;
+        bottomBar.style.display = 'flex';
+      }
       dialogMinimized = true;
-    } else {
-      // hidden - todo oculto
-      if (dialog) { dialog.setAttribute('hidden', ''); dialog.style.display = 'none'; }
-      if (bottomBar) bottomBar.hidden = true;
-      dialogMinimized = false;
+    } else { // 'hidden' (marcador no detectado o experiencia recién iniciada)
+      if (dialog) {
+        dialog.hidden = true;
+        dialog.style.display = 'none';
+      }
+      if (bottomBar) {
+        bottomBar.hidden = true;
+        bottomBar.style.display = 'none';
+      }
     }
   }
 
-  // ─── Actualizar UI de audio ───
+  // ─── UI de audio ───
   function updateAudioUI(playing) {
     isAudioPlaying = playing;
     var lbl = playing ? 'Pausar narración' : 'Escuchar narración';
@@ -108,7 +190,7 @@
     if (miniAudioIcon) miniAudioIcon.textContent = ico;
     if (miniAudioText) miniAudioText.textContent = playing ? 'Pausar' : 'Audio';
 
-    // Pulso del anillo en AR
+    // Pulso del pedestal ceremonial en AR
     if (arScene) {
       var ring = arScene.querySelector('#tamayo-glow-ring');
       if (ring) {
@@ -149,7 +231,7 @@
     }
   }
 
-  // ─── Audio ───
+  // ─── Reproducción de audio ───
   function playAudio() {
     if (!audio.src || audio.src === window.location.href) {
       audio.src = scenes[selectedScene].audio;
@@ -157,9 +239,9 @@
     audio.play().then(function () {
       updateAudioUI(true);
       hint.textContent = '🔊 Reproduciendo · ' + scenes[selectedScene].title;
-    }).catch(function () {
+    }).catch(function (e) {
       updateAudioUI(false);
-      hint.textContent = 'Toca "Escuchar narración" para iniciar';
+      hint.textContent = 'Toca "Escuchar narración" para iniciar el audio';
     });
   }
 
@@ -181,7 +263,7 @@
     if (audioProgressBar) audioProgressBar.style.width = '100%';
     hint.textContent = selectedScene < scenes.length - 1
       ? 'Escena finalizada · Pulsa "Siguiente →"'
-      : '¡Recorrido completo! Puedes volver a escuchar';
+      : '¡Recorrido completo! Puedes volver a escuchar las escenas';
   });
   audio.addEventListener('timeupdate', function () {
     if (audio.duration && audioProgressBar) {
@@ -190,10 +272,10 @@
   });
   audio.addEventListener('error', function () {
     updateAudioUI(false);
-    hint.textContent = 'Error al cargar audio. Verifica los archivos MP3.';
+    hint.textContent = 'Error al cargar audio. Verifica los archivos MP3 en assets/audio/';
   });
 
-  // ─── Botones ───
+  // ─── Listeners de botones ───
   if (dialogCloseBtn) dialogCloseBtn.addEventListener('click', function () { setDialogState('mini'); });
   if (detailsToggle) detailsToggle.addEventListener('click', function () { setDialogState('visible'); });
   if (previousSceneButton) previousSceneButton.addEventListener('click', function () { setScene(selectedScene - 1, isAudioPlaying); });
@@ -205,29 +287,38 @@
 
   document.addEventListener('historia:select-scene', function (e) { setScene(e.detail.index, false); });
 
-  // ─── Marker found / lost ───
+  // ─── Eventos del Marcador HIRO ───
   function onMarkerDetected() {
     markerFound = true;
-    hint.textContent = '✅ ¡Marcador detectado! Cargando a Franz Tamayo…';
 
-    // Mostrar diálogo (si no fue minimizado manualmente)
+    // 1. Mostrar confirmación visual inmediata
+    showDetectionBadge('¡Marcador HIRO Detectado!', 'Franz Tamayo presente · Iniciando experiencia', 3500);
+
+    // Feedback háptico en móviles
+    if (navigator.vibrate) {
+      try { navigator.vibrate([40, 50, 40]); } catch (e) {}
+    }
+
+    hint.textContent = '✅ Marcador activo · Franz Tamayo en 3D';
+
+    // 2. Mostrar cuadro de diálogo con el guion correspondiente
     setTimeout(function () {
-      if (!markerFound) return; // marker lost before timeout
+      if (!markerFound) return;
       if (!dialogMinimized) {
         setDialogState('visible');
       } else {
         setDialogState('mini');
       }
-      hint.textContent = '📍 Franz Tamayo detectado · Escucha la narración';
-      // Auto-play first scene audio on detection
+      // 3. Iniciar audio de la escena
       if (!isAudioPlaying && audio.paused) {
         playAudio();
       }
-    }, 600);
+    }, 450);
   }
 
   function onMarkerLost() {
     markerFound = false;
+    hideDetectionBadge();
     audio.pause();
     updateAudioUI(false);
     setDialogState('hidden');
@@ -240,7 +331,8 @@
     updateAudioUI(false);
     markerFound = false;
 
-    // Ocultar diálogo hasta que se detecte el marcador
+    // Ocultar diálogo y badge hasta que se detecte el marcador
+    hideDetectionBadge();
     setDialogState('hidden');
 
     arView.classList.remove('is-error');
@@ -254,6 +346,7 @@
     if (!arScene) {
       arScene = sceneTemplate.content.firstElementChild.cloneNode(true);
       configureCameraForDevice(arScene);
+      configureDracoSupport(arScene);
       arView.insertBefore(arScene, arView.querySelector('.ar-hud'));
       arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
     }
@@ -283,6 +376,9 @@
     updateAudioUI(false);
     clearTimeout(arTimeout);
     if (videoWatcher) clearInterval(videoWatcher);
+
+    hideDetectionBadge();
+    setDialogState('hidden');
 
     arView.setAttribute('aria-hidden', 'true');
     arView.inert = true;
@@ -320,7 +416,11 @@
     var scene = event.detail.scene;
     var cameraTimer;
 
+    configureDracoSupport(scene);
+
     scene.addEventListener('loaded', function () {
+      configureDracoSupport(scene);
+
       var marker = scene.querySelector('a-marker');
       var model = scene.querySelector('#franz-tamayo-figure');
 
@@ -331,12 +431,23 @@
 
       if (model) {
         model.addEventListener('model-loaded', function () {
-          console.log('[Historia Viva] Modelo franz_tamayo.glb cargado correctamente');
+          console.log('[Historia Viva] Modelo franz_tamayo.glb cargado y decodificado correctamente');
           hint.textContent = '🔍 Modelo listo · Apunta la cámara al marcador HIRO';
         });
         model.addEventListener('model-error', function (err) {
-          console.error('[Historia Viva] Error cargando modelo:', err);
-          hint.textContent = '⚠️ Error al cargar el modelo 3D. Recarga la página (Ctrl+Shift+R)';
+          console.error('[Historia Viva] Error inicial cargando modelo:', err);
+          // Si por alguna razón el decoder local falló, reintentar con el CDN oficial de Draco
+          var gltfSys = scene.systems && scene.systems['gltf-model'];
+          if (gltfSys && gltfSys.dracoLoader) {
+            console.warn('[Historia Viva] Intentando decodificación con CDN de respaldo...');
+            gltfSys.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+            var currentModelSrc = model.getAttribute('gltf-model');
+            model.removeAttribute('gltf-model');
+            setTimeout(function () {
+              model.setAttribute('gltf-model', currentModelSrc);
+            }, 150);
+          }
+          hint.textContent = '⚠️ Cargando decodificador 3D… un momento';
         });
       }
 
@@ -358,6 +469,6 @@
     });
   });
 
-  // Inicializar
+  // Inicializar primera escena
   setScene(0, false);
 })();
