@@ -124,40 +124,48 @@
     var dev = getDeviceProfile();
 
     // Escala calibrada dinámicamente:
-    // En celular vertical, el viewport es angosto: una escala de 0.42 asegura que Franz Tamayo,
-    // su pedestal y los rótulos entren completos en la pantalla sin que el usuario tenga que
-    // alejarse demasiado del marcador.
-    // En laptop/PC, 0.70 da una presencia ceremonial clara sin salirse del encuadre.
+    // En celular vertical, el visor es angosto: una escala de 0.38 asegura que Franz Tamayo,
+    // su pedestal ceremonial y los rótulos entren completos en la pantalla sin que el usuario tenga
+    // que alejarse excesivamente del marcador HIRO.
+    // En celular horizontal: 0.48.
+    // En laptop/PC: 0.65.
     var scaleValue;
     if (dev.isMobile) {
-      scaleValue = dev.isPortrait ? 0.42 : 0.52;
+      scaleValue = dev.isPortrait ? 0.38 : 0.48;
     } else {
-      scaleValue = 0.70;
+      scaleValue = 0.65;
     }
 
     rig.setAttribute('scale', scaleValue + ' ' + scaleValue + ' ' + scaleValue);
     console.log('[Historia Viva] Escala adaptada (' + (dev.isMobile ? 'Móvil' : 'PC') + ', ' + dev.width + 'x' + dev.height + '): ' + scaleValue);
   }
 
-  window.addEventListener('resize', adjustSceneForDevice);
+  window.addEventListener('resize', function () {
+    attachArVideo();
+    adjustSceneForDevice();
+  });
   window.addEventListener('orientationchange', function () {
-    setTimeout(adjustSceneForDevice, 300);
+    setTimeout(function () {
+      attachArVideo();
+      adjustSceneForDevice();
+    }, 250);
   });
 
   // ─── Configurar cámara según laptop o móvil ───
   function configureCameraForDevice(scene) {
     var dev = getDeviceProfile();
 
-    // En móvil usamos cámara trasera (facingMode: environment) y performanceProfile: desktop-fast
-    // para que AR.js use la resolución nativa nítida del sensor y NO degrade a 240p borroso
+    // En móvil usamos cámara trasera (facingMode: environment)
+    // NO usamos 'performanceProfile: desktop-fast' porque fuerza parámetros de monitor de PC
+    // provocando que en celulares la imagen se agrande y recorte dramáticamente
     var arjsAttr = dev.isMobile
-      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best; performanceProfile: desktop-fast;'
-      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; performanceProfile: desktop-fast;';
+      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best;'
+      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best;';
 
     scene.setAttribute('arjs', arjsAttr);
   }
 
-  // ─── Asegurar que el video de la cámara se visualice ───
+  // ─── Asegurar que el video de la cámara se visualice y no distorsione el viewport ───
   function attachArVideo() {
     var video = document.getElementById('arjs-video') ||
                 document.querySelector('body > video') ||
@@ -168,15 +176,37 @@
       arView.insertBefore(video, arView.firstChild);
     }
 
-    video.style.position = 'absolute';
-    video.style.top = '0';
-    video.style.left = '0';
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'cover';
-    video.style.zIndex = '1';
-    video.style.display = 'block';
-    video.style.opacity = '1';
+    // Neutralizar márgenes negativos y anchos gigantescos inyectados por AR.js en móviles
+    video.style.setProperty('position', 'fixed', 'important');
+    video.style.setProperty('top', '0px', 'important');
+    video.style.setProperty('left', '0px', 'important');
+    video.style.setProperty('width', '100vw', 'important');
+    video.style.setProperty('height', '100vh', 'important');
+    video.style.setProperty('max-width', '100vw', 'important');
+    video.style.setProperty('max-height', '100vh', 'important');
+    video.style.setProperty('margin', '0px', 'important');
+    video.style.setProperty('margin-left', '0px', 'important');
+    video.style.setProperty('margin-top', '0px', 'important');
+    video.style.setProperty('object-fit', 'cover', 'important');
+    video.style.setProperty('object-position', 'center center', 'important');
+    video.style.setProperty('z-index', '1', 'important');
+    video.style.setProperty('display', 'block', 'important');
+    video.style.setProperty('opacity', '1', 'important');
+    video.style.setProperty('transform', 'none', 'important');
+
+    var canvas = arView.querySelector('.a-canvas');
+    if (canvas) {
+      canvas.style.setProperty('position', 'fixed', 'important');
+      canvas.style.setProperty('top', '0px', 'important');
+      canvas.style.setProperty('left', '0px', 'important');
+      canvas.style.setProperty('width', '100vw', 'important');
+      canvas.style.setProperty('height', '100vh', 'important');
+      canvas.style.setProperty('max-width', '100vw', 'important');
+      canvas.style.setProperty('max-height', '100vh', 'important');
+      canvas.style.setProperty('margin', '0px', 'important');
+      canvas.style.setProperty('margin-left', '0px', 'important');
+      canvas.style.setProperty('margin-top', '0px', 'important');
+    }
 
     if (video.paused && video.srcObject) {
       video.play().catch(function () {});
@@ -353,6 +383,7 @@
     }
 
     hint.textContent = '✅ Marcador activo · Franz Tamayo en 3D';
+    adjustSceneForDevice();
 
     // 2. Mostrar cuadro de diálogo con el guion correspondiente
     setTimeout(function () {
@@ -397,6 +428,9 @@
     arView.classList.remove('is-error');
     arView.setAttribute('aria-hidden', 'false');
     arView.inert = false;
+    // Bloquear viewport móvil contra expansiones o zooms automáticos
+    document.documentElement.classList.add('ar-active');
+    document.body.classList.add('ar-active');
     document.body.style.overflow = 'hidden';
 
     loading.classList.remove('is-hidden');
@@ -410,13 +444,13 @@
       arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
     }
 
-    // Monitorear video de AR.js
+    // Monitorear video de AR.js y estabilizar tamaño
     var checks = 0;
     if (videoWatcher) clearInterval(videoWatcher);
     videoWatcher = setInterval(function () {
       checks++;
       attachArVideo();
-      if (checks > 40) clearInterval(videoWatcher);
+      if (checks > 50) clearInterval(videoWatcher);
     }, 150);
 
     arTimeout = setTimeout(function () {
@@ -428,6 +462,7 @@
     if (closeBtn) closeBtn.focus({ preventScroll: true });
 
     setScene(selectedScene, false);
+    adjustSceneForDevice();
   }
 
   function closeAR() {
@@ -441,6 +476,8 @@
 
     arView.setAttribute('aria-hidden', 'true');
     arView.inert = true;
+    document.documentElement.classList.remove('ar-active');
+    document.body.classList.remove('ar-active');
     document.body.style.overflow = '';
     markerFound = false;
 
