@@ -4,44 +4,57 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#191b22">
-  <meta name="description" content="Recorre el legado de Franz Tamayo y la historia de UNIFRANZ con una experiencia educativa de realidad aumentada.">
-  <title>Historia Viva AR | Franz Tamayo &amp; UNIFRANZ</title>
+  <meta name="description" content="Recorre el legado de Franz Tamayo y la historia de UNIFRANZ con experiencias educativas de Realidad Aumentada (AR) y Realidad Virtual inmersiva 360° (VR).">
+  <title>Historia Viva | Franz Tamayo &amp; UNIFRANZ (AR &amp; VR)</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js" defer></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js" defer></script>
+
+  <!-- A-Frame y librerías inmersivas -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
+
+  <!-- Controladores de la aplicación -->
+  <script src="js/vr-experience.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/ar-experience.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <!-- Encabezado Principal -->
   <header class="site-header">
-    <a class="brand" href="#inicio" aria-label="Historia Viva AR, inicio">
+    <a class="brand" href="#inicio" aria-label="Historia Viva, inicio">
       <span class="brand-mark" aria-hidden="true">HV</span>
       <span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span>
     </a>
     <nav class="main-nav" aria-label="Navegación principal">
       <a href="#cronologia">Cronología</a>
       <a href="#contexto">Contexto</a>
-      <a href="#visita">Tu visita</a>
+      <a href="#modalidades">Modalidades AR &amp; VR</a>
     </nav>
-    <button class="header-cta" type="button" data-open-ar><span aria-hidden="true">◉</span> Vivir en AR</button>
+    <div style="display: flex; gap: 8px;">
+      <button class="header-cta" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara"><span aria-hidden="true">📷</span> Modo AR</button>
+      <button class="header-cta" type="button" data-open-vr style="background: rgba(33,150,243,0.18); border-color: rgba(33,150,243,0.5); color: #7cc3f8;" title="Iniciar Realidad Virtual 360°"><span aria-hidden="true">🥽</span> Modo VR</button>
+    </div>
   </header>
 
   <main id="contenido">
+    <!-- Hero / Portada Principal -->
     <section class="hero" id="inicio" aria-labelledby="hero-title">
       <div class="hero-copy">
-        <p class="eyebrow"><span></span> BOLIVIA · PENSAMIENTO · EDUCACIÓN</p>
-        <h1 id="hero-title">Historia Viva AR: El Legado de Franz Tamayo y UNIFRANZ</h1>
-        <p class="hero-intro">Un viaje interactivo a través del pensamiento, la educación y el futuro de Bolivia.</p>
+        <p class="eyebrow"><span></span> BOLIVIA · PENSAMIENTO · EDUCACIÓN E INNOVACIÓN</p>
+        <h1 id="hero-title">Historia Viva: El Legado de Franz Tamayo y UNIFRANZ</h1>
+        <p class="hero-intro">Un viaje interactivo a través del pensamiento, la educación y el futuro de Bolivia. Experimenta la historia en Realidad Aumentada (AR con cámara y marcador) o en Realidad Virtual inmersiva (VR 360° para smartphone o gafas Cardboard).</p>
         <div class="hero-actions">
           <button class="button button-gold" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span aria-hidden="true">↗</span></button>
+          <button class="button button-dark" type="button" data-open-vr>🥽 Iniciar Experiencia VR (360°) <span aria-hidden="true">↗</span></button>
           <a class="button button-outline" href="#cronologia">Explorar historia <span aria-hidden="true">↓</span></a>
         </div>
-        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA<br>DE HISTORIA Y EDUCACIÓN</span></div>
+        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA INMERSIVA<br>REALIDAD AUMENTADA &amp; REALIDAD VIRTUAL 360°</span></div>
       </div>
       <div class="hero-art" role="img" aria-label="Ilustración editorial inspirada en Franz Tamayo y el pensamiento boliviano">
         <div class="art-frame">
@@ -50,11 +63,12 @@
           <div class="art-caption"><span>1879 — 1956</span><span>PENSAMIENTO BOLIVIANO</span></div>
           <div class="art-date">FRANZ TAMAYO</div>
         </div>
-        <div class="hero-stamp">EL LEGADO<br>CONTINÚA <span>✳</span></div>
+        <div class="hero-stamp">AR + VR<br>UNIFRANZ <span>✳</span></div>
       </div>
-      <div class="hero-bottom"><span>BOLIVIA</span><span>DESLIZA PARA DESCUBRIR</span><span>01 — 05</span></div>
+      <div class="hero-bottom"><span>BOLIVIA</span><span>COMPATIBLE CON MÓVIL Y GAFAS VR</span><span>01 — 05 ESCENAS</span></div>
     </section>
 
+    <!-- Sección de Cronología: Las 5 Escenas -->
     <section class="timeline-section section-pad" id="cronologia" aria-labelledby="timeline-title">
       <div class="section-heading">
         <div><p class="eyebrow eyebrow-dark"><span></span> IDEAS QUE TRANSFORMAN</p><h2 id="timeline-title">Cinco escenas.<br><em>Un legado que inspira.</em></h2></div>
@@ -85,6 +99,7 @@
       <p class="historical-note">Una invitación a seguir pensando la educación boliviana y el papel de quienes la transforman.</p>
     </section>
 
+    <!-- Ficha Educativa e Institucional -->
     <section class="context-section" id="contexto" aria-labelledby="context-title">
       <div class="context-art" aria-hidden="true"><div class="context-sun"></div><div class="context-lines"></div><div class="context-seal">U<br><small>1990</small></div><span class="context-coordinate">EDUCACIÓN · IDENTIDAD · FUTURO</span></div>
       <div class="context-copy">
@@ -100,25 +115,78 @@
       </div>
     </section>
 
-    <section class="visit-section section-pad" id="visita" aria-labelledby="visit-title">
-      <div class="visit-heading"><div><p class="eyebrow eyebrow-dark"><span></span> TU RECORRIDO</p><h2 id="visit-title">La historia está<br><em>a un marcador de distancia.</em></h2></div><p>Escanea el QR, permite el acceso a la cámara y apunta al marcador HIRO para comenzar el recorrido inmersivo.</p></div>
-      <div class="steps-grid">
-        <article class="visit-step"><span class="step-index">01</span><div class="step-icon" aria-hidden="true">▧</div><h3>Escanea el QR</h3><p>Abre la experiencia desde el navegador de tu móvil.</p></article>
-        <article class="visit-step"><span class="step-index">02</span><div class="step-icon" aria-hidden="true">◉</div><h3>Activa la cámara</h3><p>Acepta el permiso de cámara. La experiencia funciona desde el navegador.</p></article>
-        <article class="visit-step"><span class="step-index">03</span><div class="step-icon" aria-hidden="true">⌗</div><h3>Apunta al marcador</h3><p>Enfoca el marcador HIRO para activar la escena de Franz Tamayo.</p></article>
-        <article class="visit-step"><span class="step-index">04</span><div class="step-icon" aria-hidden="true">▷</div><h3>Explora y escucha</h3><p>Elige una escena, lee sus subtítulos y escucha la narración.</p></article>
+    <!-- Selector de Modalidades AR & VR -->
+    <section class="visit-section section-pad" id="modalidades" aria-labelledby="visit-title">
+      <div class="visit-heading">
+        <div>
+          <p class="eyebrow eyebrow-dark"><span></span> TU RECORRIDO INTERACTIVO</p>
+          <h2 id="visit-title">Elige cómo vivir<br><em>la experiencia.</em></h2>
+        </div>
+        <p>Puedes proyectar a Franz Tamayo en tu espacio con la cámara de tu móvil, o sumergirte en una atmósfera tridimensional 360° compatible con gafas VR Cardboard.</p>
       </div>
-      <div class="visit-callout"><div><span class="callout-label">LISTO PARA COMENZAR</span><h3>Un legado que sigue creciendo.</h3></div><button class="button button-dark" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span aria-hidden="true">↗</span></button></div>
+
+      <!-- Tarjetas de Modalidades -->
+      <div class="modes-grid">
+        <!-- Tarjeta AR -->
+        <article class="mode-card">
+          <div>
+            <span class="badge-ar">📷 REALIDAD AUMENTADA</span>
+            <h3>AR con Marcador HIRO</h3>
+            <p>Abre la cámara de tu teléfono móvil, enfoca el marcador HIRO impreso o en otra pantalla y observa el modelo 3D de Franz Tamayo cobrar vida sobre tu mesa con narración sincronizada.</p>
+          </div>
+          <button class="button button-gold" type="button" data-open-ar style="width: 100%; justify-content: center;">
+            🚀 Iniciar Experiencia AR ↗
+          </button>
+        </article>
+
+        <!-- Tarjeta VR -->
+        <article class="mode-card">
+          <div>
+            <span class="badge-vr">🥽 REALIDAD VIRTUAL 360°</span>
+            <h3>VR Inmersivo &amp; Gafas Cardboard</h3>
+            <p>Sumérgete en un entorno espacial 360° con cielo nocturno, efectos de niebla y un pedestal histórico. Puedes usarlo en pantalla completa o activar el <strong>Modo Gafas VR</strong> para visores tipo Cardboard o VR Box con control por mirada.</p>
+          </div>
+          <button class="button button-dark" type="button" data-open-vr style="width: 100%; justify-content: center;">
+            🥽 Iniciar Experiencia VR ↗
+          </button>
+        </article>
+      </div>
+
+      <!-- Pasos de visita rápida -->
+      <div class="steps-grid" style="margin-top: 45px;">
+        <article class="visit-step"><span class="step-index">01</span><div class="step-icon" aria-hidden="true">▧</div><h3>Elige tu modo</h3><p>Elige Realidad Aumentada (cámara) o Realidad Virtual (entorno 360°).</p></article>
+        <article class="visit-step"><span class="step-index">02</span><div class="step-icon" aria-hidden="true">◉</div><h3>Permisos</h3><p>Acepta el acceso a la cámara (en AR) o mueve tu dispositivo para orientarte (en VR).</p></article>
+        <article class="visit-step"><span class="step-index">03</span><div class="step-icon" aria-hidden="true">⌗</div><h3>Interactúa</h3><p>Cambia entre las 5 escenas y lee los subtítulos pedagógicos oficiales.</p></article>
+        <article class="visit-step"><span class="step-index">04</span><div class="step-icon" aria-hidden="true">▷</div><h3>Escucha la voz</h3><p>Presiona el botón de audio o narración para escuchar la locución de Franz Tamayo.</p></article>
+      </div>
     </section>
   </main>
 
-  <footer class="site-footer"><a class="brand brand-footer" href="#inicio"><span class="brand-mark" aria-hidden="true">HV</span><span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span></a><p>Un recorrido por la historia de la educación boliviana<br><strong>1879 — presente</strong></p><span class="footer-date">BOLIVIA</span></footer>
+  <!-- Pie de Página -->
+  <footer class="site-footer">
+    <a class="brand brand-footer" href="#inicio">
+      <span class="brand-mark" aria-hidden="true">HV</span>
+      <span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span>
+    </a>
+    <p>Un recorrido por la historia de la educación boliviana<br><strong>1879 — presente</strong></p>
+    <span class="footer-date">BOLIVIA</span>
+  </footer>
 
+  <!-- =========================================================================
+       MODAL 1: REALIDAD AUMENTADA (AR con Cámara y Marcador HIRO)
+       ========================================================================= -->
   <section class="ar-view" id="ar-view" aria-label="Experiencia de realidad aumentada" aria-hidden="true" inert>
-    <div class="ar-loading" id="ar-loading" role="status"><span class="loader-mark">HV</span><p>Preparando la experiencia…</p><small>Permite el acceso a la cámara para continuar</small></div>
+    <div class="ar-loading" id="ar-loading" role="status">
+      <span class="loader-mark">HV</span>
+      <p>Preparando la experiencia AR…</p>
+      <small>Permite el acceso a la cámara para continuar</small>
+    </div>
+
     <template id="ar-scene-template">
       <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; colorManagement: true" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
-        <a-assets timeout="10000"><a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item></a-assets>
+        <a-assets timeout="10000">
+          <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
+        </a-assets>
         <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
           <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" animation-mixer="clip: *; loop: repeat" position="0 0 0" scale="0.72 0.72 0.72"></a-entity>
           <a-entity position="0 1.55 0" text="value: FRANZ TAMAYO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
@@ -126,22 +194,218 @@
         <a-entity camera></a-entity>
       </a-scene>
     </template>
+
     <div class="ar-hud">
-      <div class="ar-topbar"><div class="ar-brand"><span class="brand-mark">HV</span><span>HISTORIA VIVA <small>EXPERIENCIA AR</small></span></div><button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button></div>
-      <div class="ar-title"><span class="ar-live-dot"></span><div><p>HISTORIA VIVA · REALIDAD AUMENTADA</p><h2>Franz Tamayo en AR - Historia UNIFRANZ</h2></div></div>
-      <aside class="ar-details" id="ar-details" aria-live="polite" hidden><p class="eyebrow"><span></span><span id="scene-kicker">ESCENA 1 DE 5</span></p><h3 id="scene-title">El Despertar de Franz Tamayo</h3><p id="scene-subtitle"></p><span class="details-source">HISTORIA VIVA · UNIFRANZ</span></aside>
+      <div class="ar-topbar">
+        <div class="ar-brand">
+          <span class="brand-mark">HV</span>
+          <span>HISTORIA VIVA <small>EXPERIENCIA AR</small></span>
+        </div>
+        <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button>
+      </div>
+
+      <div class="ar-title">
+        <span class="ar-live-dot"></span>
+        <div>
+          <p>HISTORIA VIVA · REALIDAD AUMENTADA</p>
+          <h2>Franz Tamayo en AR - Historia UNIFRANZ</h2>
+        </div>
+      </div>
+
+      <aside class="ar-details" id="ar-details" aria-live="polite" hidden>
+        <p class="eyebrow"><span></span><span id="scene-kicker">ESCENA 1 DE 5</span></p>
+        <h3 id="scene-title">El Despertar de Franz Tamayo</h3>
+        <p id="scene-subtitle"></p>
+        <span class="details-source">HISTORIA VIVA · UNIFRANZ</span>
+      </aside>
+
       <nav class="scene-navigation" aria-label="Navegación de escenas">
         <button class="ar-control scene-nav-button" type="button" id="previous-scene" aria-label="Escena anterior">← Anterior</button>
         <span class="scene-navigation-status" id="scene-navigation-status" aria-live="polite">Escena 1 de 5</span>
         <button class="ar-control scene-nav-button" type="button" id="next-scene" aria-label="Escena siguiente">Siguiente →</button>
       </nav>
+
       <div class="ar-bottom-controls">
-        <button class="ar-control" type="button" id="audio-toggle" aria-pressed="false"><span class="control-icon" id="audio-icon" aria-hidden="true">▶</span><span id="audio-label">Escuchar narración</span></button>
-        <button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details"><span class="control-icon" aria-hidden="true">i</span><span>Guion</span></button>
+        <button class="ar-control" type="button" id="audio-toggle" aria-pressed="false">
+          <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
+          <span id="audio-label">Escuchar narración</span>
+        </button>
+        <button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details">
+          <span class="control-icon" aria-hidden="true">i</span>
+          <span>Guion</span>
+        </button>
       </div>
       <p class="ar-hint" id="ar-hint">Busca el marcador HIRO para activar la escena</p>
     </div>
     <audio id="narration-audio" preload="metadata" src="assets/audio/escena_franz_tamayo.mp3"></audio>
+  </section>
+
+  <!-- =========================================================================
+       MODAL 2: REALIDAD VIRTUAL (VR Inmersivo 360° / Modo Gafas Cardboard)
+       ========================================================================= -->
+  <section class="vr-view" id="vr-view" aria-label="Experiencia de Realidad Virtual" aria-hidden="true" inert>
+    <div class="vr-loading" id="vr-loading" role="status">
+      <span class="loader-mark">FT</span>
+      <p>Cargando Entorno Inmersivo 360°…</p>
+      <small>Gira tu dispositivo o mueve el cursor para mirar alrededor</small>
+    </div>
+
+    <template id="vr-scene-template">
+      <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true" renderer="antialias: true; colorManagement: true; logarithmicDepthBuffer: true" fog="type: exponential; color: #141722; density: 0.04" loading-screen="enabled: false">
+        <a-assets timeout="12000">
+          <a-asset-item id="franz-tamayo-vr-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
+        </a-assets>
+
+        <!-- Entorno 360: Cielo y Estrellas -->
+        <a-sky id="vr-sky" color="#0f1118"></a-sky>
+
+        <!-- Suelo / Pedestal histórico para Franz Tamayo -->
+        <a-cylinder position="0 0.08 -2.8" radius="1.3" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
+        <a-ring id="vr-pedestal-glow" position="0 0.17 -2.8" rotation="-90 0 0" radius-inner="1.1" radius-outer="1.28" material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.6"></a-ring>
+
+        <!-- Modelo 3D Oficial de Franz Tamayo con animación -->
+        <a-entity
+          id="vr-tamayo-figure"
+          gltf-model="#franz-tamayo-vr-model"
+          animation-mixer="clip: *; loop: repeat"
+          position="0 0.16 -2.8"
+          scale="0.85 0.85 0.85">
+        </a-entity>
+
+        <!-- Luces del escenario VR -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 0.65"></a-entity>
+        <a-entity light="type: directional; color: #fff3cc; intensity: 1.1; castShadow: true" position="2 4 1"></a-entity>
+        <a-entity light="type: point; color: #d5aa46; intensity: 1.2; distance: 6" position="0 2 -2"></a-entity>
+
+        <!-- Panel 3D Flotante con Guion interactivo dentro de VR (visible con gafas puestas) -->
+        <a-entity id="vr-3d-floating-panel" position="0 1.25 -1.95" rotation="-10 0 0">
+          <a-plane width="2.4" height="1.15" material="color: #12141c; opacity: 0.88; transparent: true; roughness: 0.7"></a-plane>
+
+          <!-- Título de la escena 3D -->
+          <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO" align="center" position="0 0.42 0.02" width="2.3" color="#f1c40f" font="dejavu"></a-text>
+
+          <!-- Fase y época -->
+          <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center" position="0 0.28 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
+
+          <!-- Diálogo narrativo 3D -->
+          <a-text id="vr-3d-scene-dialog" value="Soy Franz Tamayo, poeta y pensador. Te invito a viajar en el tiempo para descubrir una historia de educacion y futuro." align="center" position="0 0.02 0.02" width="2.1" color="#ffffff" font="dejavu" wrap-count="36"></a-text>
+
+          <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
+          <a-entity position="0 -0.38 0">
+            <!-- Botón 3D Anterior -->
+            <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
+              <a-plane width="0.68" height="0.22" material="color: #232734; roughness: 0.6"></a-plane>
+              <a-text value="◄ ANTERIOR" align="center" position="0 0 0.02" width="1.9" color="#e0dbd0" font="dejavu"></a-text>
+            </a-entity>
+
+            <!-- Botón 3D Narración -->
+            <a-entity class="vr-clickable" id="vr-3d-audio-btn" position="0 0 0">
+              <a-plane width="0.95" height="0.22" material="color: #d5aa46; roughness: 0.4"></a-plane>
+              <a-text id="vr-3d-audio-btn-text" value="NARRAR ESCENA" align="center" position="0 0 0.02" width="2.1" color="#191b22" font="dejavu"></a-text>
+            </a-entity>
+
+            <!-- Botón 3D Siguiente -->
+            <a-entity class="vr-clickable" id="vr-3d-next-btn" position="0.75 0 0">
+              <a-plane width="0.68" height="0.22" material="color: #232734; roughness: 0.6"></a-plane>
+              <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9" color="#e0dbd0" font="dejavu"></a-text>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+
+        <!-- Anillos atmosféricos -->
+        <a-torus position="0 4 0" rotation="90 0 0" radius="6" radius-tubular="0.02" color="#d5aa46" opacity="0.25"></a-torus>
+
+        <!-- Cámara del Usuario con Retícula de Mirada (Gaze Cursor para Gafas VR) -->
+        <a-entity position="0 1.6 0">
+          <a-camera look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false">
+            <a-entity
+              cursor="fuse: true; fuseTimeout: 1400"
+              raycaster="objects: .vr-clickable"
+              position="0 0 -1"
+              geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
+              material="color: #f1c40f; shader: flat; opacity: 0.8"
+              animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
+              animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
+            </a-entity>
+          </a-camera>
+        </a-entity>
+      </a-scene>
+    </template>
+
+    <!-- HUD 2D de Control VR -->
+    <div class="ar-hud vr-hud">
+      <!-- Barra superior -->
+      <div class="ar-topbar vr-topbar">
+        <div class="ar-brand vr-brand">
+          <span class="brand-mark">FT</span>
+          <div>
+            <span>FRANZ TAMAYO <small>EXPERIENCIA VR INMERSIVA 360°</small></span>
+          </div>
+        </div>
+        <div class="vr-top-actions">
+          <button class="vr-cardboard-btn" type="button" id="vr-btn-enter-cardboard" title="Activar pantalla dividida para gafas de celular">
+            <span aria-hidden="true">🥽</span> Modo Gafas VR
+          </button>
+          <button class="ar-icon-button" type="button" data-close-vr aria-label="Cerrar Realidad Virtual" title="Volver a la página">×</button>
+        </div>
+      </div>
+
+      <!-- Indicador de escena -->
+      <div class="ar-title vr-title-card">
+        <span class="ar-live-dot"></span>
+        <div>
+          <p id="vr-scene-badge">ESCENA 01 / 05 · 1879 — 1956</p>
+          <h2 id="vr-scene-title">El Despertar de Franz Tamayo</h2>
+          <span class="vr-phase-label" id="vr-scene-phase">EL DESPERTAR</span>
+        </div>
+      </div>
+
+      <!-- Pastillas rápidas (01 - 05) -->
+      <div class="vr-scene-pills" role="tablist" aria-label="Seleccionar escena">
+        <button class="scene-pill is-active" type="button" data-pill-index="0" title="Escena 1">01</button>
+        <button class="scene-pill" type="button" data-pill-index="1" title="Escena 2">02</button>
+        <button class="scene-pill" type="button" data-pill-index="2" title="Escena 3">03</button>
+        <button class="scene-pill" type="button" data-pill-index="3" title="Escena 4">04</button>
+        <button class="scene-pill" type="button" data-pill-index="4" title="Escena 5">05</button>
+      </div>
+
+      <!-- Controles inferiores -->
+      <div class="ar-bottom-controls vr-bottom-controls">
+        <button class="ar-control" type="button" id="vr-btn-prev" aria-label="Escena anterior">
+          <span class="control-icon" aria-hidden="true">⏮</span>
+          <span>Anterior</span>
+        </button>
+        <button class="ar-control ar-control-main" type="button" id="vr-audio-toggle" aria-pressed="false">
+          <span class="control-icon" id="vr-audio-icon" aria-hidden="true">▶</span>
+          <span id="vr-audio-label">Escuchar a Franz Tamayo</span>
+        </button>
+        <button class="ar-control" type="button" id="vr-btn-next" aria-label="Siguiente escena">
+          <span>Siguiente</span>
+          <span class="control-icon" aria-hidden="true">⏭</span>
+        </button>
+        <button class="ar-control" type="button" id="vr-details-toggle" aria-expanded="false" aria-controls="vr-details-panel">
+          <span class="control-icon" aria-hidden="true">📜</span>
+          <span>Guion</span>
+        </button>
+      </div>
+
+      <!-- Panel de Guion -->
+      <aside class="ar-details vr-details" id="vr-details-panel" hidden>
+        <button class="details-close vr-details-close" type="button" id="vr-details-close" aria-label="Cerrar guion">×</button>
+        <p class="eyebrow"><span></span> GUION NARRATIVO OFICIAL</p>
+        <div class="vr-details-content">
+          <h4>Ambientación Visual:</h4>
+          <p id="vr-visual-desc">Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el tiempo.</p>
+          <h4 style="margin-top: 14px;">Palabras de Franz Tamayo:</h4>
+          <p id="vr-dialog-text">«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano...»</p>
+        </div>
+        <span class="details-source">EXPERIENCIA INMERSIVA · UNIFRANZ</span>
+      </aside>
+
+      <p class="ar-hint vr-hint">
+        💡 Tip: Presiona «Modo Gafas VR» y pon tu smartphone en el visor Cardboard/VR Box para inmersión 360°
+      </p>
+    </div>
   </section>
 </body>
 </html>

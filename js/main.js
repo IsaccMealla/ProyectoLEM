@@ -1,4 +1,9 @@
 (function () {
+  /**
+   * Escenas históricas oficiales de Franz Tamayo y UNIFRANZ
+   * Compartidas tanto por la experiencia de Realidad Aumentada (AR)
+   * como por la experiencia de Realidad Virtual 360° (VR).
+   */
   const scenes = [
     {
       title: 'El Despertar de Franz Tamayo',
@@ -28,6 +33,9 @@
   ];
   window.HistoriaVivaScenes = scenes;
 
+  /* -------------------------------------------------------------------------
+     Interacción de la Cronología en la página principal
+     ------------------------------------------------------------------------- */
   document.querySelectorAll('.timeline-trigger').forEach(function (button) {
     button.addEventListener('click', function () {
       const wasOpen = button.getAttribute('aria-expanded') === 'true';
@@ -48,4 +56,187 @@
       }
     });
   });
+
+  /* -------------------------------------------------------------------------
+     Controlador de la Experiencia VR (Realidad Virtual 360° / Cardboard)
+     ------------------------------------------------------------------------- */
+  const vrView = document.getElementById('vr-view');
+  const vrSceneTemplate = document.getElementById('vr-scene-template');
+  const vrLoading = document.getElementById('vr-loading');
+  const vrCardboardBtn = document.getElementById('vr-btn-enter-cardboard');
+  const vrAudioToggle = document.getElementById('vr-audio-toggle');
+  const vrBtnPrev = document.getElementById('vr-btn-prev');
+  const vrBtnNext = document.getElementById('vr-btn-next');
+  const vrPills = document.querySelectorAll('.scene-pill');
+  const vrDetailsToggle = document.getElementById('vr-details-toggle');
+  const vrDetailsPanel = document.getElementById('vr-details-panel');
+  const vrDetailsClose = document.getElementById('vr-details-close');
+
+  let aSceneInstance = null;
+  let loadingTimeout = null;
+  let currentVRSceneIndex = 0;
+
+  function mountVRScene() {
+    if (aSceneInstance || !vrSceneTemplate || !vrView) return;
+    aSceneInstance = vrSceneTemplate.content.firstElementChild.cloneNode(true);
+    vrView.insertBefore(aSceneInstance, vrView.querySelector('.vr-hud'));
+
+    aSceneInstance.addEventListener('loaded', function () {
+      if (vrLoading) vrLoading.classList.add('is-hidden');
+      if (loadingTimeout) window.clearTimeout(loadingTimeout);
+
+      if (window.tamayoVR) {
+        window.tamayoVR.setSceneIndex(currentVRSceneIndex, false);
+      }
+
+      // Conectar interactividad de los botones 3D con cursor de mirada (gaze manos libres)
+      const btn3DAudio = aSceneInstance.querySelector('#vr-3d-audio-btn');
+      if (btn3DAudio) {
+        btn3DAudio.addEventListener('click', function () {
+          if (window.tamayoVR) window.tamayoVR.toggleNarration();
+        });
+      }
+
+      const btn3DPrev = aSceneInstance.querySelector('#vr-3d-prev-btn');
+      if (btn3DPrev) {
+        btn3DPrev.addEventListener('click', function () {
+          if (window.tamayoVR) window.tamayoVR.prevScene();
+        });
+      }
+
+      const btn3DNext = aSceneInstance.querySelector('#vr-3d-next-btn');
+      if (btn3DNext) {
+        btn3DNext.addEventListener('click', function () {
+          if (window.tamayoVR) window.tamayoVR.nextScene();
+        });
+      }
+    });
+  }
+
+  function openVR() {
+    if (!vrView) return;
+    if (window.tamayoVR) window.tamayoVR.stopNarration();
+
+    vrView.classList.remove('is-error');
+    vrView.setAttribute('aria-hidden', 'false');
+    vrView.inert = false;
+    document.body.style.overflow = 'hidden';
+
+    if (vrLoading) vrLoading.classList.remove('is-hidden');
+    mountVRScene();
+
+    loadingTimeout = window.setTimeout(function () {
+      if (vrLoading) vrLoading.classList.add('is-hidden');
+    }, 6000);
+
+    const closeBtn = vrView.querySelector('[data-close-vr]');
+    if (closeBtn) closeBtn.focus({ preventScroll: true });
+
+    if (window.tamayoVR) {
+      window.tamayoVR.setSceneIndex(currentVRSceneIndex, false);
+    }
+  }
+
+  function closeVR() {
+    if (!vrView) return;
+    if (window.tamayoVR) window.tamayoVR.stopNarration();
+    if (loadingTimeout) window.clearTimeout(loadingTimeout);
+
+    vrView.setAttribute('aria-hidden', 'true');
+    vrView.inert = true;
+    document.body.style.overflow = '';
+
+    if (aSceneInstance && aSceneInstance.is && aSceneInstance.is('vr-mode')) {
+      aSceneInstance.exitVR();
+    }
+
+    if (aSceneInstance) {
+      aSceneInstance.remove();
+      aSceneInstance = null;
+    }
+
+    const openBtn = document.querySelector('[data-open-vr]');
+    if (openBtn) openBtn.focus({ preventScroll: true });
+  }
+
+  // Event Listeners para abrir y cerrar el modal VR
+  document.querySelectorAll('[data-open-vr]').forEach(function (button) {
+    button.addEventListener('click', openVR);
+  });
+
+  document.querySelectorAll('[data-close-vr]').forEach(function (button) {
+    button.addEventListener('click', closeVR);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && vrView && vrView.getAttribute('aria-hidden') === 'false') {
+      closeVR();
+    }
+  });
+
+  // Controles dentro del HUD VR
+  if (vrCardboardBtn) {
+    vrCardboardBtn.addEventListener('click', function () {
+      if (window.tamayoVR) window.tamayoVR.enterCardboardVR();
+    });
+  }
+
+  if (vrAudioToggle) {
+    vrAudioToggle.addEventListener('click', function () {
+      if (window.tamayoVR) window.tamayoVR.toggleNarration();
+    });
+  }
+
+  if (vrBtnPrev) {
+    vrBtnPrev.addEventListener('click', function () {
+      if (window.tamayoVR) window.tamayoVR.prevScene();
+    });
+  }
+
+  if (vrBtnNext) {
+    vrBtnNext.addEventListener('click', function () {
+      if (window.tamayoVR) window.tamayoVR.nextScene();
+    });
+  }
+
+  vrPills.forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      const idx = parseInt(pill.getAttribute('data-pill-index'), 10);
+      if (window.tamayoVR) window.tamayoVR.setSceneIndex(idx);
+    });
+  });
+
+  if (vrDetailsToggle && vrDetailsPanel) {
+    vrDetailsToggle.addEventListener('click', function () {
+      const isOpen = vrDetailsPanel.hidden;
+      vrDetailsPanel.hidden = !isOpen;
+      vrDetailsToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+  }
+
+  if (vrDetailsClose && vrDetailsPanel) {
+    vrDetailsClose.addEventListener('click', function () {
+      vrDetailsPanel.hidden = true;
+      if (vrDetailsToggle) vrDetailsToggle.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  // Sincronizar índice activo al cambiar de escena en VR
+  document.addEventListener('tamayo-scene-changed', function (event) {
+    if (event.detail && typeof event.detail.index === 'number') {
+      currentVRSceneIndex = event.detail.index;
+    }
+  });
+
+  // Auto-lanzar VR si la URL contiene ?vr=true o el hash #vr
+  const urlParams = new URLSearchParams(window.location.search);
+  const shouldAutoLaunchVR = urlParams.get('vr') === 'true' || 
+                             window.location.hash === '#vr' || 
+                             window.location.hash === '#experiencia-vr';
+
+  if (shouldAutoLaunchVR) {
+    window.setTimeout(function () {
+      openVR();
+    }, 450);
+  }
 })();

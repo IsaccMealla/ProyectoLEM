@@ -1,21 +1,42 @@
-# Historia Viva AR · Franz Tamayo & UNIFRANZ
+# Historia Viva · Franz Tamayo & UNIFRANZ (AR & VR)
 
-Landing educativa y experiencia WebAR sobre el pensamiento de Franz Tamayo, su obra *Creación de la pedagogía nacional* (1910), la fundación de UNIFRANZ (1990) y su presencia en Bolivia. La escena AR usa A-Frame 1.3.0, aframe-extras 6.1.1 y AR.js 3.4.5 desde CDN; se necesita conexión a internet.
+Landing educativa con dos experiencias inmersivas sobre el pensamiento de Franz Tamayo, su obra *Creación de la pedagogía nacional* (1910), la fundación de UNIFRANZ (1990) y su proyección nacional:
 
-## Ejecutar
+1. **Realidad Aumentada (AR):** Visualización del modelo 3D de Franz Tamayo sobre el marcador HIRO en el entorno real mediante la cámara del smartphone.
+2. **Realidad Virtual Inmersiva (VR 360°):** Entorno espacial 360° con iluminación, niebla, panel interactivo y **Modo Gafas VR** estereoscópico para visores de smartphone (Google Cardboard / VR Box) con retícula de mirada (control manos libres).
 
-Sirve la carpeta desde `localhost` para probarla en el navegador, o publícala bajo HTTPS. El acceso a la cámara no funciona desde una página abierta como `file://`.
+---
+
+## 🚀 Cómo ejecutar localmente
+
+Sirve la carpeta desde un servidor local (o bajo HTTPS para permitir el acceso a la cámara y al giroscopio del móvil):
 
 ```powershell
+# En PowerShell / Terminal:
 python -m http.server 8080
+# O con Node.js / npx:
+npx serve .
 ```
 
-En móvil, abre la URL pública, escanea el QR de acceso si está disponible, permite el uso de la cámara y apunta al marcador HIRO.
+Abre en tu navegador `http://localhost:8080` (o la IP local desde tu teléfono conectado a la misma red Wi-Fi).
 
-## Assets de la experiencia AR
+---
 
-- `assets/images/hiro-marker.png`: marcador HIRO de AR.js para imprimir.
-- `assets/models/franz_tamayo.glb`: modelo 3D de Franz Tamayo cargado por la escena AR. La escena reproduce en bucle las animaciones incluidas en el GLB; el archivo debe contener al menos un clip de animación.
-- `assets/audio/escena_franz_tamayo.mp3`: locución completa opcional. Si falta o no se puede reproducir, el navegador ofrece la narración mediante síntesis de voz en español.
+## 🎭 Las 5 Escenas Históricas
 
-El HUD permite avanzar y retroceder entre las cinco escenas; cada una actualiza la transcripción y su fragmento de audio o narración sintetizada. La cámara se solicita al abrir la experiencia y sus pistas se detienen al cerrarla. La experiencia requiere un navegador compatible con WebRTC y seguimiento de marcadores.
+1. **Escena 01:** *El Despertar de Franz Tamayo (1879 — 1956)*
+2. **Escena 02:** *El Pensamiento y la Educación (1910 - Creación de la pedagogía nacional)*
+3. **Escena 03:** *El Nacimiento de UNIFRANZ (1990 — 1993)*
+4. **Escena 04:** *Una Universidad en Crecimiento (La Paz, El Alto, Cochabamba y Santa Cruz)*
+5. **Escena 05:** *El Legado Continúa (Hoy y Mañana)*
+
+---
+
+## 📦 Assets y Recursos
+
+- `assets/models/franz_tamayo.glb`: Modelo 3D oficial con animaciones de Franz Tamayo utilizado tanto en AR como en VR.
+- `assets/images/hiro-marker.png`: Marcador HIRO para enfocar con la cámara en el modo AR.
+- `assets/audio/escena_franz_tamayo.mp3`: Archivo de locución opcional (con respaldo automático por `speechSynthesis` en español `es-BO`).
+- `js/ar-experience.js`: Controlador de la experiencia de Realidad Aumentada con AR.js.
+- `js/vr-experience.js`: Controlador de la experiencia de Realidad Virtual 360° y modo Cardboard.
+- `js/main.js`: Lógica principal, cronología interactiva y orquestación de ambas modalidades.
