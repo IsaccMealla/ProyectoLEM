@@ -279,10 +279,7 @@
       }
       if (model) {
         model.addEventListener('model-loaded', function (event) {
-          const animations = event.detail.model && event.detail.model.animations;
-          if (!animations || animations.length === 0) {
-            hint.textContent = 'El modelo cargó, pero el GLB no contiene clips de animación. Reexporta el modelo incluyendo sus animaciones.';
-          }
+          hint.textContent = 'Modelo 3D de Franz Tamayo cargado. Apunta al marcador HIRO';
         });
         model.addEventListener('model-error', function () {
           hint.textContent = 'No se encontró assets/models/franz_tamayo.glb. Añade el modelo 3D para mostrar a Franz Tamayo.';

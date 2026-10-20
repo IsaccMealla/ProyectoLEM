@@ -59,7 +59,7 @@ window.TAMAYO_VR_SCENES = [
     year: "EL FUTURO ES HOY",
     phase: "EL LEGADO",
     visual: "Franz Tamayo aparece en un campus actual rodeado de estudiantes de diferentes carreras. Mira directamente al espectador y el logotipo de UNIFRANZ aparece al fondo.",
-    dialog: "Y hoy, jóvenes universitarios, ustedes son parte de esta historia. Cada idea que desarrollan, cada conocimiento que adquieren y cada desafío que superan contribuye a construir el futuro de nuestra sociedad. Mi nombre representa un legado intelectual, pero son ustedes quienes pueden darle un nuevo significado a través de sus acciones. La historia de UNIFRANZ continúa escribiéndose con cada generación de estudiantes. Bienvenidos a UNIFRANZ, Universidad Privada Franz Tamayo. ¡El futuro!",
+    dialog: "Y hoy, jóvenes universitarios, ustedes son parte de esta historia. Cada idea que desarrollan, cada conocimiento que adquieren y cada desafío que superan contribuye a construir el futuro de nuestra sociedad. Mi nombre representa un legado intelectual, pero son ustedes quienes pueden darle un nuevo significado a través de sus acciones. La historia de UNIFRANZ continúa escribiéndose con cada generación de estudiantes. Bienvenidos a UNIFRANZ, Universidad Privada Franz Tamayo. ¡El futuro está en sus manos!",
     themeColor: "#27ae60",
     skyColor: "#0d1b14",
     fogColor: "#12251b"
@@ -161,7 +161,15 @@ class TamayoVRExperience {
       vrDialog3D.setAttribute('value', `"${scene.dialog}"`);
     }
     if (vrPedestalRing) {
-      vrPedestalRing.setAttribute('material', `color: ${scene.themeColor}; emissive: ${scene.themeColor}; emissiveIntensity: 0.6`);
+      vrPedestalRing.setAttribute('material', `color: ${scene.themeColor}; emissive: ${scene.themeColor}; emissiveIntensity: 0.7`);
+    }
+
+    // Alternar los elementos visuales específicos de cada escena 3D en el entorno
+    for (let i = 1; i <= 5; i++) {
+      const visualEntity = aScene.querySelector(`#vr-visuals-scene-${i}`);
+      if (visualEntity) {
+        visualEntity.setAttribute('visible', String(i === scene.id));
+      }
     }
   }
 
