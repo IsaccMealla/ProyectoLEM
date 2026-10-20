@@ -102,23 +102,58 @@
     }, 300);
   }
 
-  // ─── Detección de dispositivo ───
-  function isMobileDevice() {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // ─── Detección y calibración responsiva según pantalla y dispositivo ───
+  function getDeviceProfile() {
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth <= 800);
+    var w = window.innerWidth || document.documentElement.clientWidth;
+    var h = window.innerHeight || document.documentElement.clientHeight;
+    var isPortrait = h > w;
+    return {
+      isMobile: isMobile,
+      width: w,
+      height: h,
+      isPortrait: isPortrait
+    };
   }
+
+  // Ajusta la escala del modelo 3D y su pedestal en tiempo real según el dispositivo
+  function adjustSceneForDevice() {
+    var rig = arScene ? arScene.querySelector('#tamayo-rig') : null;
+    if (!rig) return;
+
+    var dev = getDeviceProfile();
+
+    // Escala calibrada dinámicamente:
+    // En celular vertical, el viewport es angosto: una escala de 0.42 asegura que Franz Tamayo,
+    // su pedestal y los rótulos entren completos en la pantalla sin que el usuario tenga que
+    // alejarse demasiado del marcador.
+    // En laptop/PC, 0.70 da una presencia ceremonial clara sin salirse del encuadre.
+    var scaleValue;
+    if (dev.isMobile) {
+      scaleValue = dev.isPortrait ? 0.42 : 0.52;
+    } else {
+      scaleValue = 0.70;
+    }
+
+    rig.setAttribute('scale', scaleValue + ' ' + scaleValue + ' ' + scaleValue);
+    console.log('[Historia Viva] Escala adaptada (' + (dev.isMobile ? 'Móvil' : 'PC') + ', ' + dev.width + 'x' + dev.height + '): ' + scaleValue);
+  }
+
+  window.addEventListener('resize', adjustSceneForDevice);
+  window.addEventListener('orientationchange', function () {
+    setTimeout(adjustSceneForDevice, 300);
+  });
 
   // ─── Configurar cámara según laptop o móvil ───
   function configureCameraForDevice(scene) {
-    var mobile = isMobileDevice();
-    var isPortrait = window.innerHeight > window.innerWidth;
+    var dev = getDeviceProfile();
 
-    // Resolución óptima HD según orientación para evitar zoom forzado y pixelado
-    var sWidth = isPortrait ? 720 : 1280;
-    var sHeight = isPortrait ? 1280 : 720;
+    // En móvil usamos cámara trasera (facingMode: environment) y performanceProfile: desktop-fast
+    // para que AR.js use la resolución nativa nítida del sensor y NO degrade a 240p borroso
+    var arjsAttr = dev.isMobile
+      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best; performanceProfile: desktop-fast;'
+      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; performanceProfile: desktop-fast;';
 
-    var arjsAttr = mobile
-      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best; sourceWidth: ' + sWidth + '; sourceHeight: ' + sHeight + '; displayWidth: ' + sWidth + '; displayHeight: ' + sHeight + ';'
-      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720;';
     scene.setAttribute('arjs', arjsAttr);
   }
 
@@ -134,13 +169,10 @@
     }
 
     video.style.position = 'absolute';
-    video.style.top = '50%';
-    video.style.left = '50%';
-    video.style.transform = 'translate(-50%, -50%)';
-    video.style.minWidth = '100%';
-    video.style.minHeight = '100%';
-    video.style.width = 'auto';
-    video.style.height = 'auto';
+    video.style.top = '0';
+    video.style.left = '0';
+    video.style.width = '100%';
+    video.style.height = '100%';
     video.style.objectFit = 'cover';
     video.style.zIndex = '1';
     video.style.display = 'block';
@@ -153,6 +185,8 @@
     if (video.videoWidth > 0 && loading) {
       loading.classList.add('is-hidden');
     }
+
+    adjustSceneForDevice();
   }
 
   window.addEventListener('arjs-video-loaded', function () {
@@ -445,6 +479,7 @@
 
     scene.addEventListener('loaded', function () {
       configureDracoSupport(scene);
+      adjustSceneForDevice();
 
       var marker = scene.querySelector('a-marker');
       var model = scene.querySelector('#franz-tamayo-figure');
