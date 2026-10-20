@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#191b22">
   <meta name="description" content="Recorre el legado de Franz Tamayo y la historia de UNIFRANZ con experiencias educativas de Realidad Aumentada (AR) y Realidad Virtual inmersiva 360° (VR).">
   <title>Historia Viva | Franz Tamayo &amp; UNIFRANZ (AR &amp; VR)</title>
@@ -23,6 +23,21 @@
   <script src="js/ar-experience.js" defer></script>
 </head>
 <body>
+  <div id="file-protocol-warning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:999999; background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 24px; font-family:'DM Sans', sans-serif; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.8); border-bottom:2px solid #ef4444;">
+    <strong style="font-size:15px; display:block; margin-bottom:4px;">⚠️ Estás abriendo el proyecto como archivo local (file://)</strong>
+    <span style="font-size:13px; opacity:0.95;">Los navegadores bloquean la cámara y los modelos 3D bajo <code>file://</code> por políticas de seguridad (CORS).</span><br>
+    <a href="http://localhost:8080" style="display:inline-block; margin-top:10px; padding:8px 20px; background:#ffd166; color:#0d0f14; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px;">
+      👉 Abrir en http://localhost:8080
+    </a>
+  </div>
+  <script>
+    if (window.location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function() {
+        var w = document.getElementById('file-protocol-warning');
+        if (w) w.style.display = 'block';
+      });
+    }
+  </script>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
   <!-- Encabezado Principal -->
@@ -199,6 +214,24 @@
         <article class="visit-step"><span class="step-index">03</span><div class="step-icon" aria-hidden="true">⌗</div><h3>Interactúa</h3><p>Cambia entre las 5 escenas y lee los subtítulos pedagógicos oficiales.</p></article>
         <article class="visit-step"><span class="step-index">04</span><div class="step-icon" aria-hidden="true">▷</div><h3>Escucha la voz</h3><p>Presiona el botón de audio o narración para escuchar la locución de Franz Tamayo.</p></article>
       </div>
+
+      <!-- Acceso móvil con QR y Marcador HIRO -->
+      <div class="qr-mobile-box" style="display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 35px 0 25px; padding: 24px; background: rgba(229,169,59,0.06); border: 1px solid rgba(229,169,59,0.3); border-radius: 16px;">
+        <div style="text-align: center;">
+          <img src="assets/images/qr-experiencia.png" alt="Código QR para abrir en celular" style="width: 140px; height: 140px; border-radius: 12px; background: white; padding: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: block; margin: 0 auto;">
+          <p style="margin-top: 10px; font-size: 11.5px; color: #ffd166; font-weight: 700; letter-spacing: 0.5px;">1. Escanea con tu celular</p>
+          <small style="color: #ded9cf; font-size: 10px;">Abre https://isaccmealla.github.io/ProyectoLEM/</small>
+        </div>
+        <div style="text-align: center;">
+          <a href="assets/images/hiro-marker.png" target="_blank" rel="noopener" title="Clic para ver o descargar marcador en tamaño completo">
+            <img src="assets/images/hiro-marker.png" alt="Marcador HIRO para enfocar con la cámara" style="width: 140px; height: 140px; border-radius: 12px; border: 2px solid #e5a93b; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: block; margin: 0 auto;">
+          </a>
+          <p style="margin-top: 10px; font-size: 11.5px; color: #ffd166; font-weight: 700; letter-spacing: 0.5px;">2. Apunta la cámara a este marcador</p>
+          <small style="color: #ded9cf; font-size: 10px;">Clic para ampliar o imprimir</small>
+        </div>
+      </div>
+
+      <div class="visit-callout"><div><span class="callout-label">LISTO PARA COMENZAR</span><h3>Un legado que sigue creciendo.</h3></div><button class="button button-dark" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span aria-hidden="true">↗</span></button></div>
     </section>
   </main>
 
@@ -275,9 +308,82 @@
           <span>Guion</span>
         </button>
       </div>
+
+      <!-- Selector de superficie (Pantalla / Mesa) y reseteo de rotación -->
+      <div class="ar-surface-selector" id="ar-surface-selector" role="group" aria-label="Modo de superficie">
+        <button type="button" class="surface-btn is-active" id="surface-screen-btn" title="El marcador está en la pantalla de una computadora o laptop">
+          <span aria-hidden="true">💻</span> En Pantalla
+        </button>
+        <button type="button" class="surface-btn" id="surface-table-btn" title="El marcador está sobre una mesa o impreso en papel">
+          <span aria-hidden="true">📄</span> En Mesa
+        </button>
+        <button type="button" class="surface-btn-icon" id="reset-pose-btn" title="Centrar y reiniciar rotación de Franz Tamayo">
+          <span aria-hidden="true">🔄</span>
+        </button>
+      </div>
+
+      <!-- Badge de confirmación visual al detectar marcador HIRO -->
+      <div class="ar-detection-badge" id="ar-detection-badge" aria-live="polite" hidden>
+        <span class="badge-icon" aria-hidden="true">✓</span>
+        <div class="badge-content">
+          <strong>Marcador HIRO Detectado</strong>
+          <small id="badge-subtitle">Iniciando experiencia con Franz Tamayo…</small>
+        </div>
+      </div>
+
+      <!-- Cuadro de diálogo del Guion - oculto hasta detectar marcador HIRO -->
+      <aside class="ar-dialog" id="ar-details" aria-live="polite" hidden style="display:none">
+        <div class="dialog-header">
+          <div class="dialog-tags">
+            <span class="dialog-badge" id="scene-kicker">ESCENA 1 DE 5</span>
+            <span class="dialog-period" id="scene-period">1879 — 1956</span>
+          </div>
+          <button class="dialog-close-btn" type="button" id="dialog-close" aria-label="Ocultar guion" title="Ocultar texto para observar el modelo">✕</button>
+        </div>
+
+        <div class="dialog-body">
+          <h3 class="dialog-title" id="scene-title">El Despertar de Franz Tamayo</h3>
+          <p class="dialog-text" id="scene-subtitle"></p>
+        </div>
+
+        <!-- Barra de progreso del audio de la escena -->
+        <div class="dialog-progress-wrap" id="audio-progress-wrap" aria-hidden="true">
+          <div class="dialog-progress-bar" id="audio-progress-bar"></div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-nav-btn" type="button" id="previous-scene" aria-label="Escena anterior">
+            ← Anterior
+          </button>
+          
+          <button class="dialog-btn dialog-play-btn" type="button" id="audio-toggle" aria-pressed="false">
+            <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
+            <span id="audio-label">Escuchar narración</span>
+          </button>
+
+          <button class="dialog-btn dialog-nav-btn" type="button" id="next-scene" aria-label="Escena siguiente">
+            Siguiente →
+          </button>
+        </div>
+      </aside>
+
+      <!-- Barra flotante compacta cuando el cuadro está minimizado -->
+      <div class="ar-bottom-bar" id="ar-bottom-bar" hidden>
+        <button class="ar-mini-btn" type="button" id="mini-prev-scene" aria-label="Escena anterior">←</button>
+        <button class="ar-mini-btn ar-mini-btn-script" type="button" id="details-toggle" aria-expanded="true" aria-controls="ar-details">
+          <span>📖</span> <span id="mini-scene-status">Escena 1 de 5 · Ver Guion</span>
+        </button>
+        <button class="ar-mini-btn ar-mini-btn-audio" type="button" id="mini-audio-toggle">
+          <span id="mini-audio-icon">▶</span> <span id="mini-audio-text">Audio</span>
+        </button>
+        <button class="ar-mini-btn" type="button" id="mini-next-scene" aria-label="Escena siguiente">→</button>
+      </div>
+
       <p class="ar-hint" id="ar-hint">Busca el marcador HIRO para activar la escena</p>
     </div>
-    <audio id="narration-audio" preload="metadata" src="assets/audio/escena_franz_tamayo.mp3"></audio>
+
+    <!-- Elemento de audio nativo -->
+    <audio id="narration-audio" preload="auto"></audio>
   </section>
 
   <!-- =========================================================================

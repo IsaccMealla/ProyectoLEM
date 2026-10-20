@@ -36,7 +36,9 @@ Abre en tu navegador `http://localhost:8080` (o la IP local desde tu teléfono c
 
 - `assets/models/franz_tamayo.glb`: Modelo 3D oficial con animaciones de Franz Tamayo utilizado tanto en AR como en VR.
 - `assets/images/hiro-marker.png`: Marcador HIRO para enfocar con la cámara en el modo AR.
-- `assets/audio/escena_franz_tamayo.mp3`: Archivo de locución opcional (con respaldo automático por `speechSynthesis` en español `es-BO`).
+- `assets/audio/escena1.mp3` a `assets/audio/escena5.mp3`: archivos de locución de las cinco escenas narradas.
 - `js/ar-experience.js`: Controlador de la experiencia de Realidad Aumentada con AR.js.
 - `js/vr-experience.js`: Controlador de la experiencia de Realidad Virtual 360° y modo Cardboard.
 - `js/main.js`: Lógica principal, cronología interactiva y orquestación de ambas modalidades.
+
+El HUD permite avanzar y retroceder entre las cinco escenas; cada una actualiza el guion histórico, el reproductor de audio y la animación en realidad aumentada. La cámara se solicita al abrir la experiencia y las pistas se detienen al cerrarla. La experiencia requiere un navegador compatible con WebRTC y seguimiento de marcadores.
