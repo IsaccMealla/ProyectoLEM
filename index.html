@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=4">
+  <link rel="stylesheet" href="assets/css/styles.css?v=5">
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js" defer></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js" defer></script>
-  <script src="js/main.js?v=4" defer></script>
-  <script src="js/ar-experience.js?v=4" defer></script>
+  <script src="js/main.js?v=5" defer></script>
+  <script src="js/ar-experience.js?v=5" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -228,8 +228,8 @@
         <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button>
       </div>
 
-      <!-- Cuadro de diálogo del Guion (diseño unificado, libre de superposiciones) -->
-      <aside class="ar-dialog" id="ar-details" aria-live="polite">
+      <!-- Cuadro de diálogo del Guion - oculto hasta detectar marcador HIRO -->
+      <aside class="ar-dialog" id="ar-details" aria-live="polite" hidden style="display:none">
         <div class="dialog-header">
           <div class="dialog-tags">
             <span class="dialog-badge" id="scene-kicker">ESCENA 1 DE 5</span>
