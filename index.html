@@ -52,10 +52,18 @@
       <a href="#modalidades">Modalidades AR &amp; VR</a>
     </nav>
     <div style="display: flex; gap: 8px;">
+      <button class="header-cta voice-button" id="voice-assistant-toggle" type="button" aria-pressed="false" title="Activar comandos por voz">
+        <span aria-hidden="true">🎙️</span> Voz
+      </button>
       <button class="header-cta" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara"><span aria-hidden="true">📷</span> Modo AR</button>
       <button class="header-cta" type="button" data-open-vr style="background: rgba(33,150,243,0.18); border-color: rgba(33,150,243,0.5); color: #7cc3f8;" title="Iniciar Realidad Virtual 360°"><span aria-hidden="true">🥽</span> Modo VR</button>
     </div>
   </header>
+
+  <div class="voice-assistant-chip" id="voice-assistant-chip" aria-live="polite">
+    <span id="voice-assistant-icon" aria-hidden="true">🎙️</span>
+    <span id="voice-assistant-text">Comandos por voz</span>
+  </div>
 
   <main id="contenido">
     <!-- Hero / Portada Principal -->
@@ -256,15 +264,25 @@
     </div>
 
     <template id="ar-scene-template">
-      <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; colorManagement: true" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
+      <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="antialias: false; logarithmicDepthBuffer: false; colorManagement: true; precision: mediump; powerPreference: low-power" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
         <a-assets timeout="10000">
           <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
         </a-assets>
+        <a-entity light="type: ambient; color: #ffffff; intensity: 1.25"></a-entity>
+        <a-entity light="type: directional; color: #fff3d5; intensity: 1.6" position="1 3 2"></a-entity>
         <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
-          <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" position="0 0 0" scale="0.85 0.85 0.85"></a-entity>
+          <a-cylinder position="0 0.018 0" radius="0.25" height="0.035" color="#171923" material="metalness: 0.35; roughness: 0.48"></a-cylinder>
+          <a-ring id="tamayo-glow-ring" position="0 0.04 0" rotation="-90 0 0" radius-inner="0.2" radius-outer="0.25" color="#d5aa46" material="emissive: #d5aa46; emissiveIntensity: 0.65; opacity: 0.75; transparent: true"></a-ring>
+          <a-entity id="tamayo-orientation">
+            <a-entity id="tamayo-rig">
+              <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" position="0 0.045 0" scale="1 1 1" animation__presence="property: position; to: 0 0.075 0; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine"></a-entity>
+            </a-entity>
+          </a-entity>
           <a-entity position="0 1.55 0" text="value: FRANZ TAMAYO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
         </a-marker>
-        <a-entity camera></a-entity>
+        <a-entity id="ar-camera" camera>
+          <a-entity id="ar-preview-anchor" position="0 -0.48 -2.2" visible="false"></a-entity>
+        </a-entity>
       </a-scene>
     </template>
 
@@ -285,23 +303,20 @@
         </div>
       </div>
 
-      <aside class="ar-details" id="ar-details" aria-live="polite" hidden>
-        <p class="eyebrow"><span></span><span id="scene-kicker">ESCENA 1 DE 5</span></p>
-        <h3 id="scene-title">El Despertar de Franz Tamayo</h3>
-        <p id="scene-subtitle"></p>
-        <span class="details-source">HISTORIA VIVA · UNIFRANZ</span>
-      </aside>
-
       <nav class="scene-navigation" aria-label="Navegación de escenas">
-        <button class="ar-control scene-nav-button" type="button" id="previous-scene" aria-label="Escena anterior">← Anterior</button>
+        <button class="ar-control scene-nav-button" type="button" id="ar-nav-previous-scene" aria-label="Escena anterior">← Anterior</button>
         <span class="scene-navigation-status" id="scene-navigation-status" aria-live="polite">Escena 1 de 5</span>
-        <button class="ar-control scene-nav-button" type="button" id="next-scene" aria-label="Escena siguiente">Siguiente →</button>
+        <button class="ar-control scene-nav-button" type="button" id="ar-nav-next-scene" aria-label="Escena siguiente">Siguiente →</button>
       </nav>
 
       <div class="ar-bottom-controls">
         <button class="ar-control" type="button" id="audio-toggle" aria-pressed="false">
           <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
           <span id="audio-label">Escuchar narración</span>
+        </button>
+        <button class="ar-control" type="button" id="ar-voice-trigger" data-voice-trigger aria-label="Escuchar comando de voz">
+          <span class="control-icon" aria-hidden="true">🎙️</span>
+          <span>Comando de voz</span>
         </button>
         <button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details">
           <span class="control-icon" aria-hidden="true">i</span>
@@ -356,9 +371,9 @@
             ← Anterior
           </button>
           
-          <button class="dialog-btn dialog-play-btn" type="button" id="audio-toggle" aria-pressed="false">
-            <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
-            <span id="audio-label">Escuchar narración</span>
+          <button class="dialog-btn dialog-play-btn" type="button" id="dialog-audio-toggle" aria-pressed="false">
+            <span class="control-icon" id="dialog-audio-icon" aria-hidden="true">▶</span>
+            <span id="dialog-audio-label">Escuchar narración</span>
           </button>
 
           <button class="dialog-btn dialog-nav-btn" type="button" id="next-scene" aria-label="Escena siguiente">
@@ -370,7 +385,7 @@
       <!-- Barra flotante compacta cuando el cuadro está minimizado -->
       <div class="ar-bottom-bar" id="ar-bottom-bar" hidden>
         <button class="ar-mini-btn" type="button" id="mini-prev-scene" aria-label="Escena anterior">←</button>
-        <button class="ar-mini-btn ar-mini-btn-script" type="button" id="details-toggle" aria-expanded="true" aria-controls="ar-details">
+        <button class="ar-mini-btn ar-mini-btn-script" type="button" id="mini-details-toggle" aria-expanded="true" aria-controls="ar-details">
           <span>📖</span> <span id="mini-scene-status">Escena 1 de 5 · Ver Guion</span>
         </button>
         <button class="ar-mini-btn ar-mini-btn-audio" type="button" id="mini-audio-toggle">
@@ -397,7 +412,7 @@
     </div>
 
     <template id="vr-scene-template">
-      <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true" renderer="antialias: true; colorManagement: true; logarithmicDepthBuffer: true" fog="type: exponential; color: #141722; density: 0.04" loading-screen="enabled: false">
+      <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true" renderer="antialias: false; colorManagement: true; logarithmicDepthBuffer: false; precision: mediump; powerPreference: low-power" fog="type: exponential; color: #141722; density: 0.012" loading-screen="enabled: false">
         <a-assets timeout="12000">
           <a-asset-item id="franz-tamayo-vr-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
         </a-assets>
@@ -406,16 +421,25 @@
         <a-sky id="vr-sky" color="#0f1118"></a-sky>
 
         <!-- Suelo / Pedestal histórico para Franz Tamayo -->
-        <a-cylinder position="0 0.08 -2.8" radius="1.3" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
-        <a-ring id="vr-pedestal-glow" position="0 0.17 -2.8" rotation="-90 0 0" radius-inner="1.1" radius-outer="1.28" material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
+        <a-cylinder position="0 0.08 -2.3" radius="1.05" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
+        <a-ring id="vr-pedestal-glow" position="0 0.17 -2.3" rotation="-90 0 0" radius-inner="0.88" radius-outer="1.03" material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
 
         <!-- Modelo 3D Oficial de Franz Tamayo (5.38 MB GLB) -->
         <a-entity
           id="vr-tamayo-figure"
-          gltf-model="#franz-tamayo-vr-model"
-          position="0 0.16 -2.8"
-          scale="1.65 1.65 1.65"
-          animation__breathe="property: position; to: 0 0.20 -2.8; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine">
+          position="0 0.04 -2.3"
+          animation__breathe="property: position; to: 0 0.10 -2.3; dir: alternate; dur: 2600; loop: true; easing: easeInOutSine">
+          <a-entity id="vr-character-idle" animation__presence="property: rotation; from: 0 -1 0; to: 0 1 0; dir: alternate; dur: 4200; loop: true; easing: easeInOutSine">
+            <a-entity id="vr-character-pose">
+              <a-entity id="vr-character-model" gltf-model="#franz-tamayo-vr-model" scale="1.65 1.65 1.65"></a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+        <a-entity id="vr-model-error-label" visible="false" position="0 2.05 -2.3">
+          <a-text value="CARGANDO PERSONAJE 3D…" align="center" width="3" color="#ffe89e"></a-text>
+        </a-entity>
+        <a-entity id="vr-scene-cue" position="0 2.55 -2.3" animation="property: position; to: 0 2.63 -2.3; dir: alternate; dur: 1800; loop: true; easing: easeInOutSine">
+          <a-text id="vr-scene-cue-text" value="MÍRAME · COMENCEMOS" align="center" width="2.8" color="#ffe89e"></a-text>
         </a-entity>
 
         <!-- ========================================================
@@ -498,13 +522,14 @@
         </a-entity>
 
         <!-- Luces del escenario VR -->
-        <a-entity light="type: ambient; color: #ffffff; intensity: 0.7"></a-entity>
-        <a-entity light="type: directional; color: #fff3cc; intensity: 1.15; castShadow: true" position="2 4 1"></a-entity>
-        <a-entity light="type: point; color: #d5aa46; intensity: 1.3; distance: 6" position="0 2 -2"></a-entity>
+        <a-entity light="type: ambient; color: #ffffff; intensity: 1.15"></a-entity>
+        <a-entity light="type: directional; color: #fff3cc; intensity: 2.1" position="1 3 1"></a-entity>
+        <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5" position="0 2 -1.1"></a-entity>
+        <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5" position="-1.6 1 -2.6"></a-entity>
 
         <!-- Panel 3D Flotante con Guion interactivo dentro de VR (visible con gafas puestas) -->
-        <a-entity id="vr-3d-floating-panel" position="0 1.25 -1.95" rotation="-10 0 0">
-          <a-plane width="2.4" height="1.15" material="color: #12141c; opacity: 0.88; transparent: true; roughness: 0.7"></a-plane>
+        <a-entity id="vr-3d-floating-panel" position="-1.55 1.42 -2.55" rotation="0 0 0" scale="0.58 0.58 0.58">
+          <a-plane width="2.0" height="1.15" material="color: #12141c; opacity: 0.72; transparent: true; roughness: 0.7"></a-plane>
 
           <!-- Título de la escena 3D -->
           <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO" align="center" position="0 0.42 0.02" width="2.3" color="#f1c40f" font="dejavu"></a-text>
@@ -536,13 +561,14 @@
             </a-entity>
           </a-entity>
         </a-entity>
-
-        <!-- Anillos atmosféricos -->
-        <a-torus position="0 4 0" rotation="90 0 0" radius="6" radius-tubular="0.02" color="#d5aa46" opacity="0.25"></a-torus>
+        <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
+          <a-plane width="0.58" height="0.2" material="color: #7f1d1d; roughness: 0.6"></a-plane>
+          <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff" font="dejavu"></a-text>
+        </a-entity>
 
         <!-- Cámara del Usuario con Retícula de Mirada (Gaze Cursor para Gafas VR) -->
-        <a-entity position="0 1.6 0">
-          <a-camera look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false">
+        <a-entity id="vr-camera-rig" position="0 0 0">
+          <a-camera id="vr-camera" position="0 1.6 0" look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false">
             <a-entity
               cursor="fuse: true; fuseTimeout: 1400"
               raycaster="objects: .vr-clickable"
@@ -568,6 +594,9 @@
           </div>
         </div>
         <div class="vr-top-actions">
+          <button class="vr-cardboard-btn vr-voice-btn" type="button" id="vr-voice-toggle" title="Dar comandos de voz" aria-label="Activar comandos por voz">
+            <span aria-hidden="true">🎙️</span> Voz
+          </button>
           <button class="vr-cardboard-btn" type="button" id="vr-btn-enter-cardboard" title="Activar pantalla dividida para gafas de celular">
             <span aria-hidden="true">🥽</span> Modo Gafas VR
           </button>
@@ -607,6 +636,10 @@
         <button class="ar-control" type="button" id="vr-btn-next" aria-label="Siguiente escena">
           <span>Siguiente</span>
           <span class="control-icon" aria-hidden="true">⏭</span>
+        </button>
+        <button class="ar-control" type="button" id="vr-btn-voice" aria-label="Escuchar comando de voz">
+          <span class="control-icon" aria-hidden="true">🎙️</span>
+          <span>Comando de voz</span>
         </button>
         <button class="ar-control" type="button" id="vr-details-toggle" aria-expanded="false" aria-controls="vr-details-panel">
           <span class="control-icon" aria-hidden="true">📜</span>

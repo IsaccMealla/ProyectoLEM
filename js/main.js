@@ -81,6 +81,7 @@
   const vrDetailsToggle = document.getElementById('vr-details-toggle');
   const vrDetailsPanel = document.getElementById('vr-details-panel');
   const vrDetailsClose = document.getElementById('vr-details-close');
+  const vrVoiceButtons = document.querySelectorAll('#vr-voice-toggle, #vr-btn-voice');
 
   let aSceneInstance = null;
   let loadingTimeout = null;
@@ -89,11 +90,63 @@
   function mountVRScene() {
     if (aSceneInstance || !vrSceneTemplate || !vrView) return;
     aSceneInstance = vrSceneTemplate.content.firstElementChild.cloneNode(true);
+    const sceneForLoad = aSceneInstance;
+    const vrModel = sceneForLoad.querySelector('#vr-character-model');
+    const modelHint = sceneForLoad.querySelector('#vr-model-error-label');
+    let dracoRetryCount = 0;
+
+    const configureAndRetryModel = function () {
+      if (!vrModel) return;
+      if (dracoRetryCount > 0) {
+        if (modelHint) {
+          modelHint.setAttribute('visible', 'true');
+          modelHint.querySelector('a-text')?.setAttribute('value', 'NO SE PUDO CARGAR EL MODELO 3D');
+        }
+        console.error('[Historia Viva] No se pudo cargar el GLB incluso con Draco.');
+        return;
+      }
+      if (!window.tamayoVR || !window.tamayoVR.configureDraco(sceneForLoad)) return;
+      dracoRetryCount += 1;
+      const modelSource = vrModel.getAttribute('gltf-model');
+      if (modelHint) modelHint.setAttribute('visible', 'true');
+      vrModel.removeAttribute('gltf-model');
+      window.setTimeout(function () {
+        vrModel.setAttribute('gltf-model', modelSource);
+      }, 100);
+    };
+
+    if (vrModel) {
+      vrModel.addEventListener('model-loaded', function () {
+        if (modelHint) modelHint.setAttribute('visible', 'false');
+        sceneForLoad.querySelector('#vr-tamayo-figure')?.setAttribute('visible', 'true');
+        const loadedModel = vrModel.getObject3D('mesh');
+        if (loadedModel) {
+          loadedModel.traverse(function (node) {
+            if (!node.isMesh) return;
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach(function (material) {
+              if (!material) return;
+              if (!material.emissive) material.emissive = new THREE.Color('#262626');
+              else material.emissive.set('#262626');
+              material.emissiveIntensity = 0.32;
+              material.needsUpdate = true;
+            });
+          });
+        }
+        console.info('[Historia Viva] Modelo 3D VR cargado');
+      });
+      vrModel.addEventListener('model-error', configureAndRetryModel);
+    }
+
     vrView.insertBefore(aSceneInstance, vrView.querySelector('.vr-hud'));
 
     aSceneInstance.addEventListener('loaded', function () {
       if (vrLoading) vrLoading.classList.add('is-hidden');
       if (loadingTimeout) window.clearTimeout(loadingTimeout);
+
+      if (vrModel && !vrModel.getObject3D('mesh')) {
+        configureAndRetryModel();
+      }
 
       if (window.tamayoVR) {
         window.tamayoVR.setSceneIndex(currentVRSceneIndex, false);
@@ -120,12 +173,37 @@
           if (window.tamayoVR) window.tamayoVR.nextScene();
         });
       }
+
+      const btn3DExit = aSceneInstance.querySelector('#vr-3d-exit-btn');
+      if (btn3DExit) {
+        btn3DExit.addEventListener('click', closeVR);
+      }
+
+      aSceneInstance.addEventListener('enter-vr', function () {
+        vrView.classList.remove('is-gyro-view');
+        if (vrCardboardBtn) vrCardboardBtn.textContent = '🥽 Vista VR activa';
+      });
+      aSceneInstance.addEventListener('exit-vr', function () {
+        window.tamayoVR?.disableCardboardStereo(aSceneInstance);
+        vrView.classList.remove('is-gyro-view');
+        window.tamayoVR?.unbindGyroscope();
+        if (vrCardboardBtn) vrCardboardBtn.textContent = '🥽 Modo Gafas VR';
+      });
     });
   }
 
   function openVR() {
     if (!vrView) return;
+    const arView = document.getElementById('ar-view');
+    if (arView && arView.getAttribute('aria-hidden') === 'false') {
+      document.querySelector('[data-close-ar]')?.click();
+    }
     if (window.tamayoVR) window.tamayoVR.stopNarration();
+    if (window.tamayoVR) window.tamayoVR.unbindGyroscope();
+
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+      window.screen.orientation.lock('landscape').catch(function () {});
+    }
 
     vrView.classList.remove('is-error');
     vrView.setAttribute('aria-hidden', 'false');
@@ -150,6 +228,7 @@
   function closeVR() {
     if (!vrView) return;
     if (window.tamayoVR) window.tamayoVR.stopNarration();
+    if (window.tamayoVR && aSceneInstance) window.tamayoVR.disableCardboardStereo(aSceneInstance);
     if (loadingTimeout) window.clearTimeout(loadingTimeout);
 
     vrView.setAttribute('aria-hidden', 'true');
@@ -164,6 +243,8 @@
       aSceneInstance.remove();
       aSceneInstance = null;
     }
+    vrView.classList.remove('is-gyro-view');
+    if (vrCardboardBtn) vrCardboardBtn.textContent = '🥽 Modo Gafas VR';
 
     const openBtn = document.querySelector('[data-open-vr]');
     if (openBtn) openBtn.focus({ preventScroll: true });
@@ -237,6 +318,214 @@
       currentVRSceneIndex = event.detail.index;
     }
   });
+
+  function updateVoiceStatus(isListening, message) {
+    const chip = document.getElementById('voice-assistant-chip');
+    const text = document.getElementById('voice-assistant-text');
+    const icon = document.getElementById('voice-assistant-icon');
+    const buttons = document.querySelectorAll('#voice-assistant-toggle, #vr-voice-toggle, #vr-btn-voice, [data-voice-trigger]');
+
+    if (icon) {
+      icon.textContent = isListening ? '🎧' : '🎙️';
+    }
+    if (text) {
+      text.textContent = message || 'Comandos por voz';
+    }
+    if (chip) {
+      chip.classList.toggle('is-listening', isListening);
+    }
+    buttons.forEach(function (button) {
+      button.setAttribute('aria-pressed', String(isListening));
+      button.dataset.listening = isListening ? 'true' : 'false';
+    });
+  }
+
+  function handleVoiceCommand(command) {
+    const normalized = command.toLowerCase();
+    const spanishNumbers = { uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5 };
+    const sceneNumberMatch = normalized.match(/(?:escena|número|numero)\s*(?:número\s*)?(1|2|3|4|5|uno|una|dos|tres|cuatro|cinco)/);
+    const sceneByName = [
+      /despertar|poeta/,
+      /pedagogía|pedagogia|educación|educacion|mil diez|1910/,
+      /fundación|fundacion|nacimiento|1990|1993/,
+      /crecimiento|ciudades|expansión|expansion/,
+      /legado|futuro|estudiantes/
+    ];
+    let sceneIndex = null;
+
+    if (sceneNumberMatch) {
+      const spokenNumber = sceneNumberMatch[1];
+      sceneIndex = Number.isNaN(Number(spokenNumber)) ? spanishNumbers[spokenNumber] - 1 : Number(spokenNumber) - 1;
+    } else {
+      sceneIndex = sceneByName.findIndex(function (pattern) { return pattern.test(normalized); });
+      if (sceneIndex < 0) sceneIndex = null;
+    }
+
+    if (sceneIndex !== null) {
+      if (window.tamayoVR) window.tamayoVR.setSceneIndex(sceneIndex);
+      document.dispatchEvent(new CustomEvent('historia:voice-command', {
+        detail: { action: 'scene', index: sceneIndex, command: normalized }
+      }));
+      return;
+    }
+
+    if (/siguiente|next|adelante|continua|continúa|sigue/.test(normalized)) {
+      if (window.tamayoVR) window.tamayoVR.nextScene();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'next', command: normalized } }));
+      return;
+    }
+
+    if (/anterior|atrás|volver|regresar/.test(normalized)) {
+      if (window.tamayoVR) window.tamayoVR.prevScene();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'previous', command: normalized } }));
+      return;
+    }
+
+    if (/repetir|repite/.test(normalized)) {
+      const vrIsOpen = vrView && vrView.getAttribute('aria-hidden') === 'false';
+      if (vrIsOpen && window.tamayoVR) window.tamayoVR.playNarration();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'repeat', command: normalized } }));
+      return;
+    }
+
+    if (/narración|narracion|habla|escucha|audio|reproducir/.test(normalized)) {
+      const vrIsOpen = vrView && vrView.getAttribute('aria-hidden') === 'false';
+      if (vrIsOpen && window.tamayoVR) window.tamayoVR.toggleNarration();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'audio', command: normalized } }));
+      return;
+    }
+
+    if (/camina|caminar|muévete|muevete|avanza|acércate|acercate/.test(normalized)) {
+      if (window.tamayoVR) window.tamayoVR.animateCharacterGesture('walk');
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'gesture', command: normalized } }));
+      return;
+    }
+
+    if (/señala|senalá|señalar|indica|mostrar pista/.test(normalized)) {
+      if (window.tamayoVR) window.tamayoVR.animateCharacterGesture('indicate');
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'indicate', command: normalized } }));
+      return;
+    }
+
+    if (/pausa|silencio|detener|alto/.test(normalized)) {
+      if (window.tamayoVR) window.tamayoVR.stopNarration();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'pause', command: normalized } }));
+      return;
+    }
+
+    if (/guion|información|informacion|descripción|descripcion/.test(normalized)) {
+      vrDetailsToggle?.click();
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'details', command: normalized } }));
+      return;
+    }
+
+    if (/mesa/.test(normalized)) {
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'table', command: normalized } }));
+      return;
+    }
+    if (/pantalla/.test(normalized)) {
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'screen', command: normalized } }));
+      return;
+    }
+    if (/centrar|recentrar|reiniciar posición|reiniciar posicion/.test(normalized)) {
+      document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'center', command: normalized } }));
+      return;
+    }
+
+    if (/realidad aumentada|\bar\b|modo ar|cámara|marcador/.test(normalized)) {
+      document.querySelector('[data-open-ar]')?.click();
+      return;
+    }
+
+    if (/realidad virtual|vr|gafas|visor|inmersivo/.test(normalized)) {
+      const vrIsOpen = vrView && vrView.getAttribute('aria-hidden') === 'false';
+      if (!vrIsOpen) document.querySelector('[data-open-vr]')?.click();
+      if (/gafas|visor|inmersivo/.test(normalized)) {
+        window.setTimeout(function () { window.tamayoVR?.enterCardboardVR(); }, vrIsOpen ? 0 : 700);
+      }
+      return;
+    }
+
+    if (/cerrar|salir|close/.test(normalized)) {
+      const vrIsOpen = document.getElementById('vr-view') && document.getElementById('vr-view').getAttribute('aria-hidden') === 'false';
+      const arIsOpen = document.getElementById('ar-view') && document.getElementById('ar-view').getAttribute('aria-hidden') === 'false';
+      if (vrIsOpen) {
+        document.querySelector('[data-close-vr]')?.click();
+      } else if (arIsOpen) {
+        document.querySelector('[data-close-ar]')?.click();
+      }
+    }
+  }
+
+  function setupVoiceAssistant() {
+    const voiceButton = document.getElementById('voice-assistant-toggle');
+    const allVoiceButtons = document.querySelectorAll('#voice-assistant-toggle, [data-voice-trigger], #vr-voice-toggle, #vr-btn-voice');
+    const VoiceRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!voiceButton || !VoiceRecognition) {
+      allVoiceButtons.forEach(function (button) {
+        button.disabled = true;
+        button.title = 'Tu navegador no soporta comandos por voz';
+      });
+      return;
+    }
+
+    const recognition = new VoiceRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = function () {
+      updateVoiceStatus(true, 'Escuchando…');
+    };
+
+    recognition.onresult = function (event) {
+      const transcript = Array.from(event.results)
+        .map(function (result) {
+          return result[0].transcript;
+        })
+        .join(' ')
+        .trim();
+
+      if (!transcript) return;
+      updateVoiceStatus(true, 'Comando: ' + transcript);
+      handleVoiceCommand(transcript);
+      if (/narración|narracion|escucha|reproducir|repetir|habla/.test(transcript.toLowerCase())) {
+        window.tamayoVR?.animateCharacterGesture('speak');
+      }
+    };
+
+    recognition.onerror = function () {
+      updateVoiceStatus(false, 'Comandos por voz');
+    };
+
+    recognition.onend = function () {
+      updateVoiceStatus(false, 'Comandos por voz');
+      allVoiceButtons.forEach(function (button) {
+        button.setAttribute('aria-pressed', 'false');
+        button.dataset.listening = 'false';
+      });
+    };
+
+    const toggleRecognition = function () {
+      if (voiceButton.dataset.listening === 'true') {
+        recognition.stop();
+        return;
+      }
+
+      try {
+        recognition.start();
+      } catch (error) {
+        updateVoiceStatus(false, 'Comandos por voz');
+      }
+    };
+
+    allVoiceButtons.forEach(function (button) {
+      button.addEventListener('click', toggleRecognition);
+    });
+    window.historiaVoz = { listenOnce: toggleRecognition };
+  }
+
+  setupVoiceAssistant();
 
   // Auto-lanzar VR si la URL contiene ?vr=true o el hash #vr
   const urlParams = new URLSearchParams(window.location.search);
