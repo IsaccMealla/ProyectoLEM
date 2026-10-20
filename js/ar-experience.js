@@ -110,9 +110,15 @@
   // ─── Configurar cámara según laptop o móvil ───
   function configureCameraForDevice(scene) {
     var mobile = isMobileDevice();
+    var isPortrait = window.innerHeight > window.innerWidth;
+
+    // Resolución óptima HD según orientación para evitar zoom forzado y pixelado
+    var sWidth = isPortrait ? 720 : 1280;
+    var sHeight = isPortrait ? 1280 : 720;
+
     var arjsAttr = mobile
-      ? 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; maxDetectionRate: 60; canvasWidth: 640; canvasHeight: 480;'
-      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best;';
+      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best; sourceWidth: ' + sWidth + '; sourceHeight: ' + sHeight + '; displayWidth: ' + sWidth + '; displayHeight: ' + sHeight + ';'
+      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720;';
     scene.setAttribute('arjs', arjsAttr);
   }
 
@@ -128,10 +134,13 @@
     }
 
     video.style.position = 'absolute';
-    video.style.top = '0';
-    video.style.left = '0';
-    video.style.width = '100%';
-    video.style.height = '100%';
+    video.style.top = '50%';
+    video.style.left = '50%';
+    video.style.transform = 'translate(-50%, -50%)';
+    video.style.minWidth = '100%';
+    video.style.minHeight = '100%';
+    video.style.width = 'auto';
+    video.style.height = 'auto';
     video.style.objectFit = 'cover';
     video.style.zIndex = '1';
     video.style.display = 'block';
