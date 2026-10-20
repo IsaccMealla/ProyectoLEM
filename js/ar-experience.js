@@ -123,31 +123,39 @@
 
     var dev = getDeviceProfile();
 
-    // Escala calibrada dinámicamente:
-    // En celular vertical, el visor es angosto: una escala de 0.38 asegura que Franz Tamayo,
-    // su pedestal ceremonial y los rótulos entren completos en la pantalla sin que el usuario tenga
-    // que alejarse excesivamente del marcador HIRO.
-    // En celular horizontal: 0.48.
-    // En laptop/PC: 0.65.
+    // Escala calibrada dinámicamente para que Franz Tamayo se vea grande, imponente y nítido:
+    // En celular vertical: 0.85 (para que Franz y el pedestal cubran el marcador y resalten con presencia)
+    // En celular horizontal: 0.95
+    // En laptop/PC: 1.10
     var scaleValue;
     if (dev.isMobile) {
-      scaleValue = dev.isPortrait ? 0.38 : 0.48;
+      scaleValue = dev.isPortrait ? 0.85 : 0.95;
     } else {
-      scaleValue = 0.65;
+      scaleValue = 1.10;
     }
 
     rig.setAttribute('scale', scaleValue + ' ' + scaleValue + ' ' + scaleValue);
     console.log('[Historia Viva] Escala adaptada (' + (dev.isMobile ? 'Móvil' : 'PC') + ', ' + dev.width + 'x' + dev.height + '): ' + scaleValue);
+    fixCameraAspect();
+  }
+
+  function fixCameraAspect() {
+    if (arScene && arScene.camera) {
+      arScene.camera.aspect = window.innerWidth / window.innerHeight;
+      arScene.camera.updateProjectionMatrix();
+    }
   }
 
   window.addEventListener('resize', function () {
     attachArVideo();
     adjustSceneForDevice();
+    fixCameraAspect();
   });
   window.addEventListener('orientationchange', function () {
     setTimeout(function () {
       attachArVideo();
       adjustSceneForDevice();
+      fixCameraAspect();
     }, 250);
   });
 
@@ -155,12 +163,18 @@
   function configureCameraForDevice(scene) {
     var dev = getDeviceProfile();
 
-    // En móvil usamos cámara trasera (facingMode: environment)
-    // NO usamos 'performanceProfile: desktop-fast' porque fuerza parámetros de monitor de PC
-    // provocando que en celulares la imagen se agrande y recorte dramáticamente
-    var arjsAttr = dev.isMobile
-      ? 'sourceType: webcam; facingMode: environment; debugUIEnabled: false; trackingMethod: best;'
-      : 'sourceType: webcam; debugUIEnabled: false; trackingMethod: best;';
+    var arjsAttr;
+    if (dev.isMobile) {
+      if (dev.isPortrait) {
+        // En celular vertical usamos dimensiones verticales (480x640) para sincronizar
+        // la relación de aspecto y evitar que el modelo se vea achatado o aplanado
+        arjsAttr = 'sourceType: webcam; facingMode: environment; sourceWidth: 480; sourceHeight: 640; displayWidth: ' + dev.width + '; displayHeight: ' + dev.height + '; debugUIEnabled: false; trackingMethod: best;';
+      } else {
+        arjsAttr = 'sourceType: webcam; facingMode: environment; sourceWidth: 640; sourceHeight: 480; displayWidth: ' + dev.width + '; displayHeight: ' + dev.height + '; debugUIEnabled: false; trackingMethod: best;';
+      }
+    } else {
+      arjsAttr = 'sourceType: webcam; sourceWidth: 640; sourceHeight: 480; debugUIEnabled: false; trackingMethod: best;';
+    }
 
     scene.setAttribute('arjs', arjsAttr);
   }
@@ -530,6 +544,8 @@
         model.addEventListener('model-loaded', function () {
           console.log('[Historia Viva] Modelo franz_tamayo.glb cargado y decodificado correctamente');
           hint.textContent = '🔍 Modelo listo · Apunta la cámara al marcador HIRO';
+          adjustSceneForDevice();
+          fixCameraAspect();
         });
         model.addEventListener('model-error', function (err) {
           console.error('[Historia Viva] Error inicial cargando modelo:', err);
@@ -552,6 +568,8 @@
         clearTimeout(cameraTimer);
         loading.classList.add('is-hidden');
         attachArVideo();
+        adjustSceneForDevice();
+        fixCameraAspect();
       });
 
       scene.addEventListener('camera-error', function () {
