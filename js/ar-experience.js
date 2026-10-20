@@ -117,33 +117,98 @@
   }
 
   // Ajusta la escala del modelo 3D y su pedestal en tiempo real según el dispositivo
-  var currentOrientationMode = 'screen'; // 'screen' (-80deg para pantalla vertical) o 'table' (0deg para mesa)
+  var currentOrientationMode = 'screen'; // 'screen' (-90deg para pantalla vertical) o 'table' (0deg para mesa)
   var userRotationY = 0;
   var userTiltX = 0;
   var touchStartX = 0;
   var touchStartY = 0;
   var isTouchingScene = false;
+  var hasLockedInitialPose = false;
 
   function updateTamayoPose() {
     var orientationEl = arScene ? arScene.querySelector('#tamayo-orientation') : null;
     var rigEl = arScene ? arScene.querySelector('#tamayo-rig') : null;
     if (!orientationEl) return;
 
-    var baseRotX = currentOrientationMode === 'screen' ? -80 : 0;
+    var baseRotX = currentOrientationMode === 'screen' ? -90 : 0;
     orientationEl.setAttribute('rotation', (baseRotX + userTiltX) + ' 0 0');
     if (rigEl) {
       rigEl.setAttribute('rotation', '0 ' + userRotationY + ' 0');
     }
   }
 
+  // Alinea a Franz Tamayo de frente a la cámara en el instante de detección y luego congela
+  // su orientación para que quede firmemente anclado en su espacio virtual 3D
+  function alignTamayoToCamera() {
+    if (!arScene || !markerFound) return;
+    var markerEl = arScene.querySelector('a-marker');
+    var orientationEl = arScene.querySelector('#tamayo-orientation');
+    var rigEl = arScene ? arScene.querySelector('#tamayo-rig') : null;
+    if (!markerEl || !orientationEl || !rigEl) return;
+
+    var camera = arScene.camera;
+    if (!camera) {
+      var camEl = arScene.querySelector('[camera]');
+      if (camEl) camera = camEl.getObject3D('camera');
+    }
+
+    try {
+      if (camera && markerEl.object3D) {
+        var cameraWorldPos = new THREE.Vector3();
+        camera.getWorldPosition(cameraWorldPos);
+        var cameraLocalPos = markerEl.object3D.worldToLocal(cameraWorldPos.clone());
+
+        if (currentOrientationMode === 'screen') {
+          // En modo pantalla (monitor vertical): el cuerpo se extiende a lo largo de -Z
+          // y el pecho mira hacia +Y (hacia el usuario).
+          var yaw = 0;
+          if (Math.abs(cameraLocalPos.y) > 0.02 || Math.abs(cameraLocalPos.x) > 0.02) {
+            yaw = Math.atan2(cameraLocalPos.x, Math.max(0.1, cameraLocalPos.y)) * (180 / Math.PI);
+          }
+          var pitch = 0;
+          if (Math.abs(cameraLocalPos.y) > 0.02) {
+            pitch = -Math.atan2(cameraLocalPos.z, Math.max(0.1, cameraLocalPos.y)) * (180 / Math.PI);
+            pitch = Math.max(-20, Math.min(20, pitch));
+          }
+
+          userRotationY = yaw;
+          userTiltX = pitch;
+        } else {
+          // En modo mesa (superficie horizontal):
+          var tableYaw = 0;
+          if (Math.abs(cameraLocalPos.z) > 0.02 || Math.abs(cameraLocalPos.x) > 0.02) {
+            tableYaw = Math.atan2(cameraLocalPos.x, Math.max(0.1, cameraLocalPos.z)) * (180 / Math.PI);
+          }
+          userRotationY = tableYaw;
+          userTiltX = 0;
+        }
+
+        updateTamayoPose();
+        hasLockedInitialPose = true;
+        console.log('[Historia Viva] Franz Tamayo orientado y fijado en su espacio virtual: yaw=' + userRotationY.toFixed(1) + '°, pitch=' + userTiltX.toFixed(1) + '°');
+      } else {
+        updateTamayoPose();
+      }
+    } catch (e) {
+      console.warn('[Historia Viva] Error en alignTamayoToCamera:', e);
+      updateTamayoPose();
+    }
+  }
+
   function setSurfaceMode(mode) {
     currentOrientationMode = mode;
     userTiltX = 0;
+    userRotationY = 0;
+    hasLockedInitialPose = false;
+
     var screenBtn = document.getElementById('surface-screen-btn');
     var tableBtn = document.getElementById('surface-table-btn');
     if (screenBtn) screenBtn.classList.toggle('is-active', mode === 'screen');
     if (tableBtn) tableBtn.classList.toggle('is-active', mode === 'table');
+
     updateTamayoPose();
+    alignTamayoToCamera();
+
     if (hint) {
       hint.textContent = mode === 'screen'
         ? '💻 Modo Pantalla activo · Franz Tamayo de pie frente a ti'
@@ -154,9 +219,10 @@
   function resetPose() {
     userRotationY = 0;
     userTiltX = 0;
-    updateTamayoPose();
+    hasLockedInitialPose = false;
+    alignTamayoToCamera();
     if (hint) {
-      hint.textContent = '🔄 Vista reiniciada · Desliza tu dedo en la pantalla para rotar';
+      hint.textContent = '🔄 Franz Tamayo centrado de frente a tu cámara';
     }
   }
 
@@ -487,7 +553,13 @@
 
     hint.textContent = '✅ Marcador activo · Desliza tu dedo para rotar a Franz';
     adjustSceneForDevice();
-    updateTamayoPose();
+
+    // Alinear a Franz de frente a la cámara solo la primera vez
+    if (!hasLockedInitialPose) {
+      alignTamayoToCamera();
+    } else {
+      updateTamayoPose();
+    }
 
     // 2. Mostrar cuadro de diálogo con el guion correspondiente
     setTimeout(function () {
