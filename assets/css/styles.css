@@ -133,11 +133,28 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold-light); ou
 .site-footer > p strong { color: var(--white); font-weight: 500; }
 .footer-date { color: rgba(255,255,255,.45); font-size: 8px; letter-spacing: 1px; }
 
-.ar-view { position: fixed; z-index: 50; inset: 0; overflow: hidden; background: #0c0d12; color: white; }
+.ar-view { position: fixed; z-index: 50; inset: 0; overflow: hidden; background: transparent; color: white; }
 .ar-view[aria-hidden="true"] { display: none; }
-.ar-view a-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.ar-view::before { content: ''; position: absolute; inset: 0; background: #0c0d12; z-index: 0; pointer-events: none; }
 
-.ar-hud { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: max(16px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); pointer-events: none; }
+/* Video de la cámara web generado por AR.js */
+#arjs-video,
+video#arjs-video,
+.ar-view video,
+body > video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  z-index: 1 !important;
+  pointer-events: none;
+}
+
+.ar-view a-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2 !important; background: transparent !important; }
+.ar-view a-scene .a-canvas { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; z-index: 2 !important; background: transparent !important; }
+
+.ar-hud { position: absolute; z-index: 10 !important; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: max(16px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); pointer-events: none; }
 .ar-topbar { display: flex; align-items: center; justify-content: space-between; pointer-events: auto; }
 .ar-brand { display: flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
 .ar-brand small { display: block; margin-top: 2px; color: var(--gold-light); font-size: 7px; letter-spacing: 1.2px; }

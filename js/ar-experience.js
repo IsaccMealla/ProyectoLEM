@@ -37,11 +37,55 @@
   let isAudioPlaying = false;
   let markerFound = false;
   let arTimeout;
+  let videoWatcher = null;
+
+  // Configura parámetros de cámara según sea laptop/escritorio o móvil
+  function configureCameraForDevice(sceneEl) {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      sceneEl.setAttribute('arjs', 'sourceType: webcam; facingMode: environment; debugUIEnabled: false;');
+    } else {
+      // En laptop/PC no forzamos environment para que la webcam integrada funcione de inmediato
+      sceneEl.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false;');
+    }
+  }
+
+  // Vincula el video de la cámara generado por AR.js dentro de ar-view con z-index correcto
+  function attachArVideo() {
+    const video = document.getElementById('arjs-video') ||
+                  document.querySelector('body > video') ||
+                  (arView ? arView.querySelector('video:not(#narration-audio)') : null);
+
+    if (video && arView) {
+      if (video.parentNode !== arView) {
+        arView.insertBefore(video, arScene || arView.firstChild);
+      }
+      video.style.position = 'absolute';
+      video.style.inset = '0';
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.style.zIndex = '1';
+      video.style.display = 'block';
+      video.style.opacity = '1';
+
+      if (video.paused && video.srcObject) {
+        video.play().catch(function () {});
+      }
+
+      if (loading) {
+        loading.classList.add('is-hidden');
+      }
+    }
+  }
+
+  window.addEventListener('arjs-video-loaded', function () {
+    attachArVideo();
+  });
 
   // Actualiza la interfaz del diálogo y botones para la escena actual
   function setScene(index, autoPlayAudio) {
     if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
-    const previousIndex = selectedScene;
     selectedScene = index;
     const scene = scenes[index];
 
@@ -267,15 +311,28 @@
 
     if (!arScene) {
       arScene = sceneTemplate.content.firstElementChild.cloneNode(true);
+      configureCameraForDevice(arScene);
       arView.insertBefore(arScene, arView.querySelector('.ar-hud'));
       arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
     }
+
+    // Monitorear la aparición del video para insertarlo y corregir su z-index
+    let checks = 0;
+    if (videoWatcher) window.clearInterval(videoWatcher);
+    videoWatcher = window.setInterval(function () {
+      checks++;
+      attachArVideo();
+      if (checks > 35) {
+        window.clearInterval(videoWatcher);
+      }
+    }, 150);
 
     arTimeout = window.setTimeout(function () {
       if (!arView.classList.contains('is-error')) {
         loading.classList.add('is-hidden');
       }
-    }, 9000);
+      attachArVideo();
+    }, 7000);
 
     const closeButton = arView.querySelector('[data-close-ar]');
     if (closeButton) closeButton.focus({ preventScroll: true });
@@ -288,6 +345,7 @@
     audio.pause();
     updateAudioUI(false);
     window.clearTimeout(arTimeout);
+    if (videoWatcher) window.clearInterval(videoWatcher);
 
     arView.setAttribute('aria-hidden', 'true');
     arView.inert = true;
@@ -298,10 +356,15 @@
     const opener = document.querySelector('[data-open-ar]');
     if (opener) opener.focus({ preventScroll: true });
 
-    arView.querySelectorAll('video').forEach(function (video) {
+    // Detener y remover todas las transmisiones de la cámara web
+    document.querySelectorAll('video').forEach(function (video) {
+      if (video.id === 'narration-audio') return;
       if (video.srcObject && video.srcObject.getTracks) {
         video.srcObject.getTracks().forEach(function (track) { track.stop(); });
         video.srcObject = null;
+      }
+      if (video.id === 'arjs-video' || video.parentNode === arView || video.parentNode === document.body) {
+        video.remove();
       }
     });
 
@@ -361,6 +424,7 @@
       scene.addEventListener('camera-init', function () {
         window.clearTimeout(cameraTimer);
         loading.classList.add('is-hidden');
+        attachArVideo();
       });
 
       scene.addEventListener('camera-error', function () {
@@ -372,7 +436,8 @@
 
       cameraTimer = window.setTimeout(function () {
         if (!markerFound) loading.classList.add('is-hidden');
-      }, 7000);
+        attachArVideo();
+      }, 6000);
     });
   });
 
