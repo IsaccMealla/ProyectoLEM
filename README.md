@@ -15,7 +15,7 @@ En móvil, abre la URL pública, escanea el QR de acceso si está disponible, pe
 ## Assets de la experiencia AR
 
 - `assets/images/hiro-marker.png`: marcador HIRO de AR.js para imprimir.
-- `assets/models/franz_tamayo.glb`: modelo 3D de Franz Tamayo cargado por la escena AR. La escena reproduce en bucle las animaciones incluidas en el GLB; el archivo debe contener al menos un clip de animación.
-- `assets/audio/escena_franz_tamayo.mp3`: locución completa opcional. Si falta o no se puede reproducir, el navegador ofrece la narración mediante síntesis de voz en español.
+- `assets/models/franz_tamayo.glb`: modelo 3D de Franz Tamayo cargado por la escena AR con animación ceremonial y pedestal interactivo.
+- `assets/audio/escena1.mp3` a `assets/audio/escena5.mp3`: audios oficiales individuales de las cinco escenas narradas.
 
-El HUD permite avanzar y retroceder entre las cinco escenas; cada una actualiza la transcripción y su fragmento de audio o narración sintetizada. La cámara se solicita al abrir la experiencia y sus pistas se detienen al cerrarla. La experiencia requiere un navegador compatible con WebRTC y seguimiento de marcadores.
+El HUD permite avanzar y retroceder entre las cinco escenas; cada una actualiza el guion histórico, el reproductor de audio con barra de progreso y la animación en realidad aumentada. La cámara se solicita al abrir la experiencia y sus pistas se detienen al cerrarla. La experiencia requiere un navegador compatible con WebRTC y seguimiento de marcadores.

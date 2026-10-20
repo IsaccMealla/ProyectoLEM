@@ -1,304 +1,381 @@
 (function () {
+  'use strict';
+
   const arView = document.getElementById('ar-view');
   const sceneTemplate = document.getElementById('ar-scene-template');
   const loading = document.getElementById('ar-loading');
   const hint = document.getElementById('ar-hint');
   const audio = document.getElementById('narration-audio');
-  const audioToggle = document.getElementById('audio-toggle');
-  const audioLabel = document.getElementById('audio-label');
-  const audioIcon = document.getElementById('audio-icon');
-  const details = document.getElementById('ar-details');
-  const detailsToggle = document.getElementById('details-toggle');
+
+  // Elementos del cuadro de diálogo
+  const dialog = document.getElementById('ar-details');
+  const dialogCloseBtn = document.getElementById('dialog-close');
+  const sceneKicker = document.getElementById('scene-kicker');
+  const scenePeriod = document.getElementById('scene-period');
+  const sceneTitle = document.getElementById('scene-title');
+  const sceneSubtitle = document.getElementById('scene-subtitle');
+  const audioProgressBar = document.getElementById('audio-progress-bar');
   const previousSceneButton = document.getElementById('previous-scene');
   const nextSceneButton = document.getElementById('next-scene');
-  const sceneNavigationStatus = document.getElementById('scene-navigation-status');
-  const sceneTitle = document.getElementById('scene-title');
-  const sceneKicker = document.getElementById('scene-kicker');
-  const subtitle = document.getElementById('scene-subtitle');
-  const scenes = window.HistoriaVivaScenes;
+  const audioToggle = document.getElementById('audio-toggle');
+  const audioIcon = document.getElementById('audio-icon');
+  const audioLabel = document.getElementById('audio-label');
+
+  // Elementos de la barra flotante compacta (cuando el guion está minimizado)
+  const bottomBar = document.getElementById('ar-bottom-bar');
+  const detailsToggle = document.getElementById('details-toggle');
+  const miniSceneStatus = document.getElementById('mini-scene-status');
+  const miniPrevScene = document.getElementById('mini-prev-scene');
+  const miniNextScene = document.getElementById('mini-next-scene');
+  const miniAudioToggle = document.getElementById('mini-audio-toggle');
+  const miniAudioIcon = document.getElementById('mini-audio-icon');
+  const miniAudioText = document.getElementById('mini-audio-text');
+
+  const scenes = window.HistoriaVivaScenes || [];
   let arScene = null;
   let selectedScene = 0;
-  let speechActive = false;
-  let audioFailed = false;
-  let pendingAudioScene = null;
-  let speechSession = 0;
+  let isAudioPlaying = false;
+  let markerFound = false;
   let arTimeout;
 
-  function setDetails(open) {
-    details.hidden = !open;
-    detailsToggle.setAttribute('aria-expanded', String(open));
-  }
-
-  function setAudioState(playing) {
-    audioToggle.setAttribute('aria-pressed', String(playing));
-    audioLabel.textContent = playing ? 'Pausar narración' : 'Escuchar narración';
-    audioIcon.textContent = playing ? 'Ⅱ' : '▶';
-  }
-
-  function setScene(index) {
+  // Actualiza la interfaz del diálogo y botones para la escena actual
+  function setScene(index, autoPlayAudio) {
     if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
+    const previousIndex = selectedScene;
     selectedScene = index;
     const scene = scenes[index];
-    previousSceneButton.disabled = index === 0;
-    nextSceneButton.disabled = index === scenes.length - 1;
-    sceneNavigationStatus.textContent = 'Escena ' + (index + 1) + ' de ' + scenes.length;
-    sceneTitle.textContent = scene.title;
-    sceneKicker.textContent = 'ESCENA ' + (index + 1) + ' DE ' + scenes.length + ' · ' + scene.period;
-    subtitle.textContent = scene.narration;
-  }
 
-  setScene(selectedScene);
+    // Textos del diálogo
+    if (sceneKicker) sceneKicker.textContent = 'ESCENA ' + (index + 1) + ' DE ' + scenes.length;
+    if (scenePeriod) scenePeriod.textContent = scene.period || '';
+    if (sceneTitle) sceneTitle.textContent = scene.title || '';
+    if (sceneSubtitle) sceneSubtitle.textContent = scene.narration || '';
 
-  function cancelSpeech() {
-    speechSession += 1;
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    speechActive = false;
-  }
-
-  function closeNarration() {
-    audio.pause();
-    pendingAudioScene = null;
-    cancelSpeech();
-    setAudioState(false);
-  }
-
-  function sceneWeights() {
-    return scenes.map(function (scene) { return scene.narration.trim().split(/\s+/).length; });
-  }
-
-  function sceneStartTime(index) {
-    const duration = audio.duration;
-    if (!Number.isFinite(duration) || duration <= 0) return 0;
-    const weights = sceneWeights();
-    const total = weights.reduce(function (sum, weight) { return sum + weight; }, 0);
-    const before = weights.slice(0, index).reduce(function (sum, weight) { return sum + weight; }, 0);
-    return duration * before / total;
-  }
-
-  function seekAudioToScene(index) {
-    if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
-      pendingAudioScene = index;
-      return;
+    // Barra compacta
+    if (miniSceneStatus) {
+      miniSceneStatus.textContent = 'Escena ' + (index + 1) + ' de ' + scenes.length + ' · Guion';
     }
-    pendingAudioScene = null;
-    audio.currentTime = sceneStartTime(index);
-  }
 
-  function updateAudioSubtitle() {
-    if (!Number.isFinite(audio.duration) || audio.duration <= 0) return;
-    const weights = sceneWeights();
-    const total = weights.reduce(function (sum, weight) { return sum + weight; }, 0);
-    const elapsedShare = audio.currentTime / audio.duration * total;
-    let accumulated = 0;
-    for (let index = 0; index < weights.length; index += 1) {
-      accumulated += weights[index];
-      if (elapsedShare < accumulated || index === weights.length - 1) {
-        setScene(index);
-        return;
+    // Botones anterior / siguiente
+    const isFirst = index === 0;
+    const isLast = index === scenes.length - 1;
+
+    if (previousSceneButton) previousSceneButton.disabled = isFirst;
+    if (nextSceneButton) nextSceneButton.disabled = isLast;
+    if (miniPrevScene) miniPrevScene.disabled = isFirst;
+    if (miniNextScene) miniNextScene.disabled = isLast;
+
+    // Reset de progreso visual
+    if (audioProgressBar) audioProgressBar.style.width = '0%';
+
+    // Cargar nuevo audio
+    const wasPlaying = isAudioPlaying;
+    audio.pause();
+    audio.src = scene.audio;
+    audio.currentTime = 0;
+
+    if (autoPlayAudio || wasPlaying) {
+      playAudio();
+    } else {
+      updateAudioUI(false);
+      if (markerFound) {
+        hint.textContent = 'Escena ' + (index + 1) + ' lista · Presiona "Escuchar narración"';
       }
     }
   }
 
-  function speakFromScene(index) {
-    if (!('speechSynthesis' in window)) {
-      hint.textContent = 'La narración requiere el audio incluido o síntesis de voz compatible con el navegador.';
-      setAudioState(false);
-      return;
+  // Control de visibilidad del cuadro de diálogo
+  function setDialogVisibility(visible) {
+    if (visible) {
+      if (dialog) dialog.removeAttribute('hidden');
+      if (bottomBar) bottomBar.hidden = true;
+      if (detailsToggle) detailsToggle.setAttribute('aria-expanded', 'true');
+    } else {
+      if (dialog) dialog.setAttribute('hidden', '');
+      if (bottomBar) bottomBar.hidden = false;
+      if (detailsToggle) detailsToggle.setAttribute('aria-expanded', 'false');
     }
-    audio.pause();
-    cancelSpeech();
-    speechActive = true;
-    setAudioState(true);
-    hint.textContent = 'Narración hablada · ' + scenes[index].title;
-    const session = speechSession;
+  }
 
-    function speakNext(sceneIndex) {
-      if (session !== speechSession || sceneIndex >= scenes.length) {
-        if (session === speechSession) {
-          speechActive = false;
-          setAudioState(false);
-          hint.textContent = 'Narración finalizada · Elige una escena para volver a escucharla';
-        }
-        return;
+  // Actualiza el aspecto de los botones de audio
+  function updateAudioUI(playing) {
+    isAudioPlaying = playing;
+    const playLabel = playing ? 'Pausar narración' : 'Escuchar narración';
+    const playIcon = playing ? '⏸' : '▶';
+
+    if (audioToggle) {
+      audioToggle.setAttribute('aria-pressed', String(playing));
+      if (playing) {
+        audioToggle.classList.add('is-playing');
+      } else {
+        audioToggle.classList.remove('is-playing');
       }
-      setScene(sceneIndex);
-      const utterance = new SpeechSynthesisUtterance(scenes[sceneIndex].narration);
-      utterance.lang = 'es-BO';
-      utterance.rate = 0.92;
-      utterance.onend = function () { speakNext(sceneIndex + 1); };
-      utterance.onerror = function () {
-        if (session === speechSession) {
-          speechActive = false;
-          setAudioState(false);
-          hint.textContent = 'No se pudo reproducir la voz del navegador. Comprueba la configuración de audio.';
+    }
+    if (audioLabel) audioLabel.textContent = playLabel;
+    if (audioIcon) audioIcon.textContent = playIcon;
+
+    if (miniAudioToggle) {
+      if (playing) {
+        miniAudioToggle.classList.add('is-playing');
+      } else {
+        miniAudioToggle.classList.remove('is-playing');
+      }
+    }
+    if (miniAudioIcon) miniAudioIcon.textContent = playIcon;
+    if (miniAudioText) miniAudioText.textContent = playing ? 'Pausar' : 'Audio';
+
+    // Pulso del anillo ceremonial en AR
+    if (arScene) {
+      const glowRing = arScene.querySelector('#tamayo-glow-ring');
+      if (glowRing) {
+        if (playing) {
+          glowRing.setAttribute('color', '#ffe07a');
+          glowRing.setAttribute('opacity', '0.85');
+        } else {
+          glowRing.setAttribute('color', '#ffc453');
+          glowRing.setAttribute('opacity', '0.5');
         }
-      };
-      window.speechSynthesis.speak(utterance);
-    }
-
-    speakNext(index);
-  }
-
-  function selectScene(index) {
-    if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
-    setScene(index);
-    if (audioToggle.getAttribute('aria-pressed') !== 'true') return;
-    if (speechActive) {
-      speakFromScene(index);
-      return;
-    }
-    if (!audioFailed) {
-      seekAudioToScene(index);
-      hint.textContent = 'Reproduciendo locución · ' + scenes[index].title;
+      }
     }
   }
 
+  // Reproduce el MP3 de la escena actual
+  async function playAudio() {
+    if (!audio.src || audio.src === window.location.href) {
+      audio.src = scenes[selectedScene].audio;
+    }
+    try {
+      await audio.play();
+      updateAudioUI(true);
+      hint.textContent = 'Reproduciendo audio · ' + scenes[selectedScene].title;
+    } catch (err) {
+      updateAudioUI(false);
+      hint.textContent = 'Toca "Escuchar narración" para iniciar el audio';
+    }
+  }
+
+  // Pausa el audio
+  function pauseAudio() {
+    audio.pause();
+    updateAudioUI(false);
+    hint.textContent = 'Audio en pausa';
+  }
+
+  // Alterna entre reproducir y pausar
+  function toggleAudio() {
+    if (audio.paused) {
+      playAudio();
+    } else {
+      pauseAudio();
+    }
+  }
+
+  // Eventos nativos del elemento de audio
+  audio.addEventListener('play', function () {
+    updateAudioUI(true);
+  });
+
+  audio.addEventListener('pause', function () {
+    updateAudioUI(false);
+  });
+
+  audio.addEventListener('ended', function () {
+    updateAudioUI(false);
+    if (audioProgressBar) audioProgressBar.style.width = '100%';
+    if (selectedScene < scenes.length - 1) {
+      hint.textContent = 'Escena finalizada · Pulsa "Siguiente →" para continuar';
+    } else {
+      hint.textContent = '¡Recorrido completo! Puedes volver a escuchar o elegir otra escena';
+    }
+  });
+
+  audio.addEventListener('timeupdate', function () {
+    if (audio.duration && audioProgressBar) {
+      const pct = (audio.currentTime / audio.duration) * 100;
+      audioProgressBar.style.width = pct + '%';
+    }
+  });
+
+  audio.addEventListener('error', function () {
+    updateAudioUI(false);
+    hint.textContent = 'No se pudo cargar ' + scenes[selectedScene].audio + '. Verifica que el archivo exista.';
+  });
+
+  // Eventos de botones
+  if (dialogCloseBtn) {
+    dialogCloseBtn.addEventListener('click', function () {
+      setDialogVisibility(false);
+    });
+  }
+
+  if (detailsToggle) {
+    detailsToggle.addEventListener('click', function () {
+      setDialogVisibility(true);
+    });
+  }
+
+  if (previousSceneButton) {
+    previousSceneButton.addEventListener('click', function () {
+      setScene(selectedScene - 1, isAudioPlaying);
+    });
+  }
+
+  if (nextSceneButton) {
+    nextSceneButton.addEventListener('click', function () {
+      setScene(selectedScene + 1, isAudioPlaying);
+    });
+  }
+
+  if (miniPrevScene) {
+    miniPrevScene.addEventListener('click', function () {
+      setScene(selectedScene - 1, isAudioPlaying);
+    });
+  }
+
+  if (miniNextScene) {
+    miniNextScene.addEventListener('click', function () {
+      setScene(selectedScene + 1, isAudioPlaying);
+    });
+  }
+
+  if (audioToggle) {
+    audioToggle.addEventListener('click', toggleAudio);
+  }
+
+  if (miniAudioToggle) {
+    miniAudioToggle.addEventListener('click', toggleAudio);
+  }
+
+  // Evento externo para seleccionar escena desde la página web principal
+  document.addEventListener('historia:select-scene', function (event) {
+    setScene(event.detail.index, false);
+  });
+
+  // Apertura y cierre de la experiencia de Realidad Aumentada
   function openAR() {
-    closeNarration();
-    setDetails(true);
+    audio.pause();
+    updateAudioUI(false);
+    setDialogVisibility(true);
+
     arView.classList.remove('is-error');
     arView.setAttribute('aria-hidden', 'false');
     arView.inert = false;
     document.body.style.overflow = 'hidden';
+
     loading.classList.remove('is-hidden');
-    hint.textContent = 'Busca el marcador HIRO para activar la escena';
+    hint.textContent = 'Apunta con la cámara al marcador HIRO';
+
     if (!arScene) {
       arScene = sceneTemplate.content.firstElementChild.cloneNode(true);
       arView.insertBefore(arScene, arView.querySelector('.ar-hud'));
       arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
     }
+
     arTimeout = window.setTimeout(function () {
-      if (!arView.classList.contains('is-error')) loading.classList.add('is-hidden');
-    }, 10000);
+      if (!arView.classList.contains('is-error')) {
+        loading.classList.add('is-hidden');
+      }
+    }, 9000);
+
     const closeButton = arView.querySelector('[data-close-ar]');
     if (closeButton) closeButton.focus({ preventScroll: true });
+
+    // Preparar primera escena
+    setScene(selectedScene, false);
   }
 
   function closeAR() {
-    closeNarration();
-    setDetails(false);
+    audio.pause();
+    updateAudioUI(false);
     window.clearTimeout(arTimeout);
+
     arView.setAttribute('aria-hidden', 'true');
     arView.inert = true;
     document.body.style.overflow = '';
+
     const activeElement = document.activeElement;
     if (activeElement && activeElement.blur) activeElement.blur();
     const opener = document.querySelector('[data-open-ar]');
     if (opener) opener.focus({ preventScroll: true });
+
     arView.querySelectorAll('video').forEach(function (video) {
       if (video.srcObject && video.srcObject.getTracks) {
         video.srcObject.getTracks().forEach(function (track) { track.stop(); });
         video.srcObject = null;
       }
     });
+
     if (arScene) arScene.remove();
     arScene = null;
+    markerFound = false;
   }
 
   document.querySelectorAll('[data-open-ar]').forEach(function (button) {
     button.addEventListener('click', openAR);
   });
+
   document.querySelectorAll('[data-close-ar]').forEach(function (button) {
     button.addEventListener('click', closeAR);
   });
+
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && arView.getAttribute('aria-hidden') === 'false') closeAR();
-  });
-
-  detailsToggle.addEventListener('click', function () {
-    setDetails(detailsToggle.getAttribute('aria-expanded') !== 'true');
-  });
-  previousSceneButton.addEventListener('click', function () {
-    selectScene(selectedScene - 1);
-  });
-  nextSceneButton.addEventListener('click', function () {
-    selectScene(selectedScene + 1);
-  });
-  document.addEventListener('historia:select-scene', function (event) {
-    selectScene(event.detail.index);
-  });
-
-  audioToggle.addEventListener('click', async function () {
-    if (audioToggle.getAttribute('aria-pressed') === 'true') {
-      closeNarration();
-      hint.textContent = 'Narración pausada';
-      return;
-    }
-    if (audioFailed) {
-      speakFromScene(selectedScene);
-      return;
-    }
-    try {
-      seekAudioToScene(selectedScene);
-      await audio.play();
-      setAudioState(true);
-      hint.textContent = 'Reproduciendo locución · ' + scenes[selectedScene].title;
-    } catch (error) {
-      audioFailed = true;
-      speakFromScene(selectedScene);
-      if (!speechActive) hint.textContent = 'No se pudo reproducir el archivo de audio y la voz alternativa no está disponible.';
+    if (event.key === 'Escape' && arView.getAttribute('aria-hidden') === 'false') {
+      closeAR();
     }
   });
-  audio.addEventListener('loadedmetadata', function () {
-    if (pendingAudioScene !== null) seekAudioToScene(pendingAudioScene);
-  });
-  audio.addEventListener('durationchange', function () {
-    if (pendingAudioScene !== null) seekAudioToScene(pendingAudioScene);
-  });
-  audio.addEventListener('timeupdate', updateAudioSubtitle);
-  audio.addEventListener('ended', function () {
-    setAudioState(false);
-    hint.textContent = 'Narración finalizada · Elige una escena para volver a escucharla';
-  });
-  audio.addEventListener('error', function () {
-    audioFailed = true;
-    if (audioToggle.getAttribute('aria-pressed') === 'true' && !speechActive) speakFromScene(selectedScene);
-  });
 
+  // Configuración de la escena A-Frame y eventos de tracking
   arView.addEventListener('ar-scene-ready', function (event) {
     const scene = event.detail.scene;
-    let markerFound = false;
     let cameraTimer;
 
     function onMarkerFound() {
       markerFound = true;
-      hint.textContent = 'Marcador detectado · Acércate para observar los detalles';
+      hint.textContent = 'Franz Tamayo detectado · Pulsa "Escuchar narración"';
+      const glowRing = scene.querySelector('#tamayo-glow-ring');
+      if (glowRing) {
+        glowRing.setAttribute('animation', 'property: scale; to: 1.18 1.18 1.18; dir: alternate; dur: 1600; easing: easeInOutSine; loop: true');
+      }
     }
 
     function onMarkerLost() {
       markerFound = false;
-      hint.textContent = 'Busca el marcador HIRO para activar la escena';
+      hint.textContent = 'Apunta con la cámara al marcador HIRO para activar la escena';
     }
 
     scene.addEventListener('loaded', function () {
       const marker = scene.querySelector('a-marker');
       const model = scene.querySelector('#franz-tamayo-figure');
+
       if (marker) {
         marker.addEventListener('markerFound', onMarkerFound);
         marker.addEventListener('markerLost', onMarkerLost);
       }
+
       if (model) {
-        model.addEventListener('model-loaded', function (event) {
-          const animations = event.detail.model && event.detail.model.animations;
-          if (!animations || animations.length === 0) {
-            hint.textContent = 'El modelo cargó, pero el GLB no contiene clips de animación. Reexporta el modelo incluyendo sus animaciones.';
-          }
-        });
         model.addEventListener('model-error', function () {
-          hint.textContent = 'No se encontró assets/models/franz_tamayo.glb. Añade el modelo 3D para mostrar a Franz Tamayo.';
+          hint.textContent = 'No se encontró assets/models/franz_tamayo.glb. Verifica la ruta del modelo 3D.';
         });
       }
+
       scene.addEventListener('camera-init', function () {
         window.clearTimeout(cameraTimer);
         loading.classList.add('is-hidden');
       });
+
       scene.addEventListener('camera-error', function () {
         window.clearTimeout(cameraTimer);
-        if (arView.getAttribute('aria-hidden') === 'false') arView.classList.add('is-error');
+        if (arView.getAttribute('aria-hidden') === 'false') {
+          arView.classList.add('is-error');
+        }
       });
+
       cameraTimer = window.setTimeout(function () {
         if (!markerFound) loading.classList.add('is-hidden');
-      }, 8000);
+      }, 7000);
     });
   });
+
+  // Inicialización de la primera escena
+  setScene(0, false);
 })();

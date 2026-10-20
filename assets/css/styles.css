@@ -133,35 +133,94 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold-light); ou
 .site-footer > p strong { color: var(--white); font-weight: 500; }
 .footer-date { color: rgba(255,255,255,.45); font-size: 8px; letter-spacing: 1px; }
 
-.ar-view { position: fixed; z-index: 20; inset: 0; overflow: hidden; background: #121318; color: white; }
+.ar-view { position: fixed; z-index: 50; inset: 0; overflow: hidden; background: #0c0d12; color: white; }
 .ar-view[aria-hidden="true"] { display: none; }
 .ar-view a-scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-.ar-hud { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: max(18px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); pointer-events: none; }
-.ar-hud button, .ar-details { pointer-events: auto; }
-.ar-topbar { display: flex; align-items: center; justify-content: space-between; }
-.ar-brand { display: flex; align-items: center; gap: 9px; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
-.ar-brand small { display: block; margin-top: 3px; color: var(--gold-light); font-size: 7px; letter-spacing: 1.2px; }
-.ar-icon-button, .details-close { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.35); background: rgba(20,21,26,.5); color: white; cursor: pointer; font-size: 27px; line-height: 1; }
-.ar-title { display: flex; align-items: start; gap: 11px; align-self: flex-start; margin-top: 17px; padding: 13px 16px; background: rgba(24,25,30,.75); backdrop-filter: blur(8px); }
-.ar-live-dot { width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: var(--gold-light); box-shadow: 0 0 10px var(--gold-light); }
-.ar-title p { margin: 0 0 6px; color: var(--gold-light); font-size: 8px; letter-spacing: 1.4px; }
-.ar-title h2 { margin: 0; font-family: var(--serif); font-size: 17px; font-weight: 500; line-height: 1.4; }
-.ar-title h2 span { color: rgba(255,255,255,.72); font-family: var(--sans); font-size: 10px; }
-.scene-navigation { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: auto; pointer-events: none; }
-.scene-nav-button { min-height: 40px; padding: 0 12px; }
-.scene-nav-button:disabled { cursor: not-allowed; opacity: .45; }
-.scene-navigation-status { min-width: 90px; color: white; text-align: center; font-size: 9px; text-shadow: 0 1px 5px #000; }
-.ar-bottom-controls { display: flex; justify-content: center; align-items: end; gap: 10px; margin-top: auto; padding-bottom: 35px; }
-.ar-control { display: inline-flex; align-items: center; gap: 9px; min-height: 45px; padding: 0 15px; border: 1px solid rgba(255,255,255,.45); background: rgba(24,25,30,.78); color: white; cursor: pointer; font-size: 10px; }
-.ar-control:hover, .ar-control[aria-pressed="true"] { border-color: var(--gold-light); color: var(--gold-light); }
-.control-icon { min-width: 13px; color: var(--gold-light); font-size: 13px; }
-.ar-hint { align-self: center; margin: 0 0 max(6px, env(safe-area-inset-bottom)); color: rgba(255,255,255,.7); text-align: center; font-size: 9px; text-shadow: 0 1px 5px #000; }
-.ar-details { position: absolute; right: 16px; bottom: 112px; left: 16px; max-width: 420px; max-height: min(42vh, 360px); overflow-y: auto; margin: auto; padding: 24px; color: var(--ink); background: var(--paper); box-shadow: 0 12px 40px rgba(0,0,0,.3); animation: detail-in .2s both; }
-.ar-details .eyebrow { margin-bottom: 12px; font-size: 8px; }
-.ar-details h3 { margin: 0 0 10px; font-family: var(--serif); font-size: 23px; font-weight: 500; }
-.ar-details > p:not(.eyebrow) { margin: 0; color: #56534d; font-size: 11px; line-height: 1.8; }
-.details-source { display: block; margin-top: 18px; color: #8b8375; font-size: 7px; letter-spacing: 1.3px; }
-.details-close { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-color: var(--line); background: transparent; color: var(--ink); font-size: 20px; }
+
+.ar-hud { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding: max(16px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom)); pointer-events: none; }
+.ar-topbar { display: flex; align-items: center; justify-content: space-between; pointer-events: auto; }
+.ar-brand { display: flex; align-items: center; gap: 9px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.ar-brand small { display: block; margin-top: 2px; color: var(--gold-light); font-size: 7px; letter-spacing: 1.2px; }
+.ar-icon-button { width: 38px; height: 38px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(18,20,26,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: white; cursor: pointer; font-size: 20px; display: grid; place-items: center; line-height: 1; transition: all .2s; }
+.ar-icon-button:hover { border-color: var(--gold-light); color: var(--gold-light); transform: scale(1.05); }
+
+/* Cuadro de diálogo del Guion - diseño elegante y sin superposiciones */
+.ar-dialog {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 520px);
+  background: rgba(18, 20, 26, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(229, 169, 59, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(229, 169, 59, 0.12);
+  padding: 18px 20px 16px;
+  color: #f7f5f0;
+  z-index: 10;
+  animation: dialog-pop .25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ar-dialog[hidden] { display: none !important; }
+
+.dialog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.dialog-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dialog-badge { background: rgba(229, 169, 59, 0.18); color: #ffd166; font-size: 9.5px; font-weight: 700; letter-spacing: 1.2px; padding: 3px 9px; border-radius: 20px; border: 1px solid rgba(229, 169, 59, 0.4); }
+.dialog-period { color: #d1cbc1; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+.dialog-close-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #e0ded9; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; cursor: pointer; transition: all .2s; }
+.dialog-close-btn:hover { border-color: var(--gold-light); color: var(--gold-light); }
+
+.dialog-title { font-family: var(--serif); font-size: 19px; font-weight: 600; color: #ffffff; margin: 0 0 8px; line-height: 1.35; }
+.dialog-text { font-size: 12.5px; line-height: 1.65; color: #ded9cf; margin: 0 0 12px; max-height: 24vh; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(229, 169, 59, 0.4) transparent; }
+.dialog-text::-webkit-scrollbar { width: 4px; }
+.dialog-text::-webkit-scrollbar-thumb { background: rgba(229, 169, 59, 0.4); border-radius: 4px; }
+
+.dialog-progress-wrap { height: 3px; background: rgba(255,255,255,0.12); border-radius: 3px; margin-bottom: 12px; overflow: hidden; }
+.dialog-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #e5a93b, #ffd166); transition: width 0.15s linear; }
+
+.dialog-footer { display: flex; align-items: center; gap: 8px; }
+.dialog-nav-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.22); color: #ffffff; padding: 9px 13px; border-radius: 9px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; white-space: nowrap; }
+.dialog-nav-btn:hover:not(:disabled) { border-color: #ffd166; background: rgba(229, 169, 59, 0.2); }
+.dialog-nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.dialog-play-btn { flex: 1; background: linear-gradient(135deg, #e5a93b, #c68a26); color: #0d0f14; border: none; padding: 10px 14px; border-radius: 9px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 14px rgba(229, 169, 59, 0.35); transition: all .2s; }
+.dialog-play-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(229, 169, 59, 0.45); }
+.dialog-play-btn.is-playing { background: linear-gradient(135deg, #ffd166, #e5a93b); box-shadow: 0 0 18px rgba(255, 209, 102, 0.55); }
+
+/* Barra compacta inferior (cuando el diálogo está minimizado) */
+.ar-bottom-bar {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 480px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(18, 20, 26, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(229, 169, 59, 0.35);
+  border-radius: 12px;
+  padding: 7px 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  z-index: 10;
+}
+.ar-bottom-bar[hidden] { display: none !important; }
+
+.ar-mini-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 7px 11px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.ar-mini-btn:hover:not(:disabled) { border-color: #ffd166; background: rgba(229, 169, 59, 0.2); }
+.ar-mini-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.ar-mini-btn-script { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.05); color: #eae7df; }
+.ar-mini-btn-audio { background: linear-gradient(135deg, #e5a93b, #c68a26); color: #0d0f14; border: none; font-weight: 700; padding: 7px 12px; display: flex; align-items: center; gap: 5px; }
+.ar-mini-btn-audio.is-playing { background: linear-gradient(135deg, #ffd166, #e5a93b); box-shadow: 0 0 12px rgba(255, 209, 102, 0.6); }
+
+.ar-hint { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.65); font-size: 9.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.85); pointer-events: none; z-index: 9; }
+
 .ar-loading { position: absolute; z-index: 4; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #191b22; transition: opacity .35s; }
 .ar-loading.is-hidden { opacity: 0; pointer-events: none; }
 .loader-mark { display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid var(--gold-light); color: var(--gold-light); font-family: var(--serif); animation: loader-pulse 1.4s infinite; }
@@ -170,6 +229,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold-light); ou
 .ar-view.is-error .ar-loading { background: #191b22; }
 .ar-view.is-error .ar-loading::after { content: "La cámara requiere HTTPS o localhost y permiso del navegador."; max-width: 280px; margin-top: 15px; color: rgba(255,255,255,.6); text-align: center; font-size: 10px; line-height: 1.6; }
 
+@keyframes dialog-pop { from { opacity: 0; transform: translate(-50%, 12px) scale(0.98); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(17px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes detail-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes loader-pulse { 50% { opacity: .42; transform: scale(.92); } }
@@ -243,11 +303,11 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--gold-light); ou
   .site-footer { flex-wrap: wrap; padding: 23px 24px; }
   .site-footer > p { order: 3; width: 100%; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.15); }
   .footer-date { font-size: 7px; }
-  .ar-hud { padding-right: 14px; padding-left: 14px; }
-  .ar-title { margin-top: 12px; }
-  .scene-navigation { gap: 7px; }
-  .scene-nav-button { min-height: 38px; padding: 0 9px; font-size: 9px; }
-  .ar-bottom-controls { padding-bottom: 42px; }
-  .ar-bottom-controls { flex-wrap: wrap; gap: 8px; }
-  .ar-details { right: 10px; bottom: 152px; left: 10px; max-height: 38vh; padding: 22px 19px; }
+  .ar-hud { padding: 12px 12px 10px; }
+  .ar-dialog { width: calc(100% - 16px); bottom: 18px; padding: 14px 14px 12px; }
+  .dialog-title { font-size: 17px; }
+  .dialog-text { font-size: 12px; max-height: 22vh; line-height: 1.55; }
+  .dialog-nav-btn { padding: 8px 10px; font-size: 10px; }
+  .dialog-play-btn { padding: 9px 10px; font-size: 11px; }
+  .ar-bottom-bar { width: calc(100% - 16px); bottom: 16px; padding: 6px 8px; }
 }

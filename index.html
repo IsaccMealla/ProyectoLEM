@@ -9,12 +9,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.css?v=2">
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js" defer></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js" defer></script>
-  <script src="js/main.js" defer></script>
-  <script src="js/ar-experience.js" defer></script>
+  <script src="js/main.js?v=2" defer></script>
+  <script src="js/ar-experience.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -115,33 +115,109 @@
   <footer class="site-footer"><a class="brand brand-footer" href="#inicio"><span class="brand-mark" aria-hidden="true">HV</span><span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span></a><p>Un recorrido por la historia de la educación boliviana<br><strong>1879 — presente</strong></p><span class="footer-date">BOLIVIA</span></footer>
 
   <section class="ar-view" id="ar-view" aria-label="Experiencia de realidad aumentada" aria-hidden="true" inert>
-    <div class="ar-loading" id="ar-loading" role="status"><span class="loader-mark">HV</span><p>Preparando la experiencia…</p><small>Permite el acceso a la cámara para continuar</small></div>
+    <div class="ar-loading" id="ar-loading" role="status">
+      <span class="loader-mark">HV</span>
+      <p>Iniciando experiencia AR…</p>
+      <small>Permite el acceso a la cámara para continuar</small>
+    </div>
+
     <template id="ar-scene-template">
       <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true; colorManagement: true" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
-        <a-assets timeout="10000"><a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item></a-assets>
+        <a-assets timeout="10000">
+          <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
+        </a-assets>
+
         <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
-          <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" animation-mixer="clip: *; loop: repeat" position="0 0 0" scale="0.72 0.72 0.72"></a-entity>
-          <a-entity position="0 1.55 0" text="value: FRANZ TAMAYO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
+          <!-- Rig ceremonial de Franz Tamayo con base animada -->
+          <a-entity id="tamayo-rig" position="0 0 0">
+            <!-- Pedestal ceremonial UNIFRANZ -->
+            <a-cylinder position="0 0.02 0" radius="0.82" height="0.04" color="#16181f" material="metalness: 0.7; roughness: 0.3">
+              <a-ring position="0 0.025 0" rotation="-90 0 0" radius-inner="0.68" radius-outer="0.8" color="#e5a93b" material="side: double"></a-ring>
+              <!-- Aro pulsante de energía áurea -->
+              <a-ring id="tamayo-glow-ring" position="0 0.026 0" rotation="-90 0 0" radius-inner="0.32" radius-outer="0.66" color="#ffc453" opacity="0.5"
+                animation="property: scale; to: 1.12 1.12 1.12; dir: alternate; dur: 2200; easing: easeInOutSine; loop: true"></a-ring>
+            </a-cylinder>
+
+            <!-- Figura 3D Franz Tamayo con animación suave de respiración/presencia y oscilación elegante -->
+            <a-entity id="franz-tamayo-figure"
+              gltf-model="#franz-tamayo-model"
+              position="0 0.04 0"
+              scale="0.72 0.72 0.72"
+              animation="property: position; to: 0 0.08 0; dir: alternate; dur: 2800; easing: easeInOutSine; loop: true"
+              animation__rot="property: rotation; to: 0 6 0; dir: alternate; dur: 4200; easing: easeInOutQuad; loop: true">
+            </a-entity>
+
+            <!-- Rótulo flotante superior estilizado -->
+            <a-entity position="0 1.62 0" text="value: FRANZ TAMAYO\n1879 - 1956; align: center; width: 2.8; color: #fff4d4; shader: msdf"></a-entity>
+          </a-entity>
         </a-marker>
         <a-entity camera></a-entity>
       </a-scene>
     </template>
+
     <div class="ar-hud">
-      <div class="ar-topbar"><div class="ar-brand"><span class="brand-mark">HV</span><span>HISTORIA VIVA <small>EXPERIENCIA AR</small></span></div><button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button></div>
-      <div class="ar-title"><span class="ar-live-dot"></span><div><p>HISTORIA VIVA · REALIDAD AUMENTADA</p><h2>Franz Tamayo en AR - Historia UNIFRANZ</h2></div></div>
-      <aside class="ar-details" id="ar-details" aria-live="polite" hidden><p class="eyebrow"><span></span><span id="scene-kicker">ESCENA 1 DE 5</span></p><h3 id="scene-title">El Despertar de Franz Tamayo</h3><p id="scene-subtitle"></p><span class="details-source">HISTORIA VIVA · UNIFRANZ</span></aside>
-      <nav class="scene-navigation" aria-label="Navegación de escenas">
-        <button class="ar-control scene-nav-button" type="button" id="previous-scene" aria-label="Escena anterior">← Anterior</button>
-        <span class="scene-navigation-status" id="scene-navigation-status" aria-live="polite">Escena 1 de 5</span>
-        <button class="ar-control scene-nav-button" type="button" id="next-scene" aria-label="Escena siguiente">Siguiente →</button>
-      </nav>
-      <div class="ar-bottom-controls">
-        <button class="ar-control" type="button" id="audio-toggle" aria-pressed="false"><span class="control-icon" id="audio-icon" aria-hidden="true">▶</span><span id="audio-label">Escuchar narración</span></button>
-        <button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details"><span class="control-icon" aria-hidden="true">i</span><span>Guion</span></button>
+      <!-- Barra superior AR -->
+      <div class="ar-topbar">
+        <div class="ar-brand">
+          <span class="brand-mark">HV</span>
+          <span>HISTORIA VIVA <small>EXPERIENCIA AR · UNIFRANZ</small></span>
+        </div>
+        <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button>
       </div>
+
+      <!-- Cuadro de diálogo del Guion (diseño unificado, libre de superposiciones) -->
+      <aside class="ar-dialog" id="ar-details" aria-live="polite">
+        <div class="dialog-header">
+          <div class="dialog-tags">
+            <span class="dialog-badge" id="scene-kicker">ESCENA 1 DE 5</span>
+            <span class="dialog-period" id="scene-period">1879 — 1956</span>
+          </div>
+          <button class="dialog-close-btn" type="button" id="dialog-close" aria-label="Ocultar guion" title="Ocultar texto para observar el modelo">✕</button>
+        </div>
+
+        <div class="dialog-body">
+          <h3 class="dialog-title" id="scene-title">El Despertar de Franz Tamayo</h3>
+          <p class="dialog-text" id="scene-subtitle"></p>
+        </div>
+
+        <!-- Barra de progreso del audio de la escena -->
+        <div class="dialog-progress-wrap" id="audio-progress-wrap" aria-hidden="true">
+          <div class="dialog-progress-bar" id="audio-progress-bar"></div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="dialog-btn dialog-nav-btn" type="button" id="previous-scene" aria-label="Escena anterior">
+            ← Anterior
+          </button>
+          
+          <button class="dialog-btn dialog-play-btn" type="button" id="audio-toggle" aria-pressed="false">
+            <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
+            <span id="audio-label">Escuchar narración</span>
+          </button>
+
+          <button class="dialog-btn dialog-nav-btn" type="button" id="next-scene" aria-label="Escena siguiente">
+            Siguiente →
+          </button>
+        </div>
+      </aside>
+
+      <!-- Barra flotante compacta cuando el cuadro está minimizado -->
+      <div class="ar-bottom-bar" id="ar-bottom-bar" hidden>
+        <button class="ar-mini-btn" type="button" id="mini-prev-scene" aria-label="Escena anterior">←</button>
+        <button class="ar-mini-btn ar-mini-btn-script" type="button" id="details-toggle" aria-expanded="true" aria-controls="ar-details">
+          <span>📖</span> <span id="mini-scene-status">Escena 1 de 5 · Ver Guion</span>
+        </button>
+        <button class="ar-mini-btn ar-mini-btn-audio" type="button" id="mini-audio-toggle">
+          <span id="mini-audio-icon">▶</span> <span id="mini-audio-text">Audio</span>
+        </button>
+        <button class="ar-mini-btn" type="button" id="mini-next-scene" aria-label="Escena siguiente">→</button>
+      </div>
+
       <p class="ar-hint" id="ar-hint">Busca el marcador HIRO para activar la escena</p>
     </div>
-    <audio id="narration-audio" preload="metadata" src="assets/audio/escena_franz_tamayo.mp3"></audio>
+
+    <!-- Elemento de audio nativo -->
+    <audio id="narration-audio" preload="auto"></audio>
   </section>
 </body>
 </html>
