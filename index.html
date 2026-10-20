@@ -11,12 +11,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="alternate icon" href="favicon.ico">
-  <link rel="stylesheet" href="assets/css/styles.css?v=14">
+  <link rel="stylesheet" href="assets/css/styles.css?v=15">
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js" defer></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js" defer></script>
-  <script src="js/main.js?v=14" defer></script>
-  <script src="js/ar-experience.js?v=14" defer></script>
+  <script src="js/main.js?v=15" defer></script>
+  <script src="js/ar-experience.js?v=15" defer></script>
 </head>
 <body>
   <div id="file-protocol-warning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:999999; background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 24px; font-family:'DM Sans', sans-serif; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.8); border-bottom:2px solid #ef4444;">
@@ -165,90 +165,97 @@
           <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb" response-type="arraybuffer"></a-asset-item>
         </a-assets>
 
-        <!-- Iluminación ambiental y direccional para que el modelo PBR sea visible -->
-        <a-entity light="type: ambient; color: #ffffff; intensity: 0.7"></a-entity>
-        <a-entity light="type: directional; color: #fffbe6; intensity: 0.9" position="1 2 1"></a-entity>
-        <a-entity light="type: directional; color: #e5c88e; intensity: 0.5" position="-1 1.5 -0.5"></a-entity>
-        <a-entity light="type: point; color: #ffd166; intensity: 0.4; distance: 5" position="0 2 0"></a-entity>
+        <!-- Iluminación de estudio cinematográfico -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 0.85"></a-entity>
+        <a-entity light="type: directional; color: #fff8e8; intensity: 1.4" position="1.5 3 2"></a-entity>
+        <a-entity light="type: directional; color: #b8ccf0; intensity: 0.6" position="-2 1.5 -1"></a-entity>
+        <a-entity light="type: directional; color: #ffd166; intensity: 0.8" position="0 2 -2.5"></a-entity>
 
         <a-marker preset="hiro" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="2">
-          <!-- Escena ceremonial completa de Franz Tamayo (escala calibrada para móvil y escritorio) -->
-          <a-entity id="tamayo-rig" position="0 0 0">
+          <!-- Contenedor de orientación inteligente: -80deg para pantalla vertical, 0deg para mesa -->
+          <a-entity id="tamayo-orientation" rotation="-80 0 0">
+            <!-- Rig escalado con soporte de rotación interactiva 360deg -->
+            <a-entity id="tamayo-rig" position="0 0 0">
 
-            <!-- Base circular: pedestal ceremonial UNIFRANZ adaptado al tamaño del marcador -->
-            <a-cylinder position="0 0.01 0" radius="0.55" height="0.02" color="#16181f"
-              material="metalness: 0.8; roughness: 0.2">
-            </a-cylinder>
+              <!-- Sombra de contacto suave bajo los zapatos -->
+              <a-circle position="0 0.021 0" rotation="-90 0 0" radius="0.35" color="#000000" opacity="0.6"
+                material="transparent: true">
+              </a-circle>
 
-            <!-- Anillo dorado exterior del pedestal -->
-            <a-torus position="0 0.022 0" rotation="90 0 0"
-              radius="0.52" radius-tubular="0.008"
-              color="#e5a93b" material="metalness: 0.9; roughness: 0.15; emissive: #c68a26; emissiveIntensity: 0.3">
-            </a-torus>
+              <!-- Base circular: pedestal ceremonial UNIFRANZ adaptado al tamaño del marcador -->
+              <a-cylinder position="0 0.01 0" radius="0.55" height="0.02" color="#16181f"
+                material="metalness: 0.8; roughness: 0.2">
+              </a-cylinder>
 
-            <!-- Anillo interno pulsante - energía áurea -->
-            <a-torus id="tamayo-glow-ring" position="0 0.025 0" rotation="90 0 0"
-              radius="0.32" radius-tubular="0.005"
-              color="#ffd166" opacity="0.7"
-              material="emissive: #ffc453; emissiveIntensity: 0.6"
-              animation="property: scale; to: 1.08 1.08 1.08; dir: alternate; dur: 1800; easing: easeInOutSine; loop: true"
-              animation__opacity="property: opacity; from: 0.5; to: 0.85; dir: alternate; dur: 1800; easing: easeInOutSine; loop: true">
-            </a-torus>
+              <!-- Anillo dorado exterior del pedestal -->
+              <a-torus position="0 0.022 0" rotation="90 0 0"
+                radius="0.52" radius-tubular="0.008"
+                color="#e5a93b" material="metalness: 0.9; roughness: 0.15; emissive: #c68a26; emissiveIntensity: 0.3">
+              </a-torus>
 
-            <!-- Partículas decorativas flotantes alrededor del modelo -->
-            <a-sphere position="0.45 0.9 0.2" radius="0.016" color="#ffd166" opacity="0.75"
-              material="emissive: #ffd166; emissiveIntensity: 1.2"
-              animation="property: position; to: 0.5 1.25 0.25; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"
-              animation__opacity="property: opacity; from: 0.3; to: 0.85; dir: alternate; dur: 2000; loop: true">
-            </a-sphere>
-            <a-sphere position="-0.4 1.1 -0.15" radius="0.014" color="#e5a93b" opacity="0.7"
-              material="emissive: #e5a93b; emissiveIntensity: 1.2"
-              animation="property: position; to: -0.45 1.45 -0.2; dir: alternate; dur: 2800; easing: easeInOutSine; loop: true"
-              animation__opacity="property: opacity; from: 0.2; to: 0.75; dir: alternate; dur: 2400; loop: true">
-            </a-sphere>
-            <a-sphere position="0.25 1.3 -0.3" radius="0.012" color="#fff4d4" opacity="0.6"
-              material="emissive: #fff4d4; emissiveIntensity: 1.2"
-              animation="property: position; to: 0.3 1.65 -0.35; dir: alternate; dur: 3600; easing: easeInOutSine; loop: true"
-              animation__opacity="property: opacity; from: 0.2; to: 0.7; dir: alternate; dur: 2800; loop: true">
-            </a-sphere>
-            <a-sphere position="-0.3 0.75 0.3" radius="0.015" color="#ffc453" opacity="0.65"
-              material="emissive: #ffc453; emissiveIntensity: 1.2"
-              animation="property: position; to: -0.25 1.1 0.35; dir: alternate; dur: 3000; easing: easeInOutSine; loop: true"
-              animation__opacity="property: opacity; from: 0.25; to: 0.8; dir: alternate; dur: 2600; loop: true">
-            </a-sphere>
+              <!-- Anillo interno pulsante - energía áurea -->
+              <a-torus id="tamayo-glow-ring" position="0 0.025 0" rotation="90 0 0"
+                radius="0.32" radius-tubular="0.005"
+                color="#ffd166" opacity="0.7"
+                material="emissive: #ffc453; emissiveIntensity: 0.6"
+                animation="property: scale; to: 1.08 1.08 1.08; dir: alternate; dur: 1800; easing: easeInOutSine; loop: true"
+                animation__opacity="property: opacity; from: 0.5; to: 0.85; dir: alternate; dur: 1800; easing: easeInOutSine; loop: true">
+              </a-torus>
 
-            <!-- Halo de luz detrás del modelo (efecto aureola) -->
-            <a-circle position="0 0.95 -0.1" radius="0.7"
-              color="#ffd166" opacity="0.16"
-              material="side: double; emissive: #e5a93b; emissiveIntensity: 0.6"
-              animation="property: scale; from: 0.95 0.95 0.95; to: 1.08 1.08 1.08; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
-            </a-circle>
+              <!-- Partículas decorativas flotantes alrededor del modelo -->
+              <a-sphere position="0.45 0.9 0.2" radius="0.016" color="#ffd166" opacity="0.75"
+                material="emissive: #ffd166; emissiveIntensity: 1.2"
+                animation="property: position; to: 0.5 1.25 0.25; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true"
+                animation__opacity="property: opacity; from: 0.3; to: 0.85; dir: alternate; dur: 2000; loop: true">
+              </a-sphere>
+              <a-sphere position="-0.4 1.1 -0.15" radius="0.014" color="#e5a93b" opacity="0.7"
+                material="emissive: #e5a93b; emissiveIntensity: 1.2"
+                animation="property: position; to: -0.45 1.45 -0.2; dir: alternate; dur: 2800; easing: easeInOutSine; loop: true"
+                animation__opacity="property: opacity; from: 0.2; to: 0.75; dir: alternate; dur: 2400; loop: true">
+              </a-sphere>
+              <a-sphere position="0.25 1.3 -0.3" radius="0.012" color="#fff4d4" opacity="0.6"
+                material="emissive: #fff4d4; emissiveIntensity: 1.2"
+                animation="property: position; to: 0.3 1.65 -0.35; dir: alternate; dur: 3600; easing: easeInOutSine; loop: true"
+                animation__opacity="property: opacity; from: 0.2; to: 0.7; dir: alternate; dur: 2800; loop: true">
+              </a-sphere>
+              <a-sphere position="-0.3 0.75 0.3" radius="0.015" color="#ffc453" opacity="0.65"
+                material="emissive: #ffc453; emissiveIntensity: 1.2"
+                animation="property: position; to: -0.25 1.1 0.35; dir: alternate; dur: 3000; easing: easeInOutSine; loop: true"
+                animation__opacity="property: opacity; from: 0.25; to: 0.8; dir: alternate; dur: 2600; loop: true">
+              </a-sphere>
 
-            <!-- ===== FIGURA 3D DE FRANZ TAMAYO ===== -->
-            <!-- Modelo escalado para verse imponente, grande y detallado en el pedestal -->
-            <a-entity id="franz-tamayo-figure"
-              gltf-model="#franz-tamayo-model"
-              position="0 0.02 0"
-              scale="1.75 1.75 1.75"
-              animation="property: position; to: 0 0.05 0; dir: alternate; dur: 3000; easing: easeInOutSine; loop: true"
-              animation__rot="property: rotation; from: 0 -5 0; to: 0 5 0; dir: alternate; dur: 5000; easing: easeInOutQuad; loop: true">
-            </a-entity>
+              <!-- Halo de luz detrás del modelo (efecto aureola) -->
+              <a-circle position="0 0.95 -0.1" radius="0.7"
+                color="#ffd166" opacity="0.16"
+                material="side: double; emissive: #e5a93b; emissiveIntensity: 0.6"
+                animation="property: scale; from: 0.95 0.95 0.95; to: 1.08 1.08 1.08; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
+              </a-circle>
 
-            <!-- Spotlight centrado en Franz Tamayo para resaltarlo con luz dorada brillante -->
-            <a-entity light="type: spot; color: #fffbe6; intensity: 1.4; angle: 48; penumbra: 0.5; distance: 5" position="0 3.0 0.8" rotation="-72 0 0"></a-entity>
+              <!-- ===== FIGURA 3D DE FRANZ TAMAYO ===== -->
+              <!-- Modelo escalado para verse imponente, grande y detallado en el pedestal -->
+              <a-entity id="franz-tamayo-figure"
+                gltf-model="#franz-tamayo-model"
+                position="0 0.02 0"
+                scale="1.75 1.75 1.75"
+                animation="property: position; to: 0 0.04 0; dir: alternate; dur: 3200; easing: easeInOutSine; loop: true">
+              </a-entity>
 
-            <!-- Rótulo flotante con nombre y periodo sobre la cabeza -->
-            <a-entity position="0 2.05 0"
-              text="value: FRANZ TAMAYO; align: center; width: 2.6; color: #ffd166; font: mozillavr"
-              animation="property: position; to: 0 2.11 0; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
-            </a-entity>
-            <a-entity position="0 1.90 0"
-              text="value: 1879 — 1956  ·  Poeta y Pensador; align: center; width: 1.7; color: #ffffff; font: mozillavr">
-            </a-entity>
+              <!-- Spotlight centrado en Franz Tamayo para resaltarlo con luz dorada brillante -->
+              <a-entity light="type: spot; color: #fffbe6; intensity: 1.4; angle: 48; penumbra: 0.5; distance: 5" position="0 3.0 0.8" rotation="-72 0 0"></a-entity>
 
-            <!-- Texto institucional en la base -->
-            <a-entity position="0 0.025 0.42" rotation="-90 0 0"
-              text="value: UNIFRANZ · HISTORIA VIVA; align: center; width: 1.0; color: #e5a93b; font: mozillavr">
+              <!-- Rótulo flotante con nombre y periodo sobre la cabeza -->
+              <a-entity position="0 2.05 0"
+                text="value: FRANZ TAMAYO; align: center; width: 2.6; color: #ffd166; font: mozillavr"
+                animation="property: position; to: 0 2.11 0; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
+              </a-entity>
+              <a-entity position="0 1.90 0"
+                text="value: 1879 — 1956  ·  Poeta y Pensador; align: center; width: 1.7; color: #ffffff; font: mozillavr">
+              </a-entity>
+
+              <!-- Texto institucional en la base -->
+              <a-entity position="0 0.025 0.42" rotation="-90 0 0"
+                text="value: UNIFRANZ · HISTORIA VIVA; align: center; width: 1.0; color: #e5a93b; font: mozillavr">
+              </a-entity>
             </a-entity>
           </a-entity>
         </a-marker>
@@ -264,6 +271,19 @@
           <span>HISTORIA VIVA <small>EXPERIENCIA AR · UNIFRANZ</small></span>
         </div>
         <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button>
+      </div>
+
+      <!-- Selector de superficie (Pantalla / Mesa) y reseteo de rotación -->
+      <div class="ar-surface-selector" id="ar-surface-selector" role="group" aria-label="Modo de superficie">
+        <button type="button" class="surface-btn is-active" id="surface-screen-btn" title="El marcador está en la pantalla de una computadora o laptop">
+          <span aria-hidden="true">💻</span> En Pantalla
+        </button>
+        <button type="button" class="surface-btn" id="surface-table-btn" title="El marcador está sobre una mesa o impreso en papel">
+          <span aria-hidden="true">📄</span> En Mesa
+        </button>
+        <button type="button" class="surface-btn-icon" id="reset-pose-btn" title="Centrar y reiniciar rotación de Franz Tamayo">
+          <span aria-hidden="true">🔄</span>
+        </button>
       </div>
 
       <!-- Badge de confirmación visual al detectar marcador HIRO -->

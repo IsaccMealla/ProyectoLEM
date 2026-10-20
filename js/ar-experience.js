@@ -117,6 +117,49 @@
   }
 
   // Ajusta la escala del modelo 3D y su pedestal en tiempo real según el dispositivo
+  var currentOrientationMode = 'screen'; // 'screen' (-80deg para pantalla vertical) o 'table' (0deg para mesa)
+  var userRotationY = 0;
+  var userTiltX = 0;
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var isTouchingScene = false;
+
+  function updateTamayoPose() {
+    var orientationEl = arScene ? arScene.querySelector('#tamayo-orientation') : null;
+    var rigEl = arScene ? arScene.querySelector('#tamayo-rig') : null;
+    if (!orientationEl) return;
+
+    var baseRotX = currentOrientationMode === 'screen' ? -80 : 0;
+    orientationEl.setAttribute('rotation', (baseRotX + userTiltX) + ' 0 0');
+    if (rigEl) {
+      rigEl.setAttribute('rotation', '0 ' + userRotationY + ' 0');
+    }
+  }
+
+  function setSurfaceMode(mode) {
+    currentOrientationMode = mode;
+    userTiltX = 0;
+    var screenBtn = document.getElementById('surface-screen-btn');
+    var tableBtn = document.getElementById('surface-table-btn');
+    if (screenBtn) screenBtn.classList.toggle('is-active', mode === 'screen');
+    if (tableBtn) tableBtn.classList.toggle('is-active', mode === 'table');
+    updateTamayoPose();
+    if (hint) {
+      hint.textContent = mode === 'screen'
+        ? '💻 Modo Pantalla activo · Franz Tamayo de pie frente a ti'
+        : '📄 Modo Mesa activo · Franz Tamayo erguido sobre la mesa';
+    }
+  }
+
+  function resetPose() {
+    userRotationY = 0;
+    userTiltX = 0;
+    updateTamayoPose();
+    if (hint) {
+      hint.textContent = '🔄 Vista reiniciada · Desliza tu dedo en la pantalla para rotar';
+    }
+  }
+
   function adjustSceneForDevice() {
     var rig = arScene ? arScene.querySelector('#tamayo-rig') : null;
     if (!rig) return;
@@ -136,6 +179,7 @@
 
     rig.setAttribute('scale', scaleValue + ' ' + scaleValue + ' ' + scaleValue);
     console.log('[Historia Viva] Escala adaptada (' + (dev.isMobile ? 'Móvil' : 'PC') + ', ' + dev.width + 'x' + dev.height + '): ' + scaleValue);
+    updateTamayoPose();
     fixCameraAspect();
   }
 
@@ -382,6 +426,51 @@
   if (audioToggle) audioToggle.addEventListener('click', toggleAudio);
   if (miniAudioToggle) miniAudioToggle.addEventListener('click', toggleAudio);
 
+  var surfaceScreenBtn = document.getElementById('surface-screen-btn');
+  var surfaceTableBtn = document.getElementById('surface-table-btn');
+  var resetPoseBtn = document.getElementById('reset-pose-btn');
+
+  if (surfaceScreenBtn) surfaceScreenBtn.addEventListener('click', function () { setSurfaceMode('screen'); });
+  if (surfaceTableBtn) surfaceTableBtn.addEventListener('click', function () { setSurfaceMode('table'); });
+  if (resetPoseBtn) resetPoseBtn.addEventListener('click', resetPose);
+
+  // ─── Controles táctiles: arrastra para rotar en 360° a Franz Tamayo ───
+  if (arView) {
+    arView.addEventListener('touchstart', function (e) {
+      if (e.target.closest('.ar-dialog') ||
+          e.target.closest('.ar-topbar') ||
+          e.target.closest('.ar-surface-selector') ||
+          e.target.closest('.ar-bottom-bar')) {
+        isTouchingScene = false;
+        return;
+      }
+      if (e.touches.length === 1) {
+        isTouchingScene = true;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    arView.addEventListener('touchmove', function (e) {
+      if (!isTouchingScene || e.touches.length !== 1) return;
+      var curX = e.touches[0].clientX;
+      var curY = e.touches[0].clientY;
+      var dx = curX - touchStartX;
+      var dy = curY - touchStartY;
+
+      userRotationY += dx * 0.45;
+      userTiltX = Math.max(-30, Math.min(30, userTiltX + (dy * 0.25)));
+
+      touchStartX = curX;
+      touchStartY = curY;
+      updateTamayoPose();
+    }, { passive: true });
+
+    arView.addEventListener('touchend', function () {
+      isTouchingScene = false;
+    });
+  }
+
   document.addEventListener('historia:select-scene', function (e) { setScene(e.detail.index, false); });
 
   // ─── Eventos del Marcador HIRO ───
@@ -396,8 +485,9 @@
       try { navigator.vibrate([40, 50, 40]); } catch (e) {}
     }
 
-    hint.textContent = '✅ Marcador activo · Franz Tamayo en 3D';
+    hint.textContent = '✅ Marcador activo · Desliza tu dedo para rotar a Franz';
     adjustSceneForDevice();
+    updateTamayoPose();
 
     // 2. Mostrar cuadro de diálogo con el guion correspondiente
     setTimeout(function () {
@@ -477,6 +567,8 @@
 
     setScene(selectedScene, false);
     adjustSceneForDevice();
+    setSurfaceMode('screen');
+    updateTamayoPose();
   }
 
   function closeAR() {
@@ -484,6 +576,9 @@
     updateAudioUI(false);
     clearTimeout(arTimeout);
     if (videoWatcher) clearInterval(videoWatcher);
+
+    userRotationY = 0;
+    userTiltX = 0;
 
     hideDetectionBadge();
     setDialogState('hidden');
