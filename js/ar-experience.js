@@ -40,6 +40,24 @@
   var miniAudioIcon = document.getElementById('mini-audio-icon');
   var miniAudioText = document.getElementById('mini-audio-text');
 
+  // Máquina del tiempo 2D overlay & FX
+  var warpCanvas = document.getElementById('ar-warp-canvas');
+  var warpBanner = document.getElementById('ar-time-banner');
+  var arWarpOverlay = null;
+  try {
+    if (window.HistoriaFX && warpCanvas && warpBanner) {
+      arWarpOverlay = window.HistoriaFX.createWarpOverlay(warpCanvas, warpBanner);
+    }
+  } catch (e) {
+    console.warn('[Historia Viva] No se pudo inicializar warp overlay:', e);
+  }
+
+  function getArAnimator() {
+    if (!arScene) return null;
+    var figure = arScene.querySelector('#franz-tamayo-figure');
+    return (figure && figure.components) ? figure.components['tamayo-animator'] : null;
+  }
+
   var scenes = window.HistoriaVivaScenes || [];
   var arScene = null;
   var arPreviewModel = null;
@@ -416,11 +434,21 @@
         ring.setAttribute('opacity', playing ? '0.85' : '0.5');
       }
     }
+
+    // Sincronizar articulación oral del modelo 3D con tamayo-animator
+    var animator = getArAnimator();
+    if (animator) {
+      animator.setTalking(playing);
+    }
   }
 
-  // ─── Escena seleccionada ───
+  // ─── Escena seleccionada con Efecto Máquina del Tiempo ───
   function setScene(index, autoPlay) {
     if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
+    var previousIndex = selectedScene;
+    var isSceneChange = (index !== previousIndex);
+    var travelDir = (index >= previousIndex) ? 'forward' : 'backward';
+
     selectedScene = index;
     var s = scenes[index];
 
@@ -432,12 +460,42 @@
     var navigationStatus = document.getElementById('scene-navigation-status');
     if (navigationStatus) navigationStatus.textContent = 'Escena ' + (index + 1) + ' de ' + scenes.length;
 
-    if (previousSceneButton) previousSceneButton.disabled = index === 0;
-    if (nextSceneButton) nextSceneButton.disabled = index === scenes.length - 1;
-    if (miniPrevScene) miniPrevScene.disabled = index === 0;
-    if (miniNextScene) miniNextScene.disabled = index === scenes.length - 1;
+    // Actualizar estados de botones de navegación (HUD y diálogo)
+    document.querySelectorAll('#ar-nav-previous-scene, #previous-scene, #mini-prev-scene').forEach(function (btn) {
+      btn.disabled = index === 0;
+    });
+    document.querySelectorAll('#ar-nav-next-scene, #next-scene, #mini-next-scene').forEach(function (btn) {
+      btn.disabled = index === scenes.length - 1;
+    });
 
     if (audioProgressBar) audioProgressBar.style.width = '0%';
+
+    // ⚡ Efectos de Viaje en la Máquina del Tiempo
+    if (isSceneChange) {
+      if (arWarpOverlay) {
+        arWarpOverlay.trigger({
+          year: s.period || '1879',
+          label: s.title || 'Salto Temporal',
+          duration: 1600
+        });
+      }
+      if (window.HistoriaFX && window.HistoriaFX.whoosh) {
+        window.HistoriaFX.whoosh(travelDir, 1.8);
+      }
+      if (arScene) {
+        var timeDialEl = arScene.querySelector('#ar-time-dial') || arScene.querySelector('[time-dial]');
+        if (timeDialEl && timeDialEl.components && timeDialEl.components['time-dial']) {
+          timeDialEl.components['time-dial'].spin(travelDir, 1600);
+        }
+      }
+
+      // Gestos expresivos de Franz Tamayo según la época
+      var animator = getArAnimator();
+      if (animator) {
+        var gestures = ['wave', 'think', 'nod', 'walk', 'celebrate'];
+        animator.play(gestures[index % gestures.length]);
+      }
+    }
 
     var wasPlaying = isAudioPlaying;
     audio.pause();
@@ -495,21 +553,43 @@
     hint.textContent = 'Error al cargar audio. Verifica los archivos MP3 en assets/audio/';
   });
 
-  // ─── Listeners de botones ───
+  // ─── Listeners de botones unificados (HUD superior, diálogo y barra inferior) ───
+  function handlePrevScene() {
+    setScene(selectedScene - 1, isAudioPlaying);
+  }
+  function handleNextScene() {
+    setScene(selectedScene + 1, isAudioPlaying);
+  }
+
+  // Botones de anterior
+  document.querySelectorAll('#ar-nav-previous-scene, #previous-scene, #mini-prev-scene').forEach(function (btn) {
+    btn.addEventListener('click', handlePrevScene);
+  });
+
+  // Botones de siguiente
+  document.querySelectorAll('#ar-nav-next-scene, #next-scene, #mini-next-scene').forEach(function (btn) {
+    btn.addEventListener('click', handleNextScene);
+  });
+
+  // Botones de audio
+  document.querySelectorAll('#audio-toggle, #dialog-audio-toggle, #mini-audio-toggle').forEach(function (btn) {
+    btn.addEventListener('click', toggleAudio);
+  });
+
+  // Botón de comandos de voz en AR
+  var arVoiceBtn = document.getElementById('ar-voice-trigger');
+  if (arVoiceBtn) {
+    arVoiceBtn.addEventListener('click', function () {
+      if (window.historiaVoz && window.historiaVoz.listenOnce) {
+        window.historiaVoz.listenOnce();
+      }
+    });
+  }
+
+  // Toggles de cuadro de diálogo y modo mini
   if (dialogCloseBtn) dialogCloseBtn.addEventListener('click', function () { setDialogState('mini'); });
   if (detailsToggle) detailsToggle.addEventListener('click', function () { setDialogState('visible'); });
   if (miniDetailsToggle) miniDetailsToggle.addEventListener('click', function () { setDialogState('visible'); });
-  if (previousSceneButton) previousSceneButton.addEventListener('click', function () { setScene(selectedScene - 1, isAudioPlaying); });
-  if (nextSceneButton) nextSceneButton.addEventListener('click', function () { setScene(selectedScene + 1, isAudioPlaying); });
-  var arNavPreviousButton = document.getElementById('ar-nav-previous-scene');
-  var arNavNextButton = document.getElementById('ar-nav-next-scene');
-  if (arNavPreviousButton) arNavPreviousButton.addEventListener('click', function () { setScene(selectedScene - 1, isAudioPlaying); });
-  if (arNavNextButton) arNavNextButton.addEventListener('click', function () { setScene(selectedScene + 1, isAudioPlaying); });
-  if (miniPrevScene) miniPrevScene.addEventListener('click', function () { setScene(selectedScene - 1, isAudioPlaying); });
-  if (miniNextScene) miniNextScene.addEventListener('click', function () { setScene(selectedScene + 1, isAudioPlaying); });
-  if (audioToggle) audioToggle.addEventListener('click', toggleAudio);
-  if (dialogAudioToggle) dialogAudioToggle.addEventListener('click', toggleAudio);
-  if (miniAudioToggle) miniAudioToggle.addEventListener('click', toggleAudio);
 
   var surfaceScreenBtn = document.getElementById('surface-screen-btn');
   var surfaceTableBtn = document.getElementById('surface-table-btn');
@@ -525,7 +605,11 @@
       if (e.target.closest('.ar-dialog') ||
           e.target.closest('.ar-topbar') ||
           e.target.closest('.ar-surface-selector') ||
-          e.target.closest('.ar-bottom-bar')) {
+          e.target.closest('.ar-bottom-bar') ||
+          e.target.closest('.scene-navigation') ||
+          e.target.closest('.ar-bottom-controls') ||
+          e.target.closest('.ar-control') ||
+          e.target.closest('button')) {
         isTouchingScene = false;
         return;
       }
@@ -566,13 +650,23 @@
     // 1. Mostrar confirmación visual inmediata
     showDetectionBadge('¡Marcador HIRO Detectado!', 'Franz Tamayo presente · Iniciando experiencia', 3500);
 
-    // Feedback háptico en móviles
+    // Feedback háptico en móviles y sintetizador
     if (navigator.vibrate) {
       try { navigator.vibrate([40, 50, 40]); } catch (e) {}
+    }
+    if (window.HistoriaFX && window.HistoriaFX.beep) {
+      window.HistoriaFX.beep('success');
     }
 
     hint.textContent = '✅ Marcador activo · Desliza tu dedo para rotar a Franz';
     adjustSceneForDevice();
+
+    // Materialización holográfica y saludo animado de Franz
+    var animator = getArAnimator();
+    if (animator) {
+      animator.revealTo(1, 1400);
+      animator.play('wave');
+    }
 
     // Alinear a Franz de frente a la cámara solo la primera vez
     if (!hasLockedInitialPose) {
@@ -609,8 +703,8 @@
   // ─── Abrir / Cerrar AR ───
   function openAR() {
     if (window.location.protocol === 'file:') {
-      alert('⚠️ Para usar la Realidad Aumentada (cámara y modelos 3D), debes abrir la página desde el servidor local:\n\nhttp://localhost:8080\n\nLos navegadores bloquean la cámara y los archivos 3D bajo "file://" por seguridad.');
-      window.location.href = 'http://localhost:8080';
+      alert('⚠️ Para usar la Realidad Aumentada (cámara y modelos 3D), debes abrir la página desde el servidor local:\n\nhttp://localhost:3000\n\nLos navegadores bloquean la cámara y los archivos 3D bajo "file://" por seguridad.');
+      window.location.href = 'http://localhost:3000';
       return;
     }
 
@@ -745,12 +839,34 @@
       setSurfaceMode('screen');
     } else if (action === 'center') {
       resetPose();
-    } else if (action === 'gesture' || action === 'indicate') {
-      var figure = arScene && arScene.querySelector('#franz-tamayo-figure');
-      if (figure) {
-        figure.setAttribute('animation__voice-gesture', 'property: rotation; from: -3 -8 0; to: 3 8 0; dir: alternate; dur: 420; loop: 4; easing: easeInOutSine');
+    } else if (action === 'gesture' || action === 'indicate' || action === 'wave' || action === 'think' || action === 'walk' || action === 'nod' || action === 'celebrate') {
+      var animator = getArAnimator();
+      var gestureName = 'wave';
+      if (action === 'think') gestureName = 'think';
+      else if (action === 'walk') gestureName = 'walk';
+      else if (action === 'nod') gestureName = 'nod';
+      else if (action === 'celebrate') gestureName = 'celebrate';
+      else if (action === 'indicate') gestureName = 'think';
+
+      if (animator) {
+        animator.play(gestureName);
+      } else {
+        var figure = arScene && arScene.querySelector('#franz-tamayo-figure');
+        if (figure) {
+          figure.setAttribute('animation__voice-gesture', 'property: rotation; from: -3 -8 0; to: 3 8 0; dir: alternate; dur: 420; loop: 4; easing: easeInOutSine');
+        }
       }
-      if (hint) hint.textContent = action === 'gesture' ? 'Franz Tamayo realiza un gesto de bienvenida' : 'Franz Tamayo señala la escena';
+
+      if (hint) {
+        var gestureLabels = {
+          wave: 'Franz Tamayo saluda con la mano 👋',
+          think: 'Franz Tamayo reflexiona profundamente 💭',
+          walk: 'Franz Tamayo camina en el tiempo 🚶',
+          nod: 'Franz Tamayo asiente con sabiduría ✔️',
+          celebrate: 'Franz Tamayo celebra el futuro 🎓'
+        };
+        hint.textContent = gestureLabels[gestureName] || 'Franz Tamayo responde a tu voz';
+      }
     }
   });
 

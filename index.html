@@ -17,7 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
-  <!-- Controladores de la aplicación -->
+  <!-- Controladores y efectos de la aplicación -->
+  <script src="js/tamayo-fx.js" defer></script>
   <script src="js/vr-experience.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/ar-experience.js" defer></script>
@@ -26,8 +27,8 @@
   <div id="file-protocol-warning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:999999; background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 24px; font-family:'DM Sans', sans-serif; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.8); border-bottom:2px solid #ef4444;">
     <strong style="font-size:15px; display:block; margin-bottom:4px;">⚠️ Estás abriendo el proyecto como archivo local (file://)</strong>
     <span style="font-size:13px; opacity:0.95;">Los navegadores bloquean la cámara y los modelos 3D bajo <code>file://</code> por políticas de seguridad (CORS).</span><br>
-    <a href="http://localhost:8080" style="display:inline-block; margin-top:10px; padding:8px 20px; background:#ffd166; color:#0d0f14; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px;">
-      👉 Abrir en http://localhost:8080
+    <a href="http://localhost:3000" style="display:inline-block; margin-top:10px; padding:8px 20px; background:#ffd166; color:#0d0f14; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px;">
+      👉 Abrir en http://localhost:3000
     </a>
   </div>
   <script>
@@ -273,9 +274,11 @@
         <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
           <a-cylinder position="0 0.018 0" radius="0.25" height="0.035" color="#171923" material="metalness: 0.35; roughness: 0.48"></a-cylinder>
           <a-ring id="tamayo-glow-ring" position="0 0.04 0" rotation="-90 0 0" radius-inner="0.2" radius-outer="0.25" color="#d5aa46" material="emissive: #d5aa46; emissiveIntensity: 0.65; opacity: 0.75; transparent: true"></a-ring>
+          <!-- Dial de la Máquina del Tiempo proyectado en el marcador -->
+          <a-entity id="ar-time-dial" time-dial="radius: 0.38; inner: 0.28; ticks: 48; color: #ffd166; speed: 0.08" position="0 0.022 0" rotation="-90 0 0"></a-entity>
           <a-entity id="tamayo-orientation">
             <a-entity id="tamayo-rig">
-              <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" position="0 0.045 0" scale="1 1 1" animation__presence="property: position; to: 0 0.075 0; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine"></a-entity>
+              <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" position="0 0.045 0" scale="1 1 1" tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.45; talking: false"></a-entity>
             </a-entity>
           </a-entity>
           <a-entity position="0 1.55 0" text="value: FRANZ TAMAYO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
@@ -285,6 +288,14 @@
         </a-entity>
       </a-scene>
     </template>
+
+    <!-- Efecto 2D de Viaje en la Máquina del Tiempo para AR -->
+    <canvas id="ar-warp-canvas" class="ar-warp-canvas"></canvas>
+    <div id="ar-time-banner" class="ar-time-banner" hidden>
+      <span class="time-banner-kicker">⚡ MÁQUINA DEL TIEMPO ⚡</span>
+      <div class="time-banner-year" id="ar-warp-year">1879</div>
+      <div class="time-banner-title" id="ar-warp-title">El Despertar de Franz Tamayo</div>
+    </div>
 
     <div class="ar-hud">
       <div class="ar-topbar">
@@ -417,21 +428,19 @@
           <a-asset-item id="franz-tamayo-vr-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Entorno 360: Cielo y Estrellas -->
-        <a-sky id="vr-sky" color="#0f1118"></a-sky>
+        <!-- Capa de Ambientación Espacio-Temporal 360° -->
+        <a-entity id="vr-ambience-layer" time-ambience="sky: #0f1118; color: #d5aa46; center: 0 0 -2.3"></a-entity>
 
-        <!-- Suelo / Pedestal histórico para Franz Tamayo -->
+        <!-- Suelo / Pedestal histórico para Franz Tamayo con Dial de la Máquina del Tiempo -->
         <a-cylinder position="0 0.08 -2.3" radius="1.05" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
         <a-ring id="vr-pedestal-glow" position="0 0.17 -2.3" rotation="-90 0 0" radius-inner="0.88" radius-outer="1.03" material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
+        <a-entity id="vr-pedestal-dial" time-dial="radius: 1.25; inner: 1.02; ticks: 60; color: #d5aa46; speed: 0.05; hands: true" position="0 0.09 -2.3" rotation="-90 0 0"></a-entity>
 
-        <!-- Modelo 3D Oficial de Franz Tamayo (5.38 MB GLB) -->
-        <a-entity
-          id="vr-tamayo-figure"
-          position="0 0.04 -2.3"
-          animation__breathe="property: position; to: 0 0.10 -2.3; dir: alternate; dur: 2600; loop: true; easing: easeInOutSine">
-          <a-entity id="vr-character-idle" animation__presence="property: rotation; from: 0 -1 0; to: 0 1 0; dir: alternate; dur: 4200; loop: true; easing: easeInOutSine">
+        <!-- Modelo 3D Oficial de Franz Tamayo con Animación Viva Procedural (tamayo-animator) -->
+        <a-entity id="vr-tamayo-figure" position="0 0.04 -2.3">
+          <a-entity id="vr-character-idle">
             <a-entity id="vr-character-pose">
-              <a-entity id="vr-character-model" gltf-model="#franz-tamayo-vr-model" scale="1.65 1.65 1.65"></a-entity>
+              <a-entity id="vr-character-model" gltf-model="#franz-tamayo-vr-model" scale="1.65 1.65 1.65" tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false"></a-entity>
             </a-entity>
           </a-entity>
         </a-entity>
@@ -527,21 +536,27 @@
         <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5" position="0 2 -1.1"></a-entity>
         <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5" position="-1.6 1 -2.6"></a-entity>
 
-        <!-- Panel 3D Flotante con Guion interactivo dentro de VR (visible con gafas puestas) -->
+        <!-- Panel 3D Flotante con Guion interactivo y Comandos de Voz dentro de VR (Gafas Cardboard) -->
         <a-entity id="vr-3d-floating-panel" position="-1.55 1.42 -2.55" rotation="0 0 0" scale="0.58 0.58 0.58">
-          <a-plane width="2.0" height="1.15" material="color: #12141c; opacity: 0.72; transparent: true; roughness: 0.7"></a-plane>
+          <a-plane width="2.0" height="1.42" material="color: #12141c; opacity: 0.78; transparent: true; roughness: 0.7"></a-plane>
+
+          <!-- Feedback Holográfico 3D de Comandos de Voz -->
+          <a-entity id="vr-3d-voice-status" position="0 0.56 0.03" visible="false">
+            <a-plane width="1.88" height="0.22" material="color: #0e2417; opacity: 0.92; transparent: true"></a-plane>
+            <a-text id="vr-3d-voice-status-text" value="🎧 ESCUCHANDO TU VOZ..." align="center" position="0 0 0.02" width="2.1" color="#55efc4" font="dejavu"></a-text>
+          </a-entity>
 
           <!-- Título de la escena 3D -->
-          <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO" align="center" position="0 0.42 0.02" width="2.3" color="#f1c40f" font="dejavu"></a-text>
+          <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO" align="center" position="0 0.38 0.02" width="2.3" color="#f1c40f" font="dejavu"></a-text>
 
           <!-- Fase y época -->
-          <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center" position="0 0.28 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
+          <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center" position="0 0.24 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
 
           <!-- Diálogo narrativo 3D -->
-          <a-text id="vr-3d-scene-dialog" value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»" align="center" position="0 0.02 0.02" width="2.1" color="#ffffff" font="dejavu" wrap-count="36"></a-text>
+          <a-text id="vr-3d-scene-dialog" value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»" align="center" position="0 -0.02 0.02" width="2.1" color="#ffffff" font="dejavu" wrap-count="36"></a-text>
 
           <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
-          <a-entity position="0 -0.38 0">
+          <a-entity position="0 -0.34 0">
             <!-- Botón 3D Anterior -->
             <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
               <a-plane width="0.68" height="0.22" material="color: #232734; roughness: 0.6"></a-plane>
@@ -560,21 +575,28 @@
               <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9" color="#e0dbd0" font="dejavu"></a-text>
             </a-entity>
           </a-entity>
+
+          <!-- Botón 3D de Comando de Voz Manos Libres para Gafas VR -->
+          <a-entity class="vr-clickable" id="vr-3d-voice-btn" position="0 -0.56 0">
+            <a-plane width="1.6" height="0.18" material="color: #182838; opacity: 0.95; transparent: true; roughness: 0.5"></a-plane>
+            <a-text id="vr-3d-voice-btn-text" value="🎙️ COMANDO DE VOZ (MÍRAME)" align="center" position="0 0 0.02" width="1.9" color="#7cc3f8" font="dejavu"></a-text>
+          </a-entity>
         </a-entity>
+
         <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
           <a-plane width="0.58" height="0.2" material="color: #7f1d1d; roughness: 0.6"></a-plane>
           <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff" font="dejavu"></a-text>
         </a-entity>
 
-        <!-- Cámara del Usuario con Retícula de Mirada (Gaze Cursor para Gafas VR) -->
+        <!-- Cámara del Usuario con Retícula de Mirada y Túnel del Tiempo para Viaje Temporal -->
         <a-entity id="vr-camera-rig" position="0 0 0">
-          <a-camera id="vr-camera" position="0 1.6 0" look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false">
+          <a-camera id="vr-camera" position="0 1.6 0" look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false" time-tunnel="count: 280; color: #d5aa46; rings: 8">
             <a-entity
               cursor="fuse: true; fuseTimeout: 1400"
               raycaster="objects: .vr-clickable"
               position="0 0 -1"
               geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
-              material="color: #f1c40f; shader: flat; opacity: 0.8"
+              material="color: #f1c40f; shader: flat; opacity: 0.85"
               animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
               animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
             </a-entity>

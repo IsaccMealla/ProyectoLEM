@@ -13,12 +13,12 @@ Sirve la carpeta desde un servidor local (o bajo HTTPS para permitir el acceso a
 
 ```powershell
 # En PowerShell / Terminal:
-python -m http.server 8080
-# O con Node.js / npx:
-npx serve .
+node server.js
+# O con Python:
+python -m http.server 3000
 ```
 
-Abre en tu navegador `http://localhost:8080` (o la IP local desde tu teléfono conectado a la misma red Wi-Fi).
+Abre en tu navegador `http://localhost:3000` (o la IP local desde tu teléfono conectado a la misma red Wi-Fi).
 
 ---
 

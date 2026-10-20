@@ -208,11 +208,44 @@ class TamayoVRExperience {
 
   setSceneIndex(index, updateAudio = true) {
     if (index < 0 || index >= window.TAMAYO_VR_SCENES.length) return;
+    const prevIndex = this.currentIndex;
+    const isSceneChange = (index !== prevIndex);
+    const travelDir = (index >= prevIndex) ? 'forward' : 'backward';
+
     this.currentIndex = index;
     const scene = this.getCurrentScene();
 
     this.updateHUD(scene);
     this.update3DScene(scene);
+
+    // ⚡ Efectos de Salto en la Máquina del Tiempo
+    if (isSceneChange) {
+      if (window.HistoriaFX && window.HistoriaFX.whoosh) {
+        window.HistoriaFX.whoosh(travelDir, 2.0);
+      }
+      const aScene = document.querySelector('#vr-scene') || document.querySelector('.vr-view a-scene') || document.querySelector('a-scene');
+      if (aScene) {
+        // Túnel de hipervelocidad espacio-temporal en la cámara
+        const camera = aScene.querySelector('#vr-camera');
+        if (camera && camera.components && camera.components['time-tunnel']) {
+          camera.components['time-tunnel'].warp(scene.themeColor, 1800);
+        }
+        // Giro acelerado del dial temporal del pedestal
+        const dial = aScene.querySelector('#vr-pedestal-dial') || aScene.querySelector('[time-dial]');
+        if (dial && dial.components && dial.components['time-dial']) {
+          dial.components['time-dial'].spin(travelDir, 1800);
+        }
+        // Atmósfera cósmica reactiva
+        const ambience = aScene.querySelector('#vr-ambience-layer') || aScene.querySelector('[time-ambience]');
+        if (ambience && ambience.components && ambience.components['time-ambience']) {
+          ambience.components['time-ambience'].setTheme(scene.themeColor, scene.skyColor);
+        }
+      }
+
+      const gestures = ['wave', 'think', 'nod', 'walk', 'celebrate'];
+      this.animateCharacterGesture(gestures[index % gestures.length]);
+    }
+
     this.ensureAudioElement();
     if (this.audioEl) {
       this.audioEl.src = scene.audio || '';
@@ -410,6 +443,14 @@ class TamayoVRExperience {
     if (btn3D) {
       btn3D.setAttribute('value', isPlaying ? 'PAUSAR VOZ' : 'NARRAR ESCENA');
     }
+
+    // Sincronizar modulación oral con tamayo-animator
+    const aScene = document.querySelector('#vr-scene') || document.querySelector('.vr-view a-scene') || document.querySelector('a-scene');
+    const model = aScene && aScene.querySelector('#vr-character-model');
+    const animator = model && model.components && model.components['tamayo-animator'];
+    if (animator) {
+      animator.setTalking(isPlaying);
+    }
   }
 
   async enterCardboardVR() {
@@ -455,7 +496,22 @@ class TamayoVRExperience {
   }
 
   animateCharacterGesture(kind = 'speak') {
-    const aScene = document.querySelector('#vr-scene');
+    const aScene = document.querySelector('#vr-scene') || document.querySelector('.vr-view a-scene') || document.querySelector('a-scene');
+    const model = aScene && aScene.querySelector('#vr-character-model');
+    const animator = model && model.components && model.components['tamayo-animator'];
+    if (animator) {
+      const gestureMap = {
+        speak: 'nod',
+        walk: 'walk',
+        indicate: 'think',
+        wave: 'wave',
+        think: 'think',
+        nod: 'nod',
+        celebrate: 'celebrate'
+      };
+      animator.play(gestureMap[kind] || kind);
+    }
+
     const character = aScene && aScene.querySelector('#vr-character-pose');
     const cue = aScene && aScene.querySelector('#vr-scene-cue');
     if (!character) return;
@@ -463,7 +519,7 @@ class TamayoVRExperience {
     character.removeAttribute('animation__gesture');
     if (kind === 'walk') {
       character.setAttribute('animation__gesture', 'property: rotation; from: -5 -7 0; to: 5 7 0; dir: alternate; dur: 320; loop: 6; easing: easeInOutSine');
-    } else if (kind === 'indicate') {
+    } else if (kind === 'indicate' || kind === 'think') {
       character.setAttribute('animation__gesture', 'property: rotation; from: -3 -10 0; to: 3 10 0; dir: alternate; dur: 460; loop: 3; easing: easeInOutSine');
     } else {
       character.setAttribute('animation__gesture', 'property: rotation; from: -2 -3 0; to: 2 3 0; dir: alternate; dur: 480; loop: 4; easing: easeInOutSine');
