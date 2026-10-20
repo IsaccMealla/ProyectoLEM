@@ -1,19 +1,21 @@
-# Historia Viva AR · Plaza Murillo
+# Historia Viva AR · Franz Tamayo & UNIFRANZ
 
-Landing educativa y experiencia WebAR con A-Frame 1.3.0 y AR.js 3.4.5. Las bibliotecas se cargan desde CDN; se necesita conexión a internet.
+Landing educativa y experiencia WebAR sobre el pensamiento de Franz Tamayo, su obra *Creación de la pedagogía nacional* (1910), la fundación de UNIFRANZ (1990) y su presencia en Bolivia. La escena AR usa A-Frame 1.3.0, aframe-extras 6.1.1 y AR.js 3.4.5 desde CDN; se necesita conexión a internet.
 
 ## Ejecutar
 
-Sirve la carpeta desde `localhost` para probarla en el navegador, o publícala bajo HTTPS. El acceso a la cámara no funciona desde una página abierta como `file://`. En móvil, abre la URL pública y concede permiso de cámara.
+Sirve la carpeta desde `localhost` para probarla en el navegador, o publícala bajo HTTPS. El acceso a la cámara no funciona desde una página abierta como `file://`.
 
 ```powershell
 python -m http.server 8080
 ```
 
-## Assets
+En móvil, abre la URL pública, escanea el QR de acceso si está disponible, permite el uso de la cámara y apunta al marcador HIRO.
+
+## Assets de la experiencia AR
 
 - `assets/images/hiro-marker.png`: marcador HIRO de AR.js para imprimir.
-- `assets/models/murillo_placeholder.glb`: busto low-poly de prueba. Sustitúyelo por el modelo 3D definitivo conservando la ruta, o actualiza la referencia en `index.html`.
-- `assets/audio/proclama_1809.mp3`: coloca aquí una narración autorizada. Si no existe, el botón utiliza la voz en español disponible en el navegador. La voz sintetizada es una narración educativa, no una grabación histórica.
+- `assets/models/franz_tamayo.glb`: modelo 3D de Franz Tamayo cargado por la escena AR. La escena reproduce en bucle las animaciones incluidas en el GLB; el archivo debe contener al menos un clip de animación.
+- `assets/audio/escena_franz_tamayo.mp3`: locución completa opcional. Si falta o no se puede reproducir, el navegador ofrece la narración mediante síntesis de voz en español.
 
-La vista AR solicita cámara al abrirse y detiene las pistas al cerrarla. La experiencia requiere un navegador con WebRTC y seguimiento de marcadores compatible.
+El HUD permite avanzar y retroceder entre las cinco escenas; cada una actualiza la transcripción y su fragmento de audio o narración sintetizada. La cámara se solicita al abrir la experiencia y sus pistas se detienen al cerrarla. La experiencia requiere un navegador compatible con WebRTC y seguimiento de marcadores.

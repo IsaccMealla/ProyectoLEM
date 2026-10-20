@@ -1,88 +1,32 @@
 (function () {
-  const arView = document.getElementById('ar-view');
-  const sceneTemplate = document.getElementById('ar-scene-template');
-  let arScene = null;
-  const loading = document.getElementById('ar-loading');
-  const audio = document.getElementById('proclamation-audio');
-  const audioToggle = document.getElementById('audio-toggle');
-  const audioLabel = document.getElementById('audio-label');
-  const audioIcon = document.getElementById('audio-icon');
-  const details = document.getElementById('ar-details');
-  const detailsToggle = document.getElementById('details-toggle');
-  let speechActive = false;
-  let arTimeout;
-
-  function mountARScene() {
-    if (arScene) return;
-    arScene = sceneTemplate.content.firstElementChild.cloneNode(true);
-    arView.insertBefore(arScene, arView.querySelector('.ar-hud'));
-    arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
-  }
-
-  function setDetails(open) {
-    details.hidden = !open;
-    detailsToggle.setAttribute('aria-expanded', String(open));
-  }
-
-  function setAudioState(playing) {
-    audioToggle.setAttribute('aria-pressed', String(playing));
-    audioLabel.textContent = playing ? 'Pausar proclama' : 'Escuchar proclama';
-    audioIcon.textContent = playing ? 'Ⅱ' : '▶';
-  }
-
-  function closeNarration() {
-    audio.pause();
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    speechActive = false;
-    setAudioState(false);
-  }
-
-  function openAR() {
-    closeNarration();
-    setDetails(false);
-    arView.classList.remove('is-error');
-    arView.setAttribute('aria-hidden', 'false');
-    arView.inert = false;
-    document.body.style.overflow = 'hidden';
-    loading.classList.remove('is-hidden');
-    mountARScene();
-    arTimeout = window.setTimeout(function () {
-      if (!arView.classList.contains('is-error')) loading.classList.add('is-hidden');
-    }, 10000);
-    const closeButton = arView.querySelector('[data-close-ar]');
-    if (closeButton) closeButton.focus({ preventScroll: true });
-  }
-
-  function closeAR() {
-    closeNarration();
-    setDetails(false);
-    window.clearTimeout(arTimeout);
-    arView.setAttribute('aria-hidden', 'true');
-    arView.inert = true;
-    document.body.style.overflow = '';
-    const activeElement = document.activeElement;
-    if (activeElement && activeElement.blur) activeElement.blur();
-    const opener = document.querySelector('[data-open-ar]');
-    if (opener) opener.focus({ preventScroll: true });
-    arView.querySelectorAll('video').forEach(function (video) {
-      if (video.srcObject && video.srcObject.getTracks) {
-        video.srcObject.getTracks().forEach(function (track) { track.stop(); });
-        video.srcObject = null;
-      }
-    });
-    if (arScene) arScene.remove();
-    arScene = null;
-  }
-
-  document.querySelectorAll('[data-open-ar]').forEach(function (button) {
-    button.addEventListener('click', openAR);
-  });
-  document.querySelectorAll('[data-close-ar]').forEach(function (button) {
-    button.addEventListener('click', closeAR);
-  });
-  document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && arView.getAttribute('aria-hidden') === 'false') closeAR();
-  });
+  const scenes = [
+    {
+      title: 'El Despertar de Franz Tamayo',
+      period: '1879 — 1956',
+      narration: 'Franz Tamayo nació en La Paz en 1879 y murió en 1956. Fue poeta, pensador, jurista y una de las voces intelectuales más influyentes de Bolivia. Su obra recorrió la literatura, la política y la reflexión sobre la identidad nacional. En esta primera escena comenzamos un viaje por sus ideas y por la huella que dejaron en la historia del país.'
+    },
+    {
+      title: 'El Pensamiento y la Educación',
+      period: '1910',
+      narration: 'En 1910, Franz Tamayo publicó Creación de la pedagogía nacional. En esta obra reflexionó sobre la educación boliviana y sostuvo que debía pensarse desde la realidad, la historia y las características propias del país. Su propuesta abrió un debate sobre cómo formar a las nuevas generaciones y sobre el papel de la educación en la construcción de Bolivia. Más de un siglo después, esa pregunta sigue vigente: ¿cómo educar para comprender y transformar nuestra sociedad?'
+    },
+    {
+      title: 'El Nacimiento de UNIFRANZ',
+      period: '1990 — 1993',
+      narration: 'El 4 de noviembre de 1990, Abel Ágreda y Celsa Nogales de Ágreda fundaron la Universidad Privada Franz Tamayo, UNIFRANZ. Su nombre rinde homenaje al pensador boliviano y establece un diálogo entre su legado y el compromiso con la educación superior. Entre 1990 y 1993, la institución comenzó a consolidar su proyecto universitario, abriendo nuevas posibilidades de formación para el país.'
+    },
+    {
+      title: 'Una Universidad en Crecimiento',
+      period: 'PRESENCIA NACIONAL',
+      narration: 'Con el paso del tiempo, UNIFRANZ amplió su presencia en Bolivia. Hoy cuenta con sedes en La Paz, El Alto, Cochabamba y Santa Cruz. En cada ciudad, estudiantes y docentes forman parte de una comunidad universitaria que conecta distintas realidades y contribuye al desarrollo de sus regiones. Esta expansión expresa una apuesta por acercar la educación superior a más personas y territorios.'
+    },
+    {
+      title: 'El Legado Continúa',
+      period: 'HOY Y MAÑANA',
+      narration: 'El legado de Franz Tamayo continúa cada vez que una nueva generación cuestiona, aprende y propone caminos para Bolivia. La innovación y la investigación permiten convertir ideas en respuestas para los desafíos de la sociedad. Estudiantes: el futuro no está escrito; se construye con curiosidad, conocimiento y compromiso. La historia sigue viva en ustedes.'
+    }
+  ];
+  window.HistoriaVivaScenes = scenes;
 
   document.querySelectorAll('.timeline-trigger').forEach(function (button) {
     button.addEventListener('click', function () {
@@ -98,44 +42,10 @@
         button.setAttribute('aria-expanded', 'true');
         const panel = document.getElementById(button.getAttribute('aria-controls'));
         if (panel) panel.hidden = false;
+        document.dispatchEvent(new CustomEvent('historia:select-scene', {
+          detail: { index: Number(button.dataset.scene) }
+        }));
       }
     });
-  });
-
-  detailsToggle.addEventListener('click', function () {
-    setDetails(detailsToggle.getAttribute('aria-expanded') !== 'true');
-  });
-  arView.querySelector('.details-close').addEventListener('click', function () { setDetails(false); });
-
-  audioToggle.addEventListener('click', async function () {
-    if (audioToggle.getAttribute('aria-pressed') === 'true') {
-      closeNarration();
-      return;
-    }
-    if (audio.getAttribute('src')) {
-      try {
-        await audio.play();
-        setAudioState(true);
-        return;
-      } catch (error) {
-      }
-    }
-    if ('speechSynthesis' in window) {
-      const narration = new SpeechSynthesisUtterance('El 16 de julio de 1809, en la ciudad de La Paz, comenzó una revolución en busca de un gobierno propio. La Junta Tuitiva expresó aspiraciones de autonomía y protección de los derechos del pueblo. Pedro Domingo Murillo es recordado como uno de los protagonistas de este proceso.');
-      narration.lang = 'es-BO';
-      narration.rate = 0.88;
-      narration.onend = function () { speechActive = false; setAudioState(false); };
-      narration.onerror = function () { speechActive = false; setAudioState(false); };
-      speechActive = true;
-      window.speechSynthesis.speak(narration);
-      setAudioState(true);
-    } else {
-      audioLabel.textContent = 'Narración no disponible';
-      window.setTimeout(function () { setAudioState(false); }, 2200);
-    }
-  });
-  audio.addEventListener('ended', function () { setAudioState(false); });
-  audio.addEventListener('pause', function () {
-    if (!speechActive) setAudioState(false);
   });
 })();
