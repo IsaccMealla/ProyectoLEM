@@ -261,9 +261,8 @@
           <h2 id="map-title">Saber dónde estamos.<br><em>Activar la animación en rango.</em></h2>
         </div>
         <p class="section-aside">
-          El modelo 3D de Franz Tamayo y su animación en Realidad Aumentada están vinculados a su entorno geográfico.
-          Para despertar al pensador y activar su animación interactiva, debes encontrarte dentro del radio histórico
-          establecido.
+          Cada escena de Franz Tamayo y Eduardo Abaroa tiene un punto de activación propio. Al estar dentro del radio
+          elegido, se habilitan el personaje y la narración de esa escena en Realidad Aumentada.
         </p>
       </div>
 
@@ -308,6 +307,7 @@
               <option value="unifranz_ea">UNIFRANZ El Alto</option>
               <option value="unifranz_cbba">UNIFRANZ Cochabamba</option>
               <option value="unifranz_scz">UNIFRANZ Santa Cruz</option>
+              <option value="active-scene">Escena AR seleccionada</option>
             </select>
           </div>
 
@@ -354,6 +354,32 @@
           </div>
         </div>
 
+        <div class="geo-scene-editor" aria-labelledby="geo-editor-title">
+          <div class="geo-scene-editor-copy">
+            <strong id="geo-editor-title">📍 Ubicaciones de escenas AR</strong>
+            <span>Elige una escena y activa la edición. Haz clic en el mapa o arrastra su marcador para mover el punto.</span>
+            <small>Los cambios se guardan solo en este navegador. Los puntos iniciales de Abaroa son aproximados; confírmalos en terreno.</small>
+          </div>
+          <div class="geo-scene-editor-controls">
+            <label for="geo-editor-story">Recorrido</label>
+            <select id="geo-editor-story" class="geo-select">
+              <option value="franz">Franz Tamayo</option>
+              <option value="abaroa">Eduardo Abaroa</option>
+            </select>
+            <label for="geo-editor-scene">Escena</label>
+            <select id="geo-editor-scene" class="geo-select">
+              <option value="0">Escena 1</option>
+              <option value="1">Escena 2</option>
+              <option value="2">Escena 3</option>
+              <option value="3">Escena 4</option>
+              <option value="4">Escena 5</option>
+            </select>
+            <button type="button" class="geo-btn geo-btn-primary" id="geo-editor-toggle">Editar ubicación en el mapa</button>
+            <button type="button" class="geo-btn geo-btn-dark" id="geo-editor-reset">Restaurar punto inicial</button>
+          </div>
+          <p id="geo-editor-status" class="geo-scene-editor-status" aria-live="polite"></p>
+        </div>
+
         <!-- Contenedor del Mapa Leaflet -->
         <!-- Contenedor del Mapa Leaflet en Tiempo Real -->
         <div class="map-wrapper">
@@ -390,8 +416,8 @@
           <div>
             <span class="geo-cta-kicker" id="geo-target-name">UNIFRANZ La Paz · Sede Central</span>
             <h3>¿Listo para probar la experiencia inmersiva?</h3>
-            <p>Al estar dentro del rango en el mapa, el modelo 3D de Franz Tamayo se despertará, gesticulará y narrará
-              la historia.</p>
+            <p>Selecciona una escena en el mapa. Su narración y personaje se habilitan al acercarte al punto de
+              activación dentro del radio configurado.</p>
           </div>
           <button class="button button-gold" id="geo-open-ar-btn" type="button" data-open-ar>
             🚀 Iniciar Experiencia AR ↗
@@ -514,8 +540,8 @@
     <!-- Indicador de carga inicial -->
     <div class="ar-loading" id="ar-loading" role="status">
       <span class="loader-mark">HV</span>
-      <p>Iniciando cámara y entorno Pokémon GO…</p>
-      <small>Permite el acceso a la cámara para ver a Franz Tamayo en tu espacio</small>
+      <p>Preparando tu experiencia AR…</p>
+      <small>El navegador solicitará permiso para cámara y ubicación. Gira el teléfono para orientar las escenas.</small>
     </div>
 
     <!-- Plantilla de la escena A-Frame (transparente sobre la cámara con giroscopio) -->
@@ -525,6 +551,7 @@
         vr-mode-ui="enabled: false" loading-screen="enabled: false">
         <a-assets timeout="12000">
           <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
+          <video id="ar-scene-video" muted loop playsinline preload="none"></video>
         </a-assets>
 
         <!-- Iluminación natural adaptada al entorno real -->
@@ -538,7 +565,7 @@
           </a-camera>
         </a-entity>
 
-        <!-- Anclaje de Franz Tamayo en el mundo real (frente a la cámara a nivel del suelo) -->
+        <!-- Anclaje geográfico de la escena, independiente del rig de cámara -->
         <a-entity id="tamayo-world-anchor" position="0 0 -2.6" visible="false">
           <!-- Anillo de presencia holográfico estilo Pokémon GO en el suelo -->
           <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="0.32" radius-outer="0.55" color="#ffd166"
@@ -547,9 +574,10 @@
             material="opacity: 0.35; transparent: true"></a-circle>
 
           <!-- Entidad con desplazamiento autónomo y caminata (tamayo-walker) -->
-          <a-entity id="tamayo-walker-root" tamayo-walker="speed: 0.68; roamRadius: 1.8; autoRoam: true">
+          <a-entity id="tamayo-walker-root" tamayo-walker="speed: 0.68; roamRadius: 1.8; autoRoam: false">
             <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" scale="1.15 1.15 1.15"
               tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false; autoGestures: true"></a-entity>
+            <a-entity id="eduardo-abaroa-figure" position="0 0 0" scale="1.7 1.7 1.7" visible="false"></a-entity>
           </a-entity>
 
           <!-- Estudiante acompañante animado en Realidad Aumentada -->
@@ -557,8 +585,16 @@
             npc-person="mode: idle; facing: -1.35; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; scale: 0.92"></a-entity>
 
           <!-- Identificador flotante -->
-          <a-entity position="0 1.95 0"
-            text="value: FRANZ TAMAYO; align: center; width: 3.2; color: #fff4d4; shader: msdf"></a-entity>
+          <a-entity id="ar-character-name" position="0 2.05 0"
+            text="value: FRANZ TAMAYO; align: center; width: 2.1; color: #fff4d4; shader: msdf"></a-entity>
+          <a-text id="ar-model-error-label" value="CARGANDO MODELO 3D..." visible="false" position="0 2.25 0"
+            align="center" width="3.2" color="#ffd166"></a-text>
+          <a-entity id="ar-video-panel" position="-1.55 1.7 0.35" visible="false">
+            <a-plane position="0 0 0" width="1.7" height="1" color="#111111"
+              material="opacity: 0.9; transparent: true"></a-plane>
+            <a-video id="ar-scene-video-surface" src="#ar-scene-video" position="0 0 0.01" width="1.62"
+              height="0.91"></a-video>
+          </a-entity>
 
           <!-- ========================================================
                OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (Pokémon GO)
@@ -868,12 +904,12 @@
           <span class="back-arrow" aria-hidden="true">‹</span> Volver al Inicio
         </button>
         <div class="pokear-top-actions">
-          <div class="ar-status-pill is-out-of-range" id="ar-status-pill">
+          <div class="ar-status-pill is-out-of-range" id="ar-status-pill" role="status" aria-live="polite">
             <span class="ar-status-dot"></span> 📡 Calculando...
           </div>
           <button type="button" class="pokear-chip-btn" id="ar-btn-toggle-minimap"
-            title="Ver mapa en tiempo real, ubicación de las 5 escenas y ruta más corta">
-            🗺️ Mapa y Ruta
+            title="Ver puntos de activación AR y ruta a la escena seleccionada">
+            🗺️ Puntos AR y Ruta
           </button>
           <button type="button" class="pokear-chip-btn" id="ar-btn-simulate"
             title="Simular que estás dentro del sitio para ver las animaciones">
@@ -887,7 +923,7 @@
       <!-- Mini-Mapa en Tiempo Real con las 5 Escenas y Algoritmo de Ruta Más Corta -->
       <div class="ar-minimap-drawer" id="ar-minimap-drawer" hidden>
         <div class="ar-minimap-header">
-          <span>🗺️ MAPA EN TIEMPO REAL · 5 ESCENAS Y RUTA MÁS CORTA</span>
+          <span>🗺️ PUNTOS DE ACTIVACIÓN AR · SELECCIONA UNA ESCENA</span>
           <button type="button" class="ar-minimap-close" id="ar-minimap-close" aria-label="Cerrar mini mapa">×</button>
         </div>
         <div id="ar-mini-map" class="ar-mini-map"></div>
@@ -900,8 +936,13 @@
         </div>
       </div>
 
-      <!-- Tarjeta inferior minimalista y responsiva (Solo los 4 botones esenciales) -->
+      <!-- Tarjeta inferior minimalista para seleccionar recorrido y escena -->
       <div class="pokear-bottom-card" id="ar-bottom-card">
+        <label class="pokear-story-label" for="ar-story-select">Recorrido</label>
+        <select id="ar-story-select" class="pokear-story-select" aria-label="Seleccionar recorrido histórico">
+          <option value="franz">Franz Tamayo</option>
+          <option value="abaroa">Eduardo Abaroa</option>
+        </select>
         <div class="pokear-card-header">
           <span class="pokear-card-badge" id="ar-hud-scene-number">ESCENA 1 DE 5</span>
           <span class="pokear-card-period" id="ar-hud-scene-period">1879 — 1956</span>
@@ -916,21 +957,16 @@
           <div class="pokear-progress-bar" id="ar-hud-progress-bar"></div>
         </div>
 
-        <!-- Los 4 botones esenciales -->
+        <!-- Navegación y narración -->
         <div class="pokear-card-controls">
           <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-prev" aria-label="Escena anterior"
             title="Escena anterior">
             ←
           </button>
           <button class="pokear-btn pokear-btn-play" type="button" id="ar-btn-audio" aria-pressed="false"
-            title="Escuchar o pausar la narración de Franz Tamayo">
+            title="Escuchar o pausar la narración">
             <span id="ar-btn-audio-icon" aria-hidden="true">▶</span>
             <span id="ar-btn-audio-label">Narrar</span>
-          </button>
-          <button class="pokear-btn pokear-btn-walk is-active" type="button" id="ar-btn-walk"
-            title="Alternar paseo y caminata de Franz Tamayo">
-            <span id="ar-btn-walk-icon" aria-hidden="true">🧍</span>
-            <span id="ar-btn-walk-label">Pasear</span>
           </button>
           <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-next" aria-label="Escena siguiente"
             title="Escena siguiente">
@@ -1004,7 +1040,7 @@
         </a-entity>
 
         <!-- Suelo / Pedestal histórico para Franz Tamayo con Dial de la Máquina del Tiempo -->
-        <a-cylinder position="0 0.08 -2.3" radius="1.05" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
+        <a-cylinder id="vr-pedestal" position="0 0.08 -2.3" radius="1.05" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
         <a-ring id="vr-pedestal-glow" position="0 0.17 -2.3" rotation="-90 0 0" radius-inner="0.88" radius-outer="1.03"
           material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
         <a-entity id="vr-pedestal-dial"
@@ -1029,6 +1065,313 @@
             color="#ffe89e"></a-text>
         </a-entity>
 
+        <!-- Escena VR 01 de Eduardo Abaroa: diorama táctico y mapa de 1879 -->
+        <a-entity id="vr-abaroa-scene-1" visible="false">
+          <a-entity light="type: ambient; color: #a9bdc7; intensity: 0.38"></a-entity>
+          <a-entity light="type: point; color: #d7efff; intensity: 1.15; distance: 5; decay: 1.6"
+            position="0 2.8 -2.1"></a-entity>
+
+          <!-- Mesa rústica a escala de usuario -->
+          <a-box position="0 0.91 -2.15" width="2.05" height="0.11" depth="1.28" color="#53351f"
+            roughness="0.88"></a-box>
+          <a-box position="-0.88 0.43 -1.68" width="0.12" height="0.86" depth="0.12" color="#392719"></a-box>
+          <a-box position="0.88 0.43 -1.68" width="0.12" height="0.86" depth="0.12" color="#392719"></a-box>
+          <a-box position="-0.88 0.43 -2.62" width="0.12" height="0.86" depth="0.12" color="#392719"></a-box>
+          <a-box position="0.88 0.43 -2.62" width="0.12" height="0.86" depth="0.12" color="#392719"></a-box>
+
+          <!-- Relieve esquemático del litoral y del desierto sobre la mesa -->
+          <a-plane position="0 0.974 -2.15" rotation="-90 0 0" width="1.82" height="1.06"
+            material="color: #876443; roughness: 1"></a-plane>
+          <a-plane position="-0.54 0.99 -2.15" rotation="-90 0 0" width="0.62" height="1.02"
+            material="color: #405c69; roughness: 0.82"></a-plane>
+          <a-box position="0.13 0.994 -2.16" width="0.98" height="0.035" depth="0.82"
+            material="color: #a98252; roughness: 1"></a-box>
+          <a-sphere position="0.14 1.02 -2.28" radius="0.2" scale="1 0.08 0.56"
+            color="#b69261" roughness="1"></a-sphere>
+          <a-sphere position="0.48 1.018 -2.32" radius="0.15" scale="1 0.07 0.48"
+            color="#9d784f" roughness="1"></a-sphere>
+          <a-sphere position="0.22 1.014 -1.94" radius="0.13" scale="1 0.06 0.42"
+            color="#c2a171" roughness="1"></a-sphere>
+          <a-box position="0.37 1.014 -1.98" rotation="0 0 -7" width="0.55" height="0.025" depth="0.28"
+            color="#b69261"></a-box>
+
+          <a-text value="LITORAL DE ATACAMA · 1879" position="0 1.04 -2.66" rotation="-90 0 0"
+            align="center" width="1.55" color="#f0ddbd"></a-text>
+          <a-text value="ANTOFAGASTA" position="-0.56 1.04 -2.1" rotation="-90 0 0"
+            align="center" width="0.48" color="#eafaff"></a-text>
+          <a-text value="CALAMA" position="0.59 1.04 -2.14" rotation="-90 0 0"
+            align="center" width="0.4" color="#fff0c7"></a-text>
+
+          <a-entity id="vr-abaroa-route" visible="false">
+            <a-entity line="start: -0.5 1.035 -2.1; end: 0.53 1.035 -2.14; color: #4df5e0"></a-entity>
+            <a-sphere position="-0.18 1.055 -2.11" radius="0.035"
+              material="color: #64fff0; emissive: #22d3c5; emissiveIntensity: 1.3"
+              animation__pulse="property: scale; from: 0.8 0.8 0.8; to: 1.4 1.4 1.4; dir: alternate; dur: 500; loop: true"></a-sphere>
+            <a-sphere position="0.15 1.055 -2.13" radius="0.035"
+              material="color: #64fff0; emissive: #22d3c5; emissiveIntensity: 1.3"
+              animation__pulse="property: scale; from: 0.8 0.8 0.8; to: 1.4 1.4 1.4; dir: alternate; dur: 500; loop: true"></a-sphere>
+          </a-entity>
+
+          <a-entity id="vr-abaroa-landmark-antofagasta" class="vr-clickable"
+            data-vr-landmark="ANTOFAGASTA · 14 DE FEBRERO DE 1879&#10;La ocupación del puerto marca el inicio de la Guerra del Pacífico."
+            position="-0.56 1.04 -2.1">
+            <a-sphere radius="0.075" material="color: #5de8db; emissive: #1bb7aa; emissiveIntensity: 0.8"></a-sphere>
+          </a-entity>
+          <a-entity id="vr-abaroa-landmark-calama" class="vr-clickable"
+            data-vr-landmark="CALAMA · 23 DE MARZO DE 1879&#10;La defensa de Calama reunió a los defensores del territorio."
+            position="0.59 1.04 -2.14">
+            <a-sphere radius="0.075" material="color: #ffd166; emissive: #b7791f; emissiveIntensity: 0.75"></a-sphere>
+          </a-entity>
+          <a-entity id="vr-abaroa-landmark-topater" class="vr-clickable"
+            data-vr-landmark="TOPÁTER · CALAMA · 1879&#10;El puente de Topáter fue uno de los puntos de resistencia."
+            position="0.42 1.04 -2.34">
+            <a-sphere radius="0.06" material="color: #ffd166; emissive: #b7791f; emissiveIntensity: 0.75"></a-sphere>
+          </a-entity>
+
+          <a-entity id="vr-abaroa-map-info" position="0 1.52 -2.18" visible="false">
+            <a-plane width="1.7" height="0.42"
+              material="color: #08131b; opacity: 0.94; transparent: true; emissive: #12363b"></a-plane>
+            <a-text id="vr-abaroa-map-info-text" value="" align="center" position="0 0 0.02"
+              width="1.55" wrap-count="40" color="#d9fff9"></a-text>
+          </a-entity>
+          <a-entity id="vr-abaroa-timeline-prompt" position="0 1.55 -2.18">
+            <a-text value="ESCUCHA LA NARRACIÓN&#10;La ruta se iluminará a los 15 segundos"
+              align="center" width="2.2" color="#9cefe5"></a-text>
+          </a-entity>
+
+        </a-entity>
+        <a-entity id="vr-abaroa-figure" position="1.43 0.02 -2.15" visible="false"
+          animation__breathing="property: scale; from: 1 1 1; to: 1 1.008 1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine"
+          animation__sway="property: rotation; from: 0 180 -0.5; to: 0 180 0.5; dir: alternate; dur: 3100; loop: true; easing: easeInOutSine">
+          <a-entity id="vr-abaroa-model" gltf-model="" scale="1 1 1"></a-entity>
+          <a-text value="EDUARDO ABAROA" position="0 2.08 0" align="center" width="1.65"
+            color="#f1d49a"></a-text>
+        </a-entity>
+
+        <!-- Escena 02: Consejo y preparativos en el vado del río Loa -->
+        <a-entity id="vr-abaroa-scene-2" visible="false">
+          <a-entity light="type: ambient; color: #fff0d4; intensity: 0.72"></a-entity>
+          <a-entity light="type: directional; color: #fff0d4; intensity: 1.6" position="-3 8 4"></a-entity>
+          <a-plane rotation="-90 0 0" width="38" height="38" position="0 -0.05 -8"
+            material="color: #a88a5f; roughness: 1"></a-plane>
+          <a-plane rotation="-90 0 0" width="3.4" height="19" position="-3.3 0.01 -9"
+            material="color: #526c70; opacity: 0.88; transparent: true; roughness: 0.3"></a-plane>
+          <a-entity position="0 0 -12">
+            <a-box position="-7 1.4 0" width="2.8" height="2.8" depth="2.4" color="#a9784b"></a-box>
+            <a-box position="-4.2 1.2 -1.2" width="2.4" height="2.4" depth="2" color="#bc8a59"></a-box>
+            <a-box position="-7 2.95 0" width="3" height="0.15" depth="2.6" color="#624530"></a-box>
+            <a-box position="-4.2 2.45 -1.2" width="2.5" height="0.14" depth="2.1" color="#624530"></a-box>
+            <a-box position="-7 1.9 1.22" width="0.75" height="0.65" depth="0.08" color="#33281f"></a-box>
+            <a-box position="-4.2 1.6 -0.17" width="0.65" height="0.55" depth="0.08" color="#33281f"></a-box>
+          </a-entity>
+          <a-text value="CALAMA · RÍO LOA" position="-2.7 2.7 -7" align="center" width="3.2" color="#fff0d4"></a-text>
+
+          <!-- Figura esquemática de Ladislao Cabrera; no hay modelo 3D propio en los assets. -->
+          <a-entity id="vr-abaroa-cabrera" position="-1.7 0 -4.4" rotation="0 25 0">
+            <a-cylinder position="0 0.92 0" radius="0.23" height="0.92" color="#45433a"></a-cylinder>
+            <a-sphere position="0 1.55 0" radius="0.19" color="#9d704d"></a-sphere>
+            <a-cylinder position="0 1.73 -0.01" radius="0.2" height="0.12" color="#292a28"></a-cylinder>
+            <a-entity id="vr-abaroa-cabrera-arm" position="0.18 1.18 0" rotation="0 0 0">
+              <a-cylinder position="0.27 0 0" rotation="0 0 90" radius="0.07" height="0.58" color="#50483e"></a-cylinder>
+            </a-entity>
+            <a-text value="LADISLAO CABRERA" position="0 2.02 0" align="center" width="1.5" color="#fff0d4"></a-text>
+          </a-entity>
+
+          <a-entity id="vr-abaroa-defenders">
+            <a-entity position="-4 0 -4"
+              npc-person="mode: idle; phase: 0.2; facing: 0.3; shirt: #526047; pants: #39382e; skin: #a77c58">
+              <a-box position="0 0.22 -0.48" width="0.62" height="0.42" depth="0.45" color="#8c7351"
+                animation__load="property: position; from: 0 0.22 -0.48; to: 0 0.7 -0.22; dir: alternate; dur: 2600; delay: 150; loop: true; easing: easeInOutSine"></a-box>
+            </a-entity>
+            <a-entity position="-2.9 0 -5.2"
+              npc-person="mode: idle; phase: 1.1; facing: -0.2; shirt: #625b43; pants: #39382e; skin: #966f4d">
+              <a-box position="0 0.22 -0.48" width="0.62" height="0.42" depth="0.45" color="#927b59"
+                animation__load="property: position; from: 0 0.22 -0.48; to: 0 0.7 -0.22; dir: alternate; dur: 2700; delay: 550; loop: true; easing: easeInOutSine"></a-box>
+            </a-entity>
+            <a-entity position="-4.8 0 -6"
+              npc-person="mode: idle; phase: 2.4; facing: 0.15; shirt: #555b47; pants: #39382e; skin: #a77c58">
+              <a-box position="0 0.22 -0.48" width="0.62" height="0.42" depth="0.45" color="#806b4e"
+                animation__load="property: position; from: 0 0.22 -0.48; to: 0 0.7 -0.22; dir: alternate; dur: 2500; delay: 900; loop: true; easing: easeInOutSine"></a-box>
+            </a-entity>
+            <a-entity position="-1.7 0 -6.1"
+              npc-person="mode: idle; phase: 3.2; facing: -0.15; shirt: #565e49; pants: #39382e; skin: #9c744f">
+              <a-box position="0 0.22 -0.48" width="0.62" height="0.42" depth="0.45" color="#8c7654"
+                animation__load="property: position; from: 0 0.22 -0.48; to: 0 0.7 -0.22; dir: alternate; dur: 2800; delay: 350; loop: true; easing: easeInOutSine"></a-box>
+            </a-entity>
+            <a-entity position="-5.5 0 -8"
+              npc-person="mode: idle; phase: 4.1; facing: 0.2; shirt: #5b5945; pants: #39382e; skin: #a77c58">
+              <a-box position="0 0.22 -0.48" width="0.62" height="0.42" depth="0.45" color="#907a56"
+                animation__load="property: position; from: 0 0.22 -0.48; to: 0 0.7 -0.22; dir: alternate; dur: 2550; delay: 700; loop: true; easing: easeInOutSine"></a-box>
+            </a-entity>
+          </a-entity>
+          <a-entity position="1.7 0.05 -8.3" rotation="0 -12 0">
+            <a-box position="0 0.08 0" width="2.6" height="0.12" depth="0.2" color="#59432e"></a-box>
+            <a-box position="0 0.24 0.28" width="2.6" height="0.12" depth="0.2" color="#6a5035"></a-box>
+            <a-box position="0 0.4 0.56" width="2.6" height="0.12" depth="0.2" color="#59432e"></a-box>
+          </a-entity>
+          <a-entity id="vr-abaroa-topater-portal" position="0 0.035 -10.5" visible="false">
+            <a-ring rotation="-90 0 0" radius-inner="0.72" radius-outer="1.02"
+              material="color: #42f2d5; emissive: #25c9bd; emissiveIntensity: 0.9; opacity: 0.9; transparent: true"></a-ring>
+            <a-cone position="0 0.5 0" rotation="90 0 0" radius-bottom="0.34" radius-top="0" height="0.72"
+              material="color: #42f2d5; emissive: #25c9bd; emissiveIntensity: 0.8"></a-cone>
+            <a-text value="HACIA EL PUENTE DE TOPÁTER" position="0 1.25 0" align="center" width="3.2" color="#b9fff4"></a-text>
+          </a-entity>
+          <a-entity id="vr-abaroa-scene-2-prompt" position="0 2.55 -4.5">
+            <a-text value="EL CONSEJO DE LOS DEFENSORES" align="center" width="3.4" color="#fff0d4"></a-text>
+          </a-entity>
+        </a-entity>
+
+        <!-- Escena 03: trinchera, puente, humo visual y avance enemigo -->
+        <a-entity id="vr-abaroa-scene-3" visible="false">
+          <a-entity light="type: ambient; color: #d3b99a; intensity: 0.52"></a-entity>
+          <a-entity light="type: directional; color: #ffd9a1; intensity: 1.3" position="-2 5 3"></a-entity>
+          <a-plane rotation="-90 0 0" width="50" height="50" position="0 -0.08 -14"
+            material="color: #80674e; roughness: 1"></a-plane>
+          <a-plane rotation="-90 0 0" width="6" height="16" position="0 -0.01 -11"
+            material="color: #495e60; opacity: 0.9; transparent: true; roughness: 0.35"></a-plane>
+          <a-entity id="vr-abaroa-trench">
+            <a-box position="-1.6 0.32 -1" width="1.8" height="0.58" depth="0.62" color="#927854"></a-box>
+            <a-box position="0 0.32 -1" width="1.8" height="0.58" depth="0.62" color="#a08761"></a-box>
+            <a-box position="1.6 0.32 -1" width="1.8" height="0.58" depth="0.62" color="#927854"></a-box>
+          </a-entity>
+          <a-entity id="vr-abaroa-bridge" position="0 0.08 -8">
+            <a-box position="0 0.12 0" width="3.4" height="0.2" depth="8" color="#5d422c"></a-box>
+            <a-box position="-1.6 0.82 0" width="0.12" height="0.12" depth="8" color="#4c3827"></a-box>
+            <a-box position="1.6 0.82 0" width="0.12" height="0.12" depth="8" color="#4c3827"></a-box>
+            <a-cylinder position="-1.6 0.44 -3.7" radius="0.07" height="0.76" color="#473323"></a-cylinder>
+            <a-cylinder position="1.6 0.44 -3.7" radius="0.07" height="0.76" color="#473323"></a-cylinder>
+            <a-cylinder position="-1.6 0.44 3.7" radius="0.07" height="0.76" color="#473323"></a-cylinder>
+            <a-cylinder position="1.6 0.44 3.7" radius="0.07" height="0.76" color="#473323"></a-cylinder>
+          </a-entity>
+          <a-entity id="vr-abaroa-enemy-model" position="2.2 0 -18" rotation="0 180 0" scale="1.8 1.8 1.8"></a-entity>
+          <a-entity id="vr-abaroa-enemy-line" position="0 0 -16">
+            <a-entity position="-4 0 0"
+              npc-person="mode: idle; phase: 0.5; facing: 0; shirt: #42453e; pants: #343630; skin: #987555">
+            </a-entity>
+            <a-entity position="0 0 -1.5"
+              npc-person="mode: idle; phase: 1.6; facing: 0; shirt: #4b4c42; pants: #343630; skin: #a17c5c">
+            </a-entity>
+            <a-entity position="4 0 -3"
+              npc-person="mode: idle; phase: 2.7; facing: 0; shirt: #3e433d; pants: #343630; skin: #987555">
+            </a-entity>
+          </a-entity>
+          <a-entity id="vr-abaroa-allied-retreat" position="-3 0 -3">
+            <a-entity npc-person="mode: idle; phase: 0.3; shirt: #596149; pants: #343630; skin: #a77c58"></a-entity>
+            <a-entity position="-1 0 -1"
+              npc-person="mode: idle; phase: 2.1; shirt: #596149; pants: #343630; skin: #a77c58"></a-entity>
+          </a-entity>
+          <a-entity id="vr-abaroa-gunsmoke">
+            <a-sphere position="-1.5 1.5 -4" radius="0.8" material="color: #8d8778; opacity: 0.2; transparent: true"></a-sphere>
+            <a-sphere position="1.6 1.2 -6" radius="1" material="color: #77766f; opacity: 0.18; transparent: true"></a-sphere>
+            <a-sphere position="0 1.8 -10" radius="1.3" material="color: #8d8778; opacity: 0.15; transparent: true"></a-sphere>
+          </a-entity>
+          <a-entity id="vr-abaroa-muzzle-flash" position="0.35 1.1 -3.2" visible="true">
+            <a-sphere radius="0.17" material="color: #ffcf65; emissive: #ff6b22; emissiveIntensity: 2; opacity: 0.85; transparent: true"
+              scale="0.001 0.001 0.001"
+              animation__flash="property: scale; from: 0.001 0.001 0.001; to: 1.5 1.5 1.5; dir: alternate; dur: 180; startEvents: abaroa-shot"></a-sphere>
+          </a-entity>
+          <a-entity id="vr-abaroa-scene-3-prompt" position="0 2.6 -4">
+            <a-text value="EL COMBATE DEL TOPÁTER" align="center" width="3.4" color="#ffe0b0"></a-text>
+          </a-entity>
+        </a-entity>
+
+        <!-- Escena 04: última resistencia y fundido dramático -->
+        <a-entity id="vr-abaroa-scene-4" visible="false">
+          <a-entity light="type: ambient; color: #e6d5bd; intensity: 0.48"></a-entity>
+          <a-entity light="type: directional; color: #f3d9b4; intensity: 1.1" position="-2 6 2"></a-entity>
+          <a-plane rotation="-90 0 0" width="32" height="32" position="0 -0.08 -6"
+            material="color: #8e765a; roughness: 1"></a-plane>
+          <a-entity position="0 0.08 -4">
+            <a-box position="0 0.12 0" width="3.5" height="0.2" depth="8" color="#5d422c"></a-box>
+            <a-box position="-1.65 0.82 0" width="0.12" height="0.12" depth="8" color="#4c3827"></a-box>
+            <a-box position="1.65 0.82 0" width="0.12" height="0.12" depth="8" color="#4c3827"></a-box>
+            <a-box position="-1.65 0.4 -3.4" width="0.12" height="0.8" depth="0.12" color="#473323"></a-box>
+            <a-box position="1.65 0.4 -3.4" width="0.12" height="0.8" depth="0.12" color="#473323"></a-box>
+          </a-entity>
+          <a-entity id="vr-abaroa-enemies-scene-4" position="0 0 -13" visible="false">
+            <a-entity position="-1.1 0 0"
+              npc-person="mode: idle; phase: 0.4; facing: 0.1; shirt: #464940; pants: #343630; skin: #987555">
+              <a-cylinder position="0.45 1.05 -0.25" rotation="0 0 90" radius="0.035" height="1" color="#362f26"></a-cylinder>
+            </a-entity>
+            <a-entity position="1.1 0 -0.8"
+              npc-person="mode: idle; phase: 1.8; facing: -0.1; shirt: #4c4a40; pants: #343630; skin: #a17c5c">
+              <a-cylinder position="-0.38 1.05 -0.25" rotation="0 0 90" radius="0.035" height="1" color="#362f26"></a-cylinder>
+            </a-entity>
+          </a-entity>
+          <a-entity id="vr-abaroa-volley-flash" position="0 1.2 -5" visible="false">
+            <a-sphere radius="0.45" material="color: #fff0bd; emissive: #ffe08a; emissiveIntensity: 2; opacity: 0.82; transparent: true"
+              scale="0.001 0.001 0.001"
+              animation__fade="property: scale; from: 0.001 0.001 0.001; to: 5 5 5; dur: 800; startEvents: volley; easing: easeOutQuad"></a-sphere>
+          </a-entity>
+          <a-entity id="vr-abaroa-scene-4-prompt" position="0 2.6 -3.5">
+            <a-text value="LA ÚLTIMA RESISTENCIA" align="center" width="3.4" color="#fff0d4"></a-text>
+          </a-entity>
+        </a-entity>
+
+        <!-- Escena 05: memorial, cronología y objetos seleccionables por mirada o toque -->
+        <a-entity id="vr-abaroa-scene-5" visible="false">
+          <a-entity light="type: ambient; color: #ffe5b5; intensity: 0.85"></a-entity>
+          <a-entity light="type: directional; color: #ffbd70; intensity: 1.5" position="-3 6 3"></a-entity>
+          <a-plane rotation="-90 0 0" width="40" height="40" position="0 -0.08 -5"
+            material="color: #9c8060; roughness: 0.9"></a-plane>
+          <a-cylinder position="0 0.18 -2.8" radius="1.15" height="0.36" color="#6b5540"></a-cylinder>
+          <a-ring position="0 0.38 -2.8" rotation="-90 0 0" radius-inner="1.2" radius-outer="1.34"
+            material="color: #e7bd72; emissive: #9c6c35; emissiveIntensity: 0.5"></a-ring>
+          <a-entity id="vr-abaroa-memorial-timeline" position="0 2 -4.5">
+            <a-entity class="vr-clickable" data-vr-landmark="1879 · DEFENSA DE CALAMA&#10;La resistencia de los defensores en el puente de Topáter forma parte de la memoria histórica boliviana."
+              position="-2.1 0.2 0">
+              <a-sphere radius="0.14" material="color: #f0c675; emissive: #9d6628; emissiveIntensity: 0.7"></a-sphere>
+              <a-text value="1879" position="0 0.32 0" align="center" width="0.8" color="#fff0d4"></a-text>
+            </a-entity>
+            <a-entity class="vr-clickable" data-vr-landmark="1952 · REPATRIACIÓN DE RESTOS&#10;La repatriación de los restos de Eduardo Abaroa se recuerda como un hito de homenaje nacional."
+              position="0 0.72 0">
+              <a-sphere radius="0.14" material="color: #f0c675; emissive: #9d6628; emissiveIntensity: 0.7"></a-sphere>
+              <a-text value="1952" position="0 0.32 0" align="center" width="0.8" color="#fff0d4"></a-text>
+            </a-entity>
+            <a-entity class="vr-clickable" data-vr-landmark="ACTUALIDAD · MEMORIA VIVA&#10;El legado de Abaroa permanece en monumentos, plazas y espacios de memoria en Bolivia."
+              position="2.1 0.2 0">
+              <a-sphere radius="0.14" material="color: #f0c675; emissive: #9d6628; emissiveIntensity: 0.7"></a-sphere>
+              <a-text value="HOY" position="0 0.32 0" align="center" width="0.8" color="#fff0d4"></a-text>
+            </a-entity>
+            <a-entity line="start: -2.1 0.2 0; end: 0 0.72 0; color: #e8bc73"></a-entity>
+            <a-entity line="start: 0 0.72 0; end: 2.1 0.2 0; color: #e8bc73"></a-entity>
+          </a-entity>
+          <a-entity id="vr-abaroa-memorial-props">
+            <a-entity class="vr-clickable" data-vr-landmark="WINCHESTER 1866&#10;Réplica representativa del fusil de repetición asociado al episodio. Este visor no incluye un modelo 3D del arma."
+              position="-2.2 0 -2.7">
+              <a-cylinder position="0 0.62 0" radius="0.42" height="1.24" color="#59432f"></a-cylinder>
+              <a-box position="0 1.31 0" width="0.72" height="0.06" depth="0.72" color="#a9783f"></a-box>
+              <a-box position="0 1.44 0" width="0.4" height="0.18" depth="0.4" color="#4c3827"></a-box>
+              <a-text value="WINCHESTER" position="0 1.72 0" align="center" width="1.4" color="#fff0d4"></a-text>
+            </a-entity>
+            <a-entity class="vr-clickable" data-vr-landmark="CARTA HISTÓRICA · RÉPLICA VISUAL&#10;Objeto representativo de la correspondencia de época. No se proporciona una carta original escaneada."
+              position="0 0 -2.7">
+              <a-cylinder position="0 0.62 0" radius="0.42" height="1.24" color="#59432f"></a-cylinder>
+              <a-box position="0 1.38 0" width="0.54" height="0.06" depth="0.42" color="#e7d2a9"></a-box>
+              <a-text value="CARTA" position="0 1.72 0" align="center" width="1" color="#fff0d4"></a-text>
+            </a-entity>
+            <a-entity class="vr-clickable" data-vr-landmark="MAPA DEL LITORAL&#10;Representación esquemática del territorio histórico; no es una reproducción del mapa original."
+              position="2.2 0 -2.7">
+              <a-cylinder position="0 0.62 0" radius="0.42" height="1.24" color="#59432f"></a-cylinder>
+              <a-plane position="0 1.38 0" rotation="-90 0 0" width="0.6" height="0.48" color="#d5bd8d"></a-plane>
+              <a-text value="MAPA" position="0 1.72 0" align="center" width="1" color="#fff0d4"></a-text>
+            </a-entity>
+          </a-entity>
+          <a-entity class="vr-clickable" id="vr-abaroa-restart" position="0 1.25 -1.6" visible="false">
+            <a-plane width="2" height="0.42" material="color: #29413b; emissive: #174b40; emissiveIntensity: 0.3"></a-plane>
+            <a-text value="REINICIAR EXPERIENCIA" align="center" position="0 0 0.02" width="2.8" color="#f4e3bf"></a-text>
+          </a-entity>
+          <a-entity id="vr-abaroa-scene-5-prompt" position="0 2.75 -3.5">
+            <a-text value="MEMORIAL DE EDUARDO ABAROA · SELECCIONA UN HITO" align="center" width="4.3" color="#fff0d4"></a-text>
+          </a-entity>
+        </a-entity>
+
+        <a-entity id="vr-abaroa-scene-info" position="0 2.15 -2.7" visible="false">
+          <a-plane width="2.6" height="0.6"
+            material="color: #101419; opacity: 0.94; transparent: true; emissive: #34291c"></a-plane>
+          <a-text id="vr-abaroa-scene-info-text" value="" align="center" position="0 0 0.02"
+            width="2.35" wrap-count="50" color="#fff0d4"></a-text>
+        </a-entity>
         <!-- ========================================================
              ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA
              ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA (Bien espaciados)
@@ -1353,6 +1696,10 @@
                                       animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
                                       animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
                                     </a-entity>
+                                    <a-circle id="vr-abaroa-transition" position="0 0 -0.45" radius="1"
+                                      visible="false"
+                                      material="shader: flat; color: #000000; transparent: true; side: double"
+                                      scale="0.001 0.001 0.001"></a-circle>
                                   </a-camera>
                                 </a-entity>
       </a-scene>
@@ -1390,6 +1737,14 @@
         </div>
       </div>
 
+      <div class="vr-story-picker">
+        <label for="vr-story-select">RECORRIDO</label>
+        <select id="vr-story-select" aria-label="Seleccionar recorrido VR">
+          <option value="franz">Franz Tamayo · UNIFRANZ</option>
+          <option value="abaroa">Eduardo Abaroa · Escenas 1–5</option>
+        </select>
+      </div>
+
       <!-- Pastillas rápidas (01 - 05) -->
       <div class="vr-scene-pills" role="tablist" aria-label="Seleccionar escena">
         <button class="scene-pill is-active" type="button" data-pill-index="0" title="Escena 1">01</button>
@@ -1398,6 +1753,8 @@
         <button class="scene-pill" type="button" data-pill-index="3" title="Escena 4">04</button>
         <button class="scene-pill" type="button" data-pill-index="4" title="Escena 5">05</button>
       </div>
+
+      <p class="vr-cinematic-subtitle" id="vr-cinematic-subtitle" role="status" aria-live="off" hidden></p>
 
       <!-- Controles inferiores -->
       <div class="ar-bottom-controls vr-bottom-controls">

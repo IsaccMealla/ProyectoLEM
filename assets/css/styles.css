@@ -1978,6 +1978,8 @@ canvas.a-canvas {
 
 .vr-hud button,
 .vr-hud .vr-scene-pills,
+.vr-hud .vr-story-picker,
+.vr-hud select,
 .vr-details {
   pointer-events: auto;
 }
@@ -2070,6 +2072,28 @@ canvas.a-canvas {
   color: rgba(255, 255, 255, .6);
 }
 
+.vr-story-picker {
+  display: grid;
+  gap: 5px;
+  align-self: flex-start;
+  margin-top: 10px;
+  color: var(--gold-light);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.vr-story-picker select {
+  min-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid rgba(241, 196, 15, .55);
+  border-radius: 6px;
+  background: rgba(18, 20, 28, .92);
+  color: #fff;
+  font: inherit;
+  letter-spacing: normal;
+}
+
 /* Pastillas de selección de escena en VR */
 .vr-scene-pills {
   display: flex;
@@ -2090,6 +2114,10 @@ canvas.a-canvas {
   display: grid;
   place-items: center;
   transition: all .2s;
+}
+
+.scene-pill[hidden] {
+  display: none;
 }
 
 .scene-pill:hover,
@@ -2911,6 +2939,66 @@ canvas.a-canvas {
 .geo-select:focus {
   border-color: #ffd166;
   box-shadow: 0 0 10px rgba(255, 209, 102, 0.3);
+}
+
+.geo-scene-editor {
+  margin: 14px 0;
+  padding: 16px 18px;
+  border: 1px solid rgba(56, 189, 248, 0.36);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(14, 30, 42, 0.96), rgba(25, 27, 34, 0.96));
+  color: #e7edf2;
+}
+
+.geo-scene-editor-copy {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.geo-scene-editor-copy strong {
+  color: #8be6ef;
+  font-size: 14px;
+}
+
+.geo-scene-editor-copy span,
+.geo-scene-editor-copy small {
+  color: #c4ccd4;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.geo-scene-editor-copy small {
+  color: #f0c675;
+}
+
+.geo-scene-editor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.geo-scene-editor-controls label {
+  color: #f0c675;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.geo-scene-editor-status {
+  min-height: 1.3em;
+  margin: 10px 0 0;
+  color: #a7f3d0;
+  font-size: 12px;
+}
+
+.is-editing-scene-location {
+  cursor: crosshair;
+}
+
+.scene-map-pin.is-active {
+  filter: drop-shadow(0 0 8px #fff3a3);
+  transform: scale(1.2);
 }
 
 .geo-toolbar-actions {
@@ -3750,6 +3838,27 @@ canvas.a-canvas {
   animation: dialog-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.pokear-story-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #d1cbc1;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pokear-story-select {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(229, 169, 59, 0.45);
+  border-radius: 9px;
+  background: #17191f;
+  color: #fff;
+  font: inherit;
+}
+
 .pokear-card-header {
   display: flex;
   align-items: center;
@@ -3807,7 +3916,7 @@ canvas.a-canvas {
   transition: width 0.15s linear;
 }
 
-/* Solo los 4 botones esenciales */
+/* Controles de navegación y narración */
 .pokear-card-controls {
   display: flex;
   align-items: center;
@@ -4205,4 +4314,281 @@ canvas.a-canvas {
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* VR mobile HUD: reduce overlays and keep the scene visible. */
+.vr-cinematic-subtitle {
+  position: absolute;
+  z-index: 20;
+  right: 50%;
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  width: min(86vw, 680px);
+  min-height: 2.8em;
+  margin: 0;
+  padding: 8px 14px;
+  transform: translate(50%, 8px);
+  border-left: 2px solid rgba(255, 209, 102, 0.75);
+  background: linear-gradient(90deg, rgba(5, 7, 11, 0.08), rgba(5, 7, 11, 0.78) 12%, rgba(5, 7, 11, 0.78) 88%, rgba(5, 7, 11, 0.08));
+  color: #fff;
+  font-size: clamp(16px, 2.2vw, 23px);
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 2px 8px #000, 0 1px 2px #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 380ms ease, transform 380ms ease;
+}
+
+.vr-cinematic-subtitle.is-visible {
+  transform: translate(50%, 0);
+  opacity: 1;
+}
+
+.vr-cinematic-subtitle[hidden] {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .vr-view {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100svh;
+  }
+
+  .vr-hud {
+    padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
+  }
+
+  .vr-topbar {
+    gap: 6px;
+  }
+
+  .vr-back-home-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .vr-back-home-btn .back-arrow {
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .vr-top-actions {
+    gap: 6px;
+  }
+
+  .vr-voice-btn {
+    display: none;
+  }
+
+  #vr-btn-enter-cardboard {
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  #vr-btn-enter-cardboard span {
+    font-size: 17px;
+  }
+
+  .vr-title-card {
+    position: absolute;
+    top: calc(54px + env(safe-area-inset-top, 0px));
+    left: 10px;
+    max-width: 69vw;
+    margin: 0;
+    padding: 8px 10px;
+    gap: 7px;
+  }
+
+  .vr-title-card .ar-live-dot {
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    margin-top: 5px;
+  }
+
+  .vr-title-card p {
+    margin-bottom: 2px;
+    font-size: 7px;
+    letter-spacing: 0.8px;
+  }
+
+  .vr-title-card h2 {
+    font-size: clamp(12px, 3.5vw, 15px);
+    line-height: 1.2;
+  }
+
+  .vr-phase-label {
+    margin-top: 3px;
+    font-size: 6px;
+    letter-spacing: 0.8px;
+  }
+
+  .vr-story-picker {
+    position: absolute;
+    top: calc(56px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    max-width: 27vw;
+    margin: 0;
+    gap: 3px;
+    font-size: 6px;
+    letter-spacing: 0.6px;
+  }
+
+  .vr-story-picker select {
+    width: 27vw;
+    min-width: 0;
+    padding: 7px 4px;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+  }
+
+  .vr-scene-pills {
+    position: absolute;
+    top: calc(119px + env(safe-area-inset-top, 0px));
+    left: 10px;
+    gap: 5px;
+    margin: 0;
+  }
+
+  .scene-pill {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 9px;
+  }
+
+  .vr-cinematic-subtitle {
+    bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    width: min(94vw, 600px);
+    min-height: 2.7em;
+    padding: 6px 10px;
+    font-size: clamp(15px, 4.4vw, 19px);
+    line-height: 1.35;
+  }
+
+  .vr-bottom-controls {
+    position: absolute;
+    right: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 42px 42px;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .vr-bottom-controls #vr-btn-voice {
+    display: none;
+  }
+
+  .vr-bottom-controls .ar-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 14px;
+    font-size: 10px;
+  }
+
+  .vr-bottom-controls #vr-btn-prev span:not(.control-icon),
+  .vr-bottom-controls #vr-btn-next span:not(.control-icon),
+  .vr-bottom-controls #vr-details-toggle span:not(.control-icon) {
+    display: none;
+  }
+
+  .vr-bottom-controls #vr-audio-label {
+    font-size: 0;
+  }
+
+  .vr-bottom-controls #vr-audio-label::after {
+    content: "Narrar";
+    font-size: 10px;
+  }
+
+  .vr-bottom-controls #vr-audio-toggle[aria-pressed="true"] #vr-audio-label::after {
+    content: "Pausar";
+  }
+
+  .vr-bottom-controls .control-icon {
+    font-size: 13px;
+  }
+
+  .vr-hint {
+    display: none;
+  }
+
+  .vr-details {
+    right: 10px;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    max-height: min(55dvh, 420px);
+    overflow-y: auto;
+    padding: 18px 14px;
+  }
+}
+
+@media (max-width: 700px) and (orientation: landscape) and (max-height: 500px) {
+  .vr-title-card {
+    top: calc(48px + env(safe-area-inset-top, 0px));
+    max-width: 45vw;
+  }
+
+  .vr-story-picker {
+    top: calc(48px + env(safe-area-inset-top, 0px));
+    right: 58px;
+  }
+
+  .vr-story-picker select {
+    width: 25vw;
+  }
+
+  .vr-scene-pills {
+    top: calc(120px + env(safe-area-inset-top, 0px));
+  }
+
+  .vr-cinematic-subtitle {
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    width: min(72vw, 600px);
+    min-height: 1.6em;
+    font-size: 15px;
+  }
+
+  .vr-bottom-controls {
+    right: 8px;
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    grid-template-columns: 38px minmax(0, 1fr) 38px 38px;
+    gap: 5px;
+  }
+
+  .vr-bottom-controls .ar-control {
+    min-height: 36px;
+    padding: 4px;
+  }
+
+  .vr-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vr-cinematic-subtitle {
+    transition: none;
+  }
 }

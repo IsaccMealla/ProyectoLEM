@@ -618,7 +618,7 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
 
   function speechEnvelope(T) {
     const gate = smooth(-0.2, 0.4, Math.sin(T * 1.9) + 0.6 * Math.sin(T * 0.77 + 2.0));
-    const syllables = 0.5 + 0.5 * Math.sin(T * 11.2) * Math.sin(T * 4.1 + 0.5);
+    const syllables = 0.5 + 0.5 * Math.sin(T * 10.5) * Math.sin(T * 3.7 + 0.5);
     return gate * syllables;
   }
 
@@ -999,6 +999,7 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
       mesh.traverse((node) => {
         if (!node.isMesh || !node.geometry) return;
         node.geometry.computeBoundingBox();
+        if (node.geometry.boundingBox) maxY = Math.max(maxY, node.geometry.boundingBox.max.y);
         if (node.geometry.boundingBox) {
           maxY = Math.max(maxY, node.geometry.boundingBox.max.y);
           maxZ = Math.max(maxZ, node.geometry.boundingBox.max.z);
@@ -1122,16 +1123,23 @@ tick(time, dtMs) {
 
   // Animación de Caminata procedural (estilo Pokémon GO: pasos, cadencia y balanceo)
   if (this.data.walking) {
-    const walkFreq = 4.8;
+    const walkFreq = 4.6;
     const step = Math.sin(T * walkFreq);
     const stepCos = Math.cos(T * walkFreq);
 
     // Balanceo alternado de brazos
+    o.armR.y += 0.48 * step;
     o.armR.y += 0.50 * step;
     o.armR.x += 0.16 * Math.max(0, stepCos);
+    o.armL.y -= 0.48 * step;
     o.armL.y -= 0.50 * step;
     o.armL.x += 0.16 * Math.max(0, -stepCos);
 
+    // Movimiento de piernas con zancada real y flexión de rodillas
+    o.legR.x += 0.44 * step;
+    o.legR.y += Math.max(0, -step) * 0.42;
+    o.legL.x -= 0.44 * step;
+    o.legL.y += Math.max(0, step) * 0.42;
     // Movimiento de piernas con zancada amplia y flexión de rodillas
     o.legR.x += 0.52 * step;
     o.legR.y += Math.max(0, -step) * 0.50;
@@ -1139,14 +1147,18 @@ tick(time, dtMs) {
     o.legL.y += Math.max(0, step) * 0.50;
 
     // Giro y balanceo de torso para equilibrio
+    o.body.y += 0.08 * step;
+    o.body.z += 0.045 * stepCos;
     o.body.y += 0.09 * step;
     o.body.z += 0.048 * stepCos;
     o.body.x += 0.07; // leve inclinación al avanzar
 
     // Rebote vertical al pisar
+    o.posY += 0.024 * Math.abs(step);
     o.posY += 0.026 * Math.abs(step);
   } else {
     // En reposo: microbalanceo y cambio sutil de peso entre piernas
+    // Microbalanceo adicional entre piernas
     o.legR.x += 0.02 * Math.sin(T * 0.7);
     o.legL.x -= 0.02 * Math.sin(T * 0.7);
   }
@@ -2041,6 +2053,14 @@ AFRAME.registerComponent('npc-person', {
         } else if (this.gesture.type === 'point') {
           armLx = -1.45 * e;
           headY = 0.25 * e;
+        } else if (this.gesture.type === 'lift') {
+          armLx = -1.05 * e;
+          armRx = -1.05 * e;
+          headX = 0.12 * e;
+        } else if (this.gesture.type === 'carry') {
+          armLx = -0.68 * e;
+          armRx = -0.68 * e;
+          headX = 0.06 * e;
         } else if (this.gesture.type === 'nod') {
           headX = Math.abs(Math.sin(p * Math.PI * 4)) * 0.22 * e;
         } else if (this.gesture.type === 'read') {
@@ -2065,6 +2085,11 @@ AFRAME.registerComponent('npc-person', {
     const type = opts[Math.floor(Math.random() * opts.length)];
     this.gesture = { type, start: this.t, dur: type === 'read' ? 3.5 : 2.2 };
     this.nextGesture = this.t + 3 + Math.random() * 4;
+  },
+
+  playGesture(type, duration = 2.2) {
+    this.gesture = { type, start: this.t, dur: duration };
+    this.nextGesture = this.t + duration;
   },
 
   tick(time, dtMs) {

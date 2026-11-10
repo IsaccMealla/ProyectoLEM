@@ -10,6 +10,7 @@
       period: '1879 — 1956',
       visual: 'Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el tiempo para descubrir una historia que une pensamiento, educación y futuro.',
       audio: 'assets/audio/escena1.mp3',
+      video: 'assets/videos/franz-tamayo/escena-1.mp4',
       narration: '¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano. Quizás se pregunten por qué mi nombre forma parte de una universidad. Hoy quiero invitarlos a viajar en el tiempo para descubrir una historia que une el pensamiento, la educación y el futuro de Bolivia. ¿Me acompañan?'
     },
     {
@@ -17,6 +18,7 @@
       period: '1910',
       visual: 'Aparecen libros antiguos, manuscritos y una representación de La Paz de principios del siglo XX.',
       audio: 'assets/audio/escena2.mp3',
+      video: 'assets/videos/franz-tamayo/escena-2.mp4',
       narration: 'A lo largo de mi vida, reflexioné sobre la importancia de la educación para el desarrollo de nuestro país. En 1910 publiqué Creación de la pedagogía nacional, una obra en la que planteé reflexiones sobre cómo debía pensarse la educación boliviana. Décadas después, mi nombre sería elegido para representar una institución comprometida con la formación de nuevas generaciones.'
     },
     {
@@ -24,6 +26,7 @@
       period: '1990 — 1993',
       visual: 'Las páginas del libro se transforman en una línea de tiempo. Aparece el año 1990 y luego imágenes históricas de La Paz y los primeros espacios universitarios.',
       audio: 'assets/audio/escena3.mp3',
+      video: 'assets/videos/franz-tamayo/escena-3.mp4',
       narration: 'Viajemos ahora al año 1990. El 4 de noviembre de ese año se fundó la Universidad Privada Franz Tamayo, conocida como UNIFRANZ, gracias a la iniciativa de Abel Ágreda y Celsa Nogales de Ágreda. En 1993, después de obtener las autorizaciones legales correspondientes, la universidad comenzó a hacer realidad su proyecto educativo en la ciudad de La Paz. Sus primeros espacios eran modestos, pero detrás de ellos existía una gran visión: abrir nuevas oportunidades de formación profesional.'
     },
     {
@@ -31,6 +34,7 @@
       period: 'EXPANSIÓN NACIONAL',
       visual: 'Las primeras aulas se transforman en espacios universitarios modernos. Aparecen estudiantes, libros, computadoras y un mapa de Bolivia donde se iluminan La Paz, El Alto, Cochabamba y Santa Cruz.',
       audio: 'assets/audio/escena4.mp3',
+      video: 'assets/videos/franz-tamayo/escena-4.mp4',
       narration: 'Con el paso de los años, UNIFRANZ fue creciendo y extendiendo su presencia a otras ciudades de Bolivia. La universidad evolucionó junto con las nuevas necesidades de la sociedad, incorporando propuestas de innovación, investigación y aprendizaje práctico. Así, lo que comenzó como un proyecto educativo en La Paz se convirtió en una institución con presencia en distintas regiones del país.'
     },
     {
@@ -38,10 +42,64 @@
       period: 'EL FUTURO ES HOY',
       visual: 'Franz Tamayo aparece en un campus actual rodeado de estudiantes de diferentes carreras. Mira directamente al espectador y el logotipo de UNIFRANZ aparece al fondo.',
       audio: 'assets/audio/escena5.mp3',
+      video: 'assets/videos/franz-tamayo/escena-5.mp4',
       narration: 'Y hoy, jóvenes universitarios, ustedes son parte de esta historia. Cada idea que desarrollan, cada conocimiento que adquieren y cada desafío que superan contribuye a construir el futuro de nuestra sociedad. Mi nombre representa un legado intelectual, pero son ustedes quienes pueden darle un nuevo significado a través de sus acciones. La historia de UNIFRANZ continúa escribiéndose con cada generación de estudiantes. Bienvenidos a UNIFRANZ, Universidad Privada Franz Tamayo. ¡El futuro está en sus manos!'
     }
   ];
   window.HistoriaVivaScenes = scenes;
+  window.HistoriaVivaStories = {
+    franz: {
+      title: 'Franz Tamayo',
+      model: 'assets/models/franz_tamayo.glb',
+      scenes
+    },
+    abaroa: {
+      title: 'Eduardo Abaroa',
+      model: 'assets/models/EduardoAbaroa.glb',
+      scenes: [
+        {
+          title: 'Introducción y mesa táctica holográfica',
+          period: '1879',
+          visual: 'Presentación del litoral y la ruta histórica hacia Calama.',
+          narration: 'Conoce el contexto de la defensa de Calama y la ruta hacia el puente de Topáter.',
+          audio: 'assets/audio/2.1Escena.mp3',
+          video: 'assets/videos/eduardo-abaroa/Escena2.1.mp4'
+        },
+        {
+          title: 'El consejo y preparativos en el vado',
+          period: 'Marzo de 1879',
+          visual: 'El consejo de los defensores y los preparativos junto al río Loa.',
+          narration: 'Los defensores se reúnen y organizan la defensa del paso del río.',
+          audio: 'assets/audio/2.2escena.mp3',
+          video: 'assets/videos/eduardo-abaroa/Escena2.2.mp4'
+        },
+        {
+          title: 'El combate del Topáter',
+          period: '23 de marzo de 1879',
+          visual: 'La defensa del puente de Topáter durante el combate de Calama.',
+          narration: 'La escena recuerda el combate y la resistencia de Eduardo Abaroa en Topáter.',
+          audio: 'assets/audio/2.3escena.mp3',
+          video: 'assets/videos/eduardo-abaroa/Escena2.3.mp4'
+        },
+        {
+          title: 'La última resistencia en el puente',
+          period: '23 de marzo de 1879',
+          visual: 'El episodio final de la resistencia de Abaroa en el puente.',
+          narration: 'Una evocación del episodio final y la respuesta histórica atribuida a Abaroa.',
+          audio: 'assets/audio/2.4escena.mp3',
+          video: 'assets/videos/eduardo-abaroa/Escena2.4.mp4'
+        },
+        {
+          title: 'Galería histórica y memorial',
+          period: '1879 · 1952 · Actualidad',
+          visual: 'Un memorial interactivo reúne hitos y objetos representativos.',
+          narration: 'Explora la memoria histórica y el legado de Eduardo Abaroa.',
+          audio: 'assets/audio/2.5Escena.mp3',
+          video: 'assets/videos/eduardo-abaroa/Escena2.5.mp4'
+        }
+      ]
+    }
+  };
 
   /* -------------------------------------------------------------------------
      Interacción de la Cronología en la página principal
@@ -92,6 +150,7 @@
     aSceneInstance = vrSceneTemplate.content.firstElementChild.cloneNode(true);
     const sceneForLoad = aSceneInstance;
     const vrModel = sceneForLoad.querySelector('#vr-character-model');
+    const abaroaModel = sceneForLoad.querySelector('#vr-abaroa-model');
     const modelHint = sceneForLoad.querySelector('#vr-model-error-label');
     let dracoRetryCount = 0;
 
@@ -137,6 +196,20 @@
       });
       vrModel.addEventListener('model-error', configureAndRetryModel);
     }
+    if (abaroaModel) {
+      abaroaModel.addEventListener('model-loaded', function () {
+        if (window.tamayoVR) window.tamayoVR.applyAbaroaModelAppearance();
+        console.info('[Historia Viva] Modelo 3D de Eduardo Abaroa cargado');
+      });
+      abaroaModel.addEventListener('model-error', function (event) {
+        const hint = sceneForLoad.querySelector('#vr-abaroa-timeline-prompt');
+        if (hint) {
+          hint.setAttribute('visible', 'true');
+          hint.querySelector('a-text')?.setAttribute('value', 'NO SE PUDO CARGAR EL MODELO DE EDUARDO ABAROA');
+        }
+        console.error('[Historia Viva] No se pudo cargar el modelo de Eduardo Abaroa en VR:', event.detail);
+      });
+    }
 
     vrView.insertBefore(aSceneInstance, vrView.querySelector('.vr-hud'));
 
@@ -150,6 +223,23 @@
 
       if (window.tamayoVR) {
         window.tamayoVR.setSceneIndex(currentVRSceneIndex, false);
+      }
+      sceneForLoad.querySelectorAll('[data-vr-landmark]').forEach(function (marker) {
+        marker.addEventListener('click', function () {
+          if (window.tamayoVR) window.tamayoVR.showAbaroaLandmark(marker);
+        });
+      });
+      const restartAbaroa = sceneForLoad.querySelector('#vr-abaroa-restart');
+      if (restartAbaroa) {
+        restartAbaroa.addEventListener('click', function () {
+          if (window.tamayoVR) window.tamayoVR.setStory('abaroa');
+        });
+      }
+      const enemyModel = sceneForLoad.querySelector('#vr-abaroa-enemy-model');
+      if (enemyModel) {
+        enemyModel.addEventListener('model-error', function (event) {
+          console.error('[Historia Viva] No se pudo cargar el modelo del soldado en la escena de combate:', event.detail);
+        });
       }
 
       // Conectar interactividad de los botones 3D con cursor de mirada (gaze manos libres)

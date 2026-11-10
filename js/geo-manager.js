@@ -133,12 +133,57 @@
     }
   ];
 
+  const SCENE_LOCATION_STORAGE_KEY = 'historia-viva-scene-locations-v1';
+  const SCENE_DEFAULTS = {
+    franz: SCENE_WAYPOINTS.map((waypoint) => [
+      LANDMARKS.unifranz_lp.coords[0] + waypoint.dLat,
+      LANDMARKS.unifranz_lp.coords[1] + waypoint.dLng
+    ]),
+    abaroa: [
+      [-22.4567, -68.9237],
+      [-22.4565, -68.9234],
+      [-22.4563, -68.9238],
+      [-22.4569, -68.9235],
+      [-22.4566, -68.9240]
+    ]
+  };
+
+  function isValidCoordinates(coords) {
+    return Array.isArray(coords) && coords.length === 2 &&
+      Number.isFinite(Number(coords[0])) && Number(coords[0]) >= -90 && Number(coords[0]) <= 90 &&
+      Number.isFinite(Number(coords[1])) && Number(coords[1]) >= -180 && Number(coords[1]) <= 180;
+  }
+
+  function loadSceneLocations() {
+    const locations = JSON.parse(JSON.stringify(SCENE_DEFAULTS));
+    try {
+      const saved = window.localStorage.getItem(SCENE_LOCATION_STORAGE_KEY);
+      if (!saved) return locations;
+      const parsed = JSON.parse(saved);
+      Object.keys(SCENE_DEFAULTS).forEach((storyId) => {
+        if (!Array.isArray(parsed[storyId])) return;
+        parsed[storyId].forEach((coords, index) => {
+          if (index < locations[storyId].length && isValidCoordinates(coords)) {
+            locations[storyId][index] = [Number(coords[0]), Number(coords[1])];
+          }
+        });
+      });
+    } catch (error) {
+      console.warn('[Historia Viva] No se pudieron cargar las ubicaciones AR guardadas; se usarán los puntos iniciales:', error);
+    }
+    return locations;
+  }
+
   // ─── Estado de Geolocalización y Ruta Más Corta ───
   const state = {
     target: LANDMARKS.unifranz_lp,
     selectedSceneIndex: 0,
+    activeStory: 'franz',
+    sceneLocations: loadSceneLocations(),
+    editingSceneLocation: false,
     radius: 50, // metros
     userCoords: null, // { lat, lng, accuracy }
+    gpsErrorMessage: '',
     distance: null, // metros en línea recta
     inRange: false,
     isTracking: false,
@@ -226,8 +271,112 @@
   }
 
   function getSceneStationCoords(sceneIdx) {
-    const wp = SCENE_WAYPOINTS[sceneIdx] || SCENE_WAYPOINTS[0];
-    return [state.target.coords[0] + wp.dLat, state.target.coords[1] + wp.dLng];
+    return getSceneCoordinates(state.activeStory, sceneIdx);
+  }
+
+  function getSceneCoordinates(storyId, sceneIdx) {
+    const storyLocations = state.sceneLocations[storyId];
+    const coords = storyLocations && storyLocations[sceneIdx];
+    return coords ? coords.slice() : SCENE_DEFAULTS.franz[0].slice();
+  }
+
+  function getSceneTitle(storyId, sceneIdx) {
+    const story = window.HistoriaVivaStories && window.HistoriaVivaStories[storyId];
+    const scene = story && story.scenes && story.scenes[sceneIdx];
+    return scene && scene.title ? scene.title : `Escena ${String(sceneIdx + 1).padStart(2, '0')}`;
+  }
+
+  function saveSceneLocations() {
+    try {
+      window.localStorage.setItem(SCENE_LOCATION_STORAGE_KEY, JSON.stringify(state.sceneLocations));
+    } catch (error) {
+      console.error('[Historia Viva] No se pudieron guardar las ubicaciones AR en este navegador:', error);
+      const status = document.getElementById('geo-editor-status');
+      if (status) status.textContent = 'No se pudieron guardar los cambios en este navegador.';
+      return false;
+    }
+    return true;
+  }
+
+  function updateSceneEditorStatus() {
+    const status = document.getElementById('geo-editor-status');
+    const map = state.map;
+    if (!status) return;
+    const sceneName = getSceneTitle(state.activeStory, state.selectedSceneIndex);
+    if (state.editingSceneLocation) {
+      status.textContent = `Editando ${sceneName}: haz clic en el mapa o arrastra el marcador ${String(state.selectedSceneIndex + 1).padStart(2, '0')}.`;
+    } else {
+      status.textContent = `${sceneName} · ${getSceneCoordinates(state.activeStory, state.selectedSceneIndex).map((value) => value.toFixed(5)).join(', ')}${map ? ' · punto de activación' : ''}`;
+    }
+  }
+
+  function setSceneLocation(storyId, sceneIdx, coords) {
+    if (!state.sceneLocations[storyId] || !Number.isInteger(sceneIdx) ||
+      sceneIdx < 0 || sceneIdx >= state.sceneLocations[storyId].length || !isValidCoordinates(coords)) {
+      return false;
+    }
+    state.sceneLocations[storyId][sceneIdx] = [Number(coords[0]), Number(coords[1])];
+    const targetId = `scene-${state.activeStory}-${state.selectedSceneIndex}`;
+    if (state.activeStory === storyId && state.selectedSceneIndex === sceneIdx && state.target.id === targetId) {
+      state.target.coords = getSceneCoordinates(storyId, sceneIdx);
+    }
+    saveSceneLocations();
+    refreshSceneMarkers();
+    if (state.activeStory === storyId && state.selectedSceneIndex === sceneIdx) {
+      setActiveScene(storyId, sceneIdx);
+    } else {
+      evaluateRange();
+    }
+    updateSceneEditorStatus();
+    window.dispatchEvent(new CustomEvent('historia:scene-location-changed', {
+      detail: { storyId, index: sceneIdx, coords: getSceneCoordinates(storyId, sceneIdx) }
+    }));
+    return true;
+  }
+
+  function setActiveScene(storyId, sceneIdx) {
+    if (!state.sceneLocations[storyId] || !Number.isInteger(sceneIdx) ||
+      sceneIdx < 0 || sceneIdx >= state.sceneLocations[storyId].length) return false;
+    state.activeStory = storyId;
+    state.selectedSceneIndex = sceneIdx;
+    state.target = {
+      id: `scene-${storyId}-${sceneIdx}`,
+      name: `${storyId === 'abaroa' ? 'Eduardo Abaroa' : 'Franz Tamayo'} · ${getSceneTitle(storyId, sceneIdx)}`,
+      subtitle: 'Punto AR editable en el mapa',
+      city: storyId === 'abaroa' ? 'Calama · ubicación inicial por confirmar' : 'La Paz',
+      coords: getSceneCoordinates(storyId, sceneIdx),
+      zoom: 17,
+      description: 'Punto geográfico donde se habilita esta escena de Realidad Aumentada.',
+      streets: []
+    };
+    const targetSelect = document.getElementById('geo-landmark-select');
+    if (targetSelect) targetSelect.value = 'active-scene';
+    const storySelect = document.getElementById('geo-editor-story');
+    if (storySelect) storySelect.value = storyId;
+    const sceneSelect = document.getElementById('geo-editor-scene');
+    if (sceneSelect) sceneSelect.value = String(sceneIdx);
+    if (state.map) state.map.setView(state.target.coords, state.target.zoom, { animate: true });
+    if (state.miniMap) state.miniMap.setView(state.target.coords, state.target.zoom, { animate: true });
+    refreshSceneMarkers();
+    updateSceneEditorStatus();
+    evaluateRange();
+    return true;
+  }
+
+  function getSceneDistance(storyId, sceneIdx) {
+    if (!state.userCoords) return null;
+    const coords = getSceneCoordinates(storyId, sceneIdx);
+    return calculateHaversine(state.userCoords.lat, state.userCoords.lng, coords[0], coords[1]);
+  }
+
+  function isSceneInRange(storyId, sceneIdx) {
+    const distance = getSceneDistance(storyId, sceneIdx);
+    return distance !== null && distance <= state.radius;
+  }
+
+  function refreshSceneMarkers() {
+    if (state.map) createSceneMarkersOnMap(state.map, state.markers.sceneMarkers, false);
+    if (state.miniMap) createSceneMarkersOnMap(state.miniMap, state.miniMarkers.sceneMarkers, true);
   }
 
   /* ═══════════════════════════════════════════════════════════════════════════
@@ -505,6 +654,10 @@
       distance: state.distance,
       radius: state.radius,
       target: state.target,
+      activeStory: state.activeStory,
+      selectedSceneIndex: state.selectedSceneIndex,
+      sceneDistance: getSceneDistance(state.activeStory, state.selectedSceneIndex),
+      sceneInRange: isSceneInRange(state.activeStory, state.selectedSceneIndex),
       userCoords: state.userCoords,
       shortestRoute: state.shortestRoute,
       isSimulated: state.isSimulated,
@@ -543,25 +696,14 @@
       minZoom: 4,
       maxZoom: 19,
       zoomControl: true,
-      attributionControl: false
+      attributionControl: true
     });
 
-    const darkTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    const osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      subdomains: 'abcd'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     });
-
-    const osmTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
-    });
-
-    darkTileLayer.addTo(state.map);
-
-    L.control.layers(
-      { 'Modo Noche (Recomendado)': darkTileLayer, 'Mapa de Calles (OSM API)': osmTileLayer },
-      null,
-      { position: 'topright' }
-    ).addTo(state.map);
+    osmTileLayer.addTo(state.map);
 
     // Círculo de rango geográfico (Geofence)
     state.markers.targetCircle = L.circle(state.target.coords, {
@@ -657,6 +799,10 @@
     }
 
     state.map.on('click', function (e) {
+      if (state.editingSceneLocation) {
+        setSceneLocation(state.activeStory, state.selectedSceneIndex, [e.latlng.lat, e.latlng.lng]);
+        return;
+      }
       setUserCoordinates(e.latlng.lat, e.latlng.lng, 8, true);
     });
 
@@ -688,12 +834,12 @@
     center: state.target.coords,
     zoom: 16,
     zoomControl: false,
-    attributionControl: false
+    attributionControl: true
   });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    subdomains: 'abcd'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(state.miniMap);
 
   state.miniMarkers.targetCircle = L.circle(state.target.coords, {
@@ -759,13 +905,19 @@ function createSceneMarkersOnMap(mapInstance, holderArray, isMini) {
   holderArray.length = 0;
 
   SCENE_WAYPOINTS.forEach((wp) => {
-    const coords = getSceneStationCoords(wp.index);
+    const coords = getSceneCoordinates(state.activeStory, wp.index);
+    const scene = window.HistoriaVivaStories &&
+      window.HistoriaVivaStories[state.activeStory] &&
+      window.HistoriaVivaStories[state.activeStory].scenes[wp.index];
+    const title = scene && scene.title ? scene.title : wp.title;
+    const year = scene && scene.period ? scene.period : wp.year;
+    const isActive = state.selectedSceneIndex === wp.index;
     const icon = L.divIcon({
       className: 'leaflet-scene-waypoint-icon',
       html: `
-          <div class="scene-map-pin ${isMini ? 'is-mini' : ''}" style="--scene-pin-color:${wp.color};">
+          <div class="scene-map-pin ${isMini ? 'is-mini' : ''} ${isActive ? 'is-active' : ''}" style="--scene-pin-color:${wp.color};">
             <span class="scene-map-pin-num">${wp.code}</span>
-            ${isMini ? '' : `<span class="scene-map-pin-year">${wp.year}</span>`}
+            ${isMini ? '' : `<span class="scene-map-pin-year">${year}</span>`}
           </div>
         `,
       iconSize: isMini ? [28, 28] : [58, 28],
@@ -775,19 +927,26 @@ function createSceneMarkersOnMap(mapInstance, holderArray, isMini) {
 
     const marker = L.marker(coords, {
       icon,
-      title: `${wp.title} (${wp.place})`
+      draggable: !isMini && state.editingSceneLocation && state.selectedSceneIndex === wp.index,
+      title: `${title} · punto de activación AR`
     }).addTo(mapInstance);
+    if (!isMini) {
+      marker.on('dragend', function (event) {
+        const location = event.target.getLatLng();
+        setSceneLocation(state.activeStory, wp.index, [location.lat, location.lng]);
+      });
+    }
 
     marker.bindPopup(`
         <div class="map-popup-card">
-          <span class="map-popup-badge" style="background:${wp.color};color:#0b0f19;">ESCENA ${wp.code} · ${wp.year}</span>
-          <h4 class="map-popup-title">${wp.title}</h4>
-          <p class="map-popup-desc">📍 <strong>${wp.place}</strong><br>${wp.photoNote}</p>
+          <span class="map-popup-badge" style="background:${wp.color};color:#0b0f19;">${state.activeStory === 'abaroa' ? 'EDUARDO ABAROA' : 'FRANZ TAMAYO'} · ESCENA ${wp.code}</span>
+          <h4 class="map-popup-title">${title}</h4>
+          <p class="map-popup-desc">📍 <strong>Punto de activación AR</strong><br>${scene && scene.visual ? scene.visual : wp.photoNote}<br><small>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)} · radio ${state.radius} m</small></p>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-            <button type="button" class="geo-popup-scene-btn" data-popup-walk-scene="${wp.index}" style="background:#10b981;color:#04130d;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;font-size:11px;">
+            <button type="button" class="geo-popup-scene-btn" data-popup-walk-scene="${wp.index}" data-popup-story="${state.activeStory}" style="background:#10b981;color:#04130d;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;font-size:11px;">
               🚶 Ir por Ruta Más Corta
             </button>
-            <button type="button" class="geo-popup-scene-btn" data-popup-open-scene="${wp.index}" style="background:${wp.color};color:#0b0f19;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;font-size:11px;">
+            <button type="button" class="geo-popup-scene-btn" data-popup-open-scene="${wp.index}" data-popup-story="${state.activeStory}" style="background:${wp.color};color:#0b0f19;border:none;padding:6px 10px;border-radius:6px;font-weight:700;cursor:pointer;font-size:11px;">
               🎬 Ver Escena ${wp.code}
             </button>
           </div>
@@ -823,7 +982,7 @@ function buildUserPopupContent() {
           Ruta más corta (Dijkstra): <strong>${state.shortestRoute.totalDistance} m (~${state.shortestRoute.walkingMinutes} min)</strong>
         </p>
         <div class="map-popup-meta">
-          <span>${state.inRange ? '🔓 ¡Las 5 escenas y animaciones de Franz Tamayo están activas!' : '🧭 Sigue la línea turquesa de la Ruta Más Corta hacia ' + state.target.name}</span>
+          <span>${state.inRange ? `🔓 ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} está disponible.` : '🧭 Sigue la línea turquesa de la Ruta Más Corta hacia ' + state.target.name}</span>
         </div>
       </div>
     `;
@@ -934,7 +1093,7 @@ function renderRouteDirectionsDOM() {
            <span class="route-step-badge">✓</span>
            <div>
              <strong>¡Estás dentro de la Zona Histórica (${state.distance} m)!</strong>
-             <p>Las 5 escenas interactivas de Franz Tamayo están desbloqueadas a tu alrededor.</p>
+             <p>${getSceneTitle(state.activeStory, state.selectedSceneIndex)} está disponible en Realidad Aumentada.</p>
            </div>
          </div>`
     : (r.steps || [])
@@ -953,14 +1112,14 @@ function renderRouteDirectionsDOM() {
            <span class="route-step-badge">🎯</span>
            <div>
              <strong>Llegada a ${state.target.name}</strong>
-             <p>Ingresa al radio de ${state.radius} m para activar las 5 escenas en Realidad Aumentada.</p>
+             <p>Ingresa al radio de ${state.radius} m para activar esta escena en Realidad Aumentada.</p>
            </div>
          </div>`;
 
   const summaryEl = document.getElementById('geo-route-summary');
   if (summaryEl) {
     summaryEl.innerHTML = state.inRange
-      ? `🟢 <strong>En el Sitio Histórico</strong> · Distancia: <strong>${state.distance} m</strong> · 5 Escenas Activas`
+      ? `🟢 <strong>En el Sitio Histórico</strong> · Distancia: <strong>${state.distance} m</strong> · ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} disponible`
       : `🧭 <strong>Ruta Más Corta (Dijkstra): ${r.totalDistance} m</strong> (~${r.walkingMinutes} min a pie) · Rumbo: <strong>${r.compassDir} (${r.bearingDeg}°)</strong>`;
   }
 
@@ -978,9 +1137,9 @@ function renderRouteDirectionsDOM() {
   if (arMiniSummaryEl) {
     const firstStep = r.steps && r.steps[0];
     arMiniSummaryEl.textContent = state.inRange
-      ? `🟢 En el sitio (${state.distance}m) · Toca los objetos 3D para cambiar de escena`
+      ? `🟢 ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} disponible (${state.distance}m) · Pulsa Narrar`
       : firstStep
-        ? `🧭 Ruta más corta (${r.totalDistance}m): Ve al ${firstStep.compass} por ${firstStep.street} (${firstStep.dist}m)`
+        ? `🧭 ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} · ${state.distance}m hasta el punto · Ve al ${firstStep.compass} por ${firstStep.street} (${firstStep.dist}m)`
         : `🧭 Ruta más corta: Dirígete al ${r.compassDir} (${r.totalDistance}m)`;
   }
 }
@@ -1011,26 +1170,26 @@ function updateDOMUI(info) {
   if (statusPill) {
     statusPill.className = `geo-status-pill ${info.inRange ? 'is-in-range' : 'is-out-of-range'}`;
     statusPill.innerHTML = info.inRange
-        ?`<span class="status-indicator"></span> 🟢 En rango (${info.distance}m) · 5 Escenas Desbloqueadas`
-        : `<span class="status-indicator"></span> 🔴 Fuera de rango (${info.distance}m) · Ruta más corta: ${state.shortestRoute.totalDistance}m`;
+        ?`<span class="status-indicator"></span> 🟢 ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} disponible (${info.distance}m)`
+        : `<span class="status-indicator"></span> 🔴 ${getSceneTitle(state.activeStory, state.selectedSceneIndex)} a ${info.distance}m · Ruta más corta: ${state.shortestRoute.totalDistance}m`;
   }
 
   if (unlockStatus) {
     unlockStatus.className = `geo-unlock-banner ${info.inRange ? 'is-unlocked' : 'is-locked'}`;
     unlockStatus.innerHTML = info.inRange
-        ?`<strong>🔓 ¡ANIMACIÓN 3D Y 5 ESCENAS DISPONIBLES!</strong> Estás dentro del perímetro histórico. Al iniciar AR, Franz Tamayo caminará, moverá la boca al hablar y podrás tocar los objetos 3D.`
-        : `<strong>🧭 FUERA DEL SITIO (${info.distance} m) · RUTA MÁS CORTA CALCULADA (${state.shortestRoute.totalDistance} m)</strong> Sigue la línea turquesa e indicaciones paso a paso en el mapa o presiona <em>«🚶 Caminar por la Ruta Más Corta»</em>.`;
+        ?`<strong>🔓 ¡ESCENA AR DISPONIBLE!</strong> Estás dentro del radio de ${state.radius} m de ${getSceneTitle(state.activeStory, state.selectedSceneIndex)}. Abre AR y pulsa Narrar para reproducirla.`
+        : `<strong>🧭 ESCENA A ${info.distance} m · RUTA MÁS CORTA CALCULADA (${state.shortestRoute.totalDistance} m)</strong> Sigue la ruta hacia este punto o edita su ubicación en el mapa.`;
   }
 
   if (mapArButton) {
     if (info.inRange) {
       mapArButton.classList.remove('button-locked');
       mapArButton.classList.add('button-gold');
-      mapArButton.innerHTML = `🚀 Iniciar AR con Animación Desbloqueada <span aria-hidden="true">↗</span>`;
+      mapArButton.innerHTML = `🚀 Iniciar AR · Escena disponible <span aria-hidden="true">↗</span>`;
     } else {
       mapArButton.classList.remove('button-gold');
       mapArButton.classList.add('button-locked');
-      mapArButton.innerHTML = `🧭 Abrir Cámara AR y Guía de Ruta (${info.distance}m) <span aria-hidden="true">↗</span>`;
+      mapArButton.innerHTML = `🧭 Abrir AR y ver ruta (${info.distance}m) <span aria-hidden="true">↗</span>`;
     }
   }
 
@@ -1044,18 +1203,27 @@ function updateDOMUI(info) {
         ?`🟢 En el sitio (${info.distance}m) · Activo`
         : `🧭 Lejos (${info.distance}m) · Ruta: ${state.shortestRoute.totalDistance}m`;
   }
+
+  if (state.gpsErrorMessage && unlockStatus) {
+    unlockStatus.className = 'geo-unlock-banner is-locked';
+    unlockStatus.textContent = `${state.gpsErrorMessage} Puedes ajustar tu posición en el mapa o usar «Simular Sitio» para probar AR.`;
+  }
 }
 
 // ─── Métodos Públicos y Acciones ───
 function setUserCoordinates(lat, lng, accuracy, isSimulated) {
   state.userCoords = { lat: Number(lat), lng: Number(lng), accuracy: accuracy || 15 };
   state.isSimulated = !!isSimulated;
+  state.gpsErrorMessage = '';
   evaluateRange();
 }
 
 function setTarget(landmarkKeyOrObj) {
   if (typeof landmarkKeyOrObj === 'string' && LANDMARKS[landmarkKeyOrObj]) {
     state.target = LANDMARKS[landmarkKeyOrObj];
+  } else if (landmarkKeyOrObj === 'active-scene') {
+    setActiveScene(state.activeStory, state.selectedSceneIndex);
+    return;
   } else if (landmarkKeyOrObj && Array.isArray(landmarkKeyOrObj.coords)) {
     state.target = landmarkKeyOrObj;
   }
@@ -1119,7 +1287,9 @@ function walkShortestPath(targetSceneIdx, onArrival) {
       clearInterval(state.walkTimer);
       state.walkTimer = null;
       if (typeof targetSceneIdx === 'number') {
-        window.dispatchEvent(new CustomEvent('historia:select-scene', { detail: { index: targetSceneIdx } }));
+        window.dispatchEvent(new CustomEvent('historia:select-scene', {
+          detail: { index: targetSceneIdx, storyId: state.activeStory }
+        }));
       }
       if (typeof onArrival === 'function') onArrival();
       return;
@@ -1134,6 +1304,7 @@ function walkShortestPath(targetSceneIdx, onArrival) {
 // 🎯 Simular que el usuario está dentro del rango (a 12 metros del objetivo)
 function simulateInRange() {
   if (!state.target) return;
+  if (state.isTracking) stopGPSTracking();
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
@@ -1156,6 +1327,7 @@ function simulateInRange() {
 // 🔴 Simular que el usuario está fuera de rango (a ~240 metros) para ver la ruta más corta
 function simulateOutOfRange() {
   if (!state.target) return;
+  if (state.isTracking) stopGPSTracking();
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
@@ -1206,6 +1378,9 @@ function startGPSTracking() {
     const { latitude, longitude, accuracy } = position.coords;
     state.isSimulated = false;
     setUserCoordinates(latitude, longitude, accuracy, false);
+    window.dispatchEvent(new CustomEvent('historia:gps-position', {
+      detail: { lat: latitude, lng: longitude, accuracy }
+    }));
     if (state.map && state.isTracking) {
       state.map.panTo([latitude, longitude], { animate: true });
     }
@@ -1219,7 +1394,17 @@ function startGPSTracking() {
     if (err.code === 1) msg = 'Permiso de ubicación denegado. Puedes usar «Caminar por Ruta Más Corta» o tocar el mapa.';
     else if (err.code === 2) msg = 'Señal de GPS no disponible. Puedes usar el modo simulación.';
     else if (err.code === 3) msg = 'Tiempo de espera de GPS agotado.';
-    alert('📍 ' + msg);
+    state.gpsErrorMessage = msg;
+    updateDOMUI({
+      inRange: state.inRange,
+      distance: state.distance,
+      radius: state.radius,
+      userCoords: state.userCoords,
+      target: state.target
+    });
+    window.dispatchEvent(new CustomEvent('historia:gps-error', {
+      detail: { code: err.code, message: msg }
+    }));
   };
 
   state.watchId = navigator.geolocation.watchPosition(onPos, onErr, {
@@ -1278,6 +1463,49 @@ function setupDOMListeners() {
     });
   }
 
+  const editorStory = document.getElementById('geo-editor-story');
+  const editorScene = document.getElementById('geo-editor-scene');
+  const editorToggle = document.getElementById('geo-editor-toggle');
+  const editorReset = document.getElementById('geo-editor-reset');
+  if (editorStory) {
+    editorStory.addEventListener('change', function () {
+      state.editingSceneLocation = false;
+      if (editorToggle) editorToggle.textContent = 'Editar ubicación en el mapa';
+      if (state.map) state.map.getContainer().classList.remove('is-editing-scene-location');
+      setActiveScene(editorStory.value, Number(editorScene ? editorScene.value : 0));
+    });
+  }
+  if (editorScene) {
+    editorScene.addEventListener('change', function () {
+      state.editingSceneLocation = false;
+      if (editorToggle) editorToggle.textContent = 'Editar ubicación en el mapa';
+      if (state.map) state.map.getContainer().classList.remove('is-editing-scene-location');
+      setActiveScene(state.activeStory, Number(editorScene.value));
+    });
+  }
+  if (editorToggle) {
+    editorToggle.addEventListener('click', function () {
+      state.editingSceneLocation = !state.editingSceneLocation;
+      editorToggle.textContent = state.editingSceneLocation ? 'Terminar edición' : 'Editar ubicación en el mapa';
+      if (state.map) {
+        state.markers.sceneMarkers.forEach((marker, index) => {
+          if (!marker.dragging) return;
+          if (state.editingSceneLocation && index === state.selectedSceneIndex) marker.dragging.enable();
+          else marker.dragging.disable();
+        });
+        state.map.getContainer().classList.toggle('is-editing-scene-location', state.editingSceneLocation);
+      }
+      refreshSceneMarkers();
+      updateSceneEditorStatus();
+    });
+  }
+  if (editorReset) {
+    editorReset.addEventListener('click', function () {
+      const defaults = SCENE_DEFAULTS[state.activeStory][state.selectedSceneIndex];
+      setSceneLocation(state.activeStory, state.selectedSceneIndex, defaults);
+    });
+  }
+
   const radiusSelect = document.getElementById('geo-radius-select');
   if (radiusSelect) {
     radiusSelect.addEventListener('change', function (e) {
@@ -1327,16 +1555,22 @@ function setupDOMListeners() {
     const walkBtn = ev.target.closest('[data-popup-walk-scene]');
     if (walkBtn) {
       const sIdx = Number(walkBtn.getAttribute('data-popup-walk-scene')) || 0;
+      const storyId = walkBtn.getAttribute('data-popup-story') || state.activeStory;
+      setActiveScene(storyId, sIdx);
       walkShortestPath(sIdx);
       return;
     }
     const openBtn = ev.target.closest('[data-popup-open-scene]');
     if (openBtn) {
       const sIdx = Number(openBtn.getAttribute('data-popup-open-scene')) || 0;
-      simulateInRange();
-      window.dispatchEvent(new CustomEvent('historia:select-scene', { detail: { index: sIdx } }));
-      const openArTrigger = document.querySelector('[data-open-ar]');
-      if (openArTrigger) openArTrigger.click();
+      const storyId = openBtn.getAttribute('data-popup-story') || state.activeStory;
+      setActiveScene(storyId, sIdx);
+      window.dispatchEvent(new CustomEvent('historia:select-scene', { detail: { index: sIdx, storyId } }));
+      const arView = document.getElementById('ar-view');
+      if (!arView || arView.getAttribute('aria-hidden') !== 'false') {
+        const openArTrigger = document.querySelector('[data-open-ar]');
+        if (openArTrigger) openArTrigger.click();
+      }
     }
   });
 
@@ -1350,13 +1584,19 @@ function setupDOMListeners() {
 window.HistoriaGeo = {
   LANDMARKS,
   SCENE_WAYPOINTS,
-  getState: () => ({ ...state }),
+  getState: () => ({ ...state, sceneLocations: JSON.parse(JSON.stringify(state.sceneLocations)) }),
   isInRange: () => state.inRange,
   getDistance: () => state.distance,
   getRadius: () => state.radius,
   getTarget: () => state.target,
   getUserCoords: () => state.userCoords,
   getShortestRoute: () => state.shortestRoute,
+  getSceneCoordinates,
+  getSceneDistance,
+  isSceneInRange,
+  setSceneLocation,
+  setActiveScene,
+  getActiveScene: () => ({ storyId: state.activeStory, index: state.selectedSceneIndex }),
   setTarget,
   setRadius,
   setUserCoordinates,

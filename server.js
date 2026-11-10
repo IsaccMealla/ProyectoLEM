@@ -52,9 +52,42 @@ const server = http.createServer(function (req, res) {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME[ext] || 'application/octet-stream';
 
+    const range = req.headers.range;
+    if (range && ext === '.mp4') {
+      const match = range.match(/^bytes=(\d*)-(\d*)$/);
+      if (!match) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+        res.end();
+        return;
+      }
+
+      const start = match[1]
+        ? Number(match[1])
+        : Math.max(0, stat.size - Number(match[2]));
+      const requestedEnd = match[1] && match[2] ? Number(match[2]) : stat.size - 1;
+      const end = Math.min(requestedEnd, stat.size - 1);
+      if (start >= stat.size || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${stat.size}` });
+        res.end();
+        return;
+      }
+
+      res.writeHead(206, {
+        'Content-Type': contentType,
+        'Content-Length': end - start + 1,
+        'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+        'Accept-Ranges': 'bytes',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
+      });
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+      return;
+    }
+
     res.writeHead(200, {
       'Content-Type': contentType,
       'Content-Length': stat.size,
+      'Accept-Ranges': 'bytes',
       'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'no-cache',
     });
