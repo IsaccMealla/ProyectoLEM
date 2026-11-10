@@ -618,7 +618,6 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
 
   function speechEnvelope(T) {
     const gate = smooth(-0.2, 0.4, Math.sin(T * 1.9) + 0.6 * Math.sin(T * 0.77 + 2.0));
-    const syllables = 0.5 + 0.5 * Math.sin(T * 10.5) * Math.sin(T * 3.7 + 0.5);
     const syllables = 0.5 + 0.5 * Math.sin(T * 11.2) * Math.sin(T * 4.1 + 0.5);
     return gate * syllables;
   }
@@ -1000,7 +999,6 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
       mesh.traverse((node) => {
         if (!node.isMesh || !node.geometry) return;
         node.geometry.computeBoundingBox();
-        if (node.geometry.boundingBox) maxY = Math.max(maxY, node.geometry.boundingBox.max.y);
         if (node.geometry.boundingBox) {
           maxY = Math.max(maxY, node.geometry.boundingBox.max.y);
           maxZ = Math.max(maxZ, node.geometry.boundingBox.max.z);
@@ -1021,7 +1019,6 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', '#include <common>\n' + GLSL_COMMON + GLSL_VERTEX)
           .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n  objectNormal = tamayoApply(position, objectNormal, false);')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed = tamayoApply(position, transformed, true);\n  vTamayoY = position.y;');
           .replace('#include <begin_vertex>', `#include <begin_vertex>
   transformed = tamayoApply(position, transformed, true);
   vTamayoY = position.y;
@@ -1029,15 +1026,14 @@ vec3 tamayoApply(vec3 p, vec3 v, bool isPoint){
   float mBandX = 1.0 - smoothstep(0.012 * uHeight, 0.026 * uHeight, abs(position.x));
   float mBandZ = smoothstep(uFaceZ * 0.40, uFaceZ * 0.72, position.z);
   vMouthCavity = mBandY * mBandX * mBandZ * clamp(uMouth * 1.4, 0.0, 1.0);`);
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\n' + GLSL_COMMON)
-      .replace('void main() {', GLSL_FRAG_START)
-      .replace('#include <dithering_fragment>', GLSL_FRAG_END);
-  };
-  material.customProgramCacheKey = () => 'tamayo-animator-v1';
-  material.customProgramCacheKey = () => 'tamayo-animator-v3';
-  material.needsUpdate = true;
-},
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', '#include <common>\n' + GLSL_COMMON)
+          .replace('void main() {', GLSL_FRAG_START)
+          .replace('#include <dithering_fragment>', GLSL_FRAG_END);
+      };
+      material.customProgramCacheKey = () => 'tamayo-animator-v3';
+      material.needsUpdate = true;
+    },
 
   /** Reproduce un gesto: wave, bow, nod, think, indicate, walk, spin, jump, celebrate, materialize, etc. */
   play(type) {
@@ -1126,24 +1122,16 @@ tick(time, dtMs) {
 
   // Animación de Caminata procedural (estilo Pokémon GO: pasos, cadencia y balanceo)
   if (this.data.walking) {
-    const walkFreq = 4.6;
     const walkFreq = 4.8;
     const step = Math.sin(T * walkFreq);
     const stepCos = Math.cos(T * walkFreq);
 
     // Balanceo alternado de brazos
-    o.armR.y += 0.48 * step;
     o.armR.y += 0.50 * step;
     o.armR.x += 0.16 * Math.max(0, stepCos);
-    o.armL.y -= 0.48 * step;
     o.armL.y -= 0.50 * step;
     o.armL.x += 0.16 * Math.max(0, -stepCos);
 
-    // Movimiento de piernas con zancada real y flexión de rodillas
-    o.legR.x += 0.44 * step;
-    o.legR.y += Math.max(0, -step) * 0.42;
-    o.legL.x -= 0.44 * step;
-    o.legL.y += Math.max(0, step) * 0.42;
     // Movimiento de piernas con zancada amplia y flexión de rodillas
     o.legR.x += 0.52 * step;
     o.legR.y += Math.max(0, -step) * 0.50;
@@ -1151,18 +1139,14 @@ tick(time, dtMs) {
     o.legL.y += Math.max(0, step) * 0.50;
 
     // Giro y balanceo de torso para equilibrio
-    o.body.y += 0.08 * step;
-    o.body.z += 0.045 * stepCos;
     o.body.y += 0.09 * step;
     o.body.z += 0.048 * stepCos;
     o.body.x += 0.07; // leve inclinación al avanzar
 
     // Rebote vertical al pisar
-    o.posY += 0.024 * Math.abs(step);
     o.posY += 0.026 * Math.abs(step);
   } else {
     // En reposo: microbalanceo y cambio sutil de peso entre piernas
-    // Microbalanceo adicional entre piernas
     o.legR.x += 0.02 * Math.sin(T * 0.7);
     o.legL.x -= 0.02 * Math.sin(T * 0.7);
   }
