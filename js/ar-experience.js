@@ -1800,6 +1800,8 @@
               if (!minimapDrawer) return;
               const willOpen = typeof forceState === 'boolean' ? forceState : minimapDrawer.hidden;
               minimapDrawer.hidden = !willOpen;
+              arView.classList.toggle('has-map-open', willOpen);
+              if (btnToggleMinimap) btnToggleMinimap.setAttribute('aria-expanded', String(willOpen));
               if (willOpen && window.HistoriaGeo && typeof window.HistoriaGeo.initARMiniMap === 'function') {
                 window.HistoriaGeo.initARMiniMap();
               }
@@ -1851,7 +1853,7 @@
               } else {
                 setScene(currentSceneIndex, false);
               }
-              toggleMiniMapDrawer(true);
+              toggleMiniMapDrawer(false);
               syncSitePresence();
 
               const closeBtn = arView.querySelector('[data-close-ar]');
@@ -1879,6 +1881,8 @@
               unmountPokeArScene();
 
               if (minimapDrawer) minimapDrawer.hidden = true;
+              arView.classList.remove('has-map-open');
+              if (btnToggleMinimap) btnToggleMinimap.setAttribute('aria-expanded', 'false');
               if (radarOverlay) {
                 radarOverlay.classList.remove('is-active');
                 radarOverlay.hidden = true;

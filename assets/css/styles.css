@@ -4592,3 +4592,260 @@ canvas.a-canvas {
     transition: none;
   }
 }
+
+/* AR mobile layout: keep the camera visible and the map in a collapsible sheet. */
+@media (max-width: 700px) {
+  .pokear-view {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100svh;
+  }
+
+  .pokear-video,
+  #pokear-scene,
+  #pokear-scene .a-canvas {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .pokear-hud {
+    padding: max(8px, env(safe-area-inset-top, 0px)) 10px max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .pokear-topbar {
+    gap: 6px;
+  }
+
+  .pokear-back-home-btn {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .pokear-back-home-btn .back-arrow {
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .pokear-top-actions {
+    gap: 6px;
+  }
+
+  .pokear-top-actions #ar-btn-simulate {
+    display: none;
+  }
+
+  .pokear-top-actions #ar-btn-toggle-minimap {
+    min-height: 40px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+
+  .pokear-top-actions .ar-icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ar-status-pill {
+    position: absolute;
+    top: calc(54px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    max-width: calc(100vw - 28px);
+    padding: 5px 10px;
+    transform: translateX(-50%);
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pokear-bottom-card {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 10px 12px max(10px, env(safe-area-inset-bottom, 0px));
+    border-radius: 16px;
+  }
+
+  .pokear-story-label {
+    display: none;
+  }
+
+  .pokear-story-select {
+    width: 100%;
+    min-height: 40px;
+    margin-bottom: 8px;
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+
+  .pokear-card-header {
+    margin-bottom: 3px;
+  }
+
+  .pokear-card-badge,
+  .pokear-card-period {
+    font-size: 9px;
+  }
+
+  .pokear-card-title {
+    margin-bottom: 2px;
+    font-size: clamp(14px, 4vw, 17px);
+    line-height: 1.2;
+  }
+
+  .pokear-card-dialog {
+    display: -webkit-box;
+    max-height: 2.8em;
+    margin: 0 0 6px;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .pokear-progress-wrap {
+    margin-bottom: 7px;
+  }
+
+  .pokear-card-controls {
+    gap: 8px;
+  }
+
+  .pokear-btn {
+    min-height: 42px;
+  }
+
+  .pokear-btn-nav {
+    min-width: 42px;
+    padding: 7px 10px;
+  }
+
+  .pokear-btn-play {
+    padding: 8px 12px;
+  }
+
+  .ar-minimap-drawer[hidden] {
+    display: none !important;
+  }
+
+  .ar-minimap-drawer {
+    position: absolute;
+    top: auto;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: 8px;
+    width: auto;
+    max-height: min(72dvh, 620px);
+    padding: 10px;
+    overflow-y: auto;
+    border-radius: 18px;
+    z-index: 120;
+  }
+
+  .ar-minimap-header {
+    gap: 10px;
+    margin-bottom: 7px;
+  }
+
+  .ar-minimap-header > span {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .ar-minimap-close {
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+
+  .ar-mini-map {
+    height: clamp(190px, 36dvh, 320px);
+  }
+
+  .ar-mini-route-bar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 7px;
+    font-size: 11px;
+  }
+
+  .ar-mini-route-bar p {
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .ar-mini-route-bar .pokear-chip-btn {
+    min-height: 40px;
+    width: 100%;
+  }
+
+  .pokear-view.has-map-open .pokear-bottom-card {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 700px) and (orientation: landscape) and (max-height: 500px) {
+  .pokear-hud {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .ar-status-pill {
+    top: calc(46px + env(safe-area-inset-top, 0px));
+    left: 10px;
+    max-width: 45vw;
+    transform: none;
+  }
+
+  .pokear-bottom-card {
+    max-width: 540px;
+    padding: 7px 10px;
+  }
+
+  .pokear-story-select {
+    width: auto;
+    min-width: 190px;
+    min-height: 34px;
+    margin-bottom: 5px;
+    padding: 4px 8px;
+  }
+
+  .pokear-card-dialog {
+    display: none;
+  }
+
+  .pokear-progress-wrap {
+    margin-bottom: 5px;
+  }
+
+  .pokear-btn {
+    min-height: 36px;
+  }
+
+  .ar-minimap-drawer {
+    max-height: 86dvh;
+  }
+
+  .ar-mini-map {
+    height: min(42dvh, 220px);
+  }
+
+  .ar-mini-route-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .ar-mini-route-bar .pokear-chip-btn {
+    width: auto;
+    min-height: 36px;
+  }
+}
