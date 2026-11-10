@@ -930,40 +930,47 @@
 
       <!-- Tarjeta inferior minimalista para seleccionar recorrido y escena -->
       <div class="pokear-bottom-card" id="ar-bottom-card">
-        <label class="pokear-story-label" for="ar-story-select">Recorrido</label>
-        <select id="ar-story-select" class="pokear-story-select" aria-label="Seleccionar recorrido histórico">
-          <option value="franz">Franz Tamayo</option>
-          <option value="abaroa">Eduardo Abaroa</option>
-        </select>
-        <div class="pokear-card-header">
-          <span class="pokear-card-badge" id="ar-hud-scene-number">ESCENA 1 DE 5</span>
-          <span class="pokear-card-period" id="ar-hud-scene-period">1879 — 1956</span>
-        </div>
-        <h3 class="pokear-card-title" id="ar-hud-scene-title">El Despertar de Franz Tamayo</h3>
-        <p class="pokear-card-dialog" id="ar-hud-scene-text">
-          «¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano...»
-        </p>
+        <button class="pokear-card-toggle" type="button" id="ar-btn-toggle-bottom-card"
+          aria-expanded="true" aria-controls="ar-bottom-card-content">
+          <span class="card-toggle-icon" aria-hidden="true">⌄</span>
+          <span data-card-toggle-label>Minimizar escenas</span>
+        </button>
+        <div id="ar-bottom-card-content">
+          <label class="pokear-story-label" for="ar-story-select">Recorrido</label>
+          <select id="ar-story-select" class="pokear-story-select" aria-label="Seleccionar recorrido histórico">
+            <option value="franz">Franz Tamayo</option>
+            <option value="abaroa">Eduardo Abaroa</option>
+          </select>
+          <div class="pokear-card-header">
+            <span class="pokear-card-badge" id="ar-hud-scene-number">ESCENA 1 DE 5</span>
+            <span class="pokear-card-period" id="ar-hud-scene-period">1879 — 1956</span>
+          </div>
+          <h3 class="pokear-card-title" id="ar-hud-scene-title">El Despertar de Franz Tamayo</h3>
+          <p class="pokear-card-dialog" id="ar-hud-scene-text">
+            «¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano...»
+          </p>
 
-        <!-- Barra de progreso de la narración -->
-        <div class="pokear-progress-wrap" aria-hidden="true">
-          <div class="pokear-progress-bar" id="ar-hud-progress-bar"></div>
-        </div>
+          <!-- Barra de progreso de la narración -->
+          <div class="pokear-progress-wrap" aria-hidden="true">
+            <div class="pokear-progress-bar" id="ar-hud-progress-bar"></div>
+          </div>
 
-        <!-- Navegación y narración -->
-        <div class="pokear-card-controls">
-          <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-prev" aria-label="Escena anterior"
-            title="Escena anterior">
-            ←
-          </button>
-          <button class="pokear-btn pokear-btn-play" type="button" id="ar-btn-audio" aria-pressed="false"
-            title="Escuchar o pausar la narración">
-            <span id="ar-btn-audio-icon" aria-hidden="true">▶</span>
-            <span id="ar-btn-audio-label">Narrar</span>
-          </button>
-          <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-next" aria-label="Escena siguiente"
-            title="Escena siguiente">
-            →
-          </button>
+          <!-- Navegación y narración -->
+          <div class="pokear-card-controls">
+            <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-prev" aria-label="Escena anterior"
+              title="Escena anterior">
+              ←
+            </button>
+            <button class="pokear-btn pokear-btn-play" type="button" id="ar-btn-audio" aria-pressed="false"
+              title="Escuchar o pausar la narración">
+              <span id="ar-btn-audio-icon" aria-hidden="true">▶</span>
+              <span id="ar-btn-audio-label">Narrar</span>
+            </button>
+            <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-next" aria-label="Escena siguiente"
+              title="Escena siguiente">
+              →
+            </button>
+          </div>
         </div>
       </div>
     </div>

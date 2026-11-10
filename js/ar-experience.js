@@ -25,6 +25,9 @@
   const btnToggleMinimap = document.getElementById('ar-btn-toggle-minimap');
   const minimapDrawer = document.getElementById('ar-minimap-drawer');
   const minimapClose = document.getElementById('ar-minimap-close');
+  const bottomCard = document.getElementById('ar-bottom-card');
+  const btnToggleBottomCard = document.getElementById('ar-btn-toggle-bottom-card');
+  const bottomCardContent = document.getElementById('ar-bottom-card-content');
 
   const radarOverlay = document.getElementById('ar-radar-overlay');
   const radarDistEl = document.getElementById('ar-radar-distance');
@@ -1815,6 +1818,21 @@
               }
             }
 
+            function toggleBottomCard(forceState) {
+              if (!bottomCard || !btnToggleBottomCard || !bottomCardContent) return;
+              const isExpanded = typeof forceState === 'boolean'
+                ? forceState
+                : btnToggleBottomCard.getAttribute('aria-expanded') !== 'true';
+              bottomCard.classList.toggle('is-collapsed', !isExpanded);
+              btnToggleBottomCard.setAttribute('aria-expanded', String(isExpanded));
+              btnToggleBottomCard.setAttribute('aria-label', isExpanded ? 'Minimizar escenas' : 'Mostrar escenas');
+              const label = btnToggleBottomCard.querySelector('[data-card-toggle-label]');
+              const icon = btnToggleBottomCard.querySelector('.card-toggle-icon');
+              if (label) label.textContent = isExpanded ? 'Minimizar escenas' : 'Mostrar escenas';
+              if (icon) icon.textContent = isExpanded ? '⌄' : '⌃';
+              bottomCardContent.hidden = !isExpanded;
+            }
+
             // ─── Abrir y Cerrar la Experiencia Pokémon GO AR ───
             async function openAR() {
               if (window.location.protocol === 'file:') {
@@ -1837,6 +1855,7 @@
               if (arLoading) arLoading.classList.remove('is-hidden');
               if (statusPill) statusPill.textContent = '🔐 Solicitando permisos de cámara, ubicación y orientación…';
               toggleMiniMapDrawer(true);
+              toggleBottomCard(true);
 
               if (!navigator.geolocation && statusPill) {
                 statusPill.textContent = '📍 Este navegador no permite acceso a la ubicación';
@@ -1891,6 +1910,7 @@
               if (minimapDrawer) minimapDrawer.hidden = true;
               arView.classList.remove('has-map-open');
               if (btnToggleMinimap) btnToggleMinimap.setAttribute('aria-expanded', 'false');
+              toggleBottomCard(true);
               if (radarOverlay) {
                 radarOverlay.classList.remove('is-active');
                 radarOverlay.hidden = true;
@@ -1951,6 +1971,9 @@
               }
               if (minimapClose) {
                 minimapClose.addEventListener('click', () => toggleMiniMapDrawer(false));
+              }
+              if (btnToggleBottomCard) {
+                btnToggleBottomCard.addEventListener('click', () => toggleBottomCard());
               }
 
               const triggerSimulate = () => {
