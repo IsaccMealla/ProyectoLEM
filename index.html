@@ -861,36 +861,25 @@
           <div class="radar-sweep"></div>
           <span class="radar-icon">📡</span>
         </div>
-        <span class="radar-kicker">RADAR HISTÓRICO · MODO POKÉMON GO</span>
-        <h3 class="radar-title">Escaneando presencia histórica...</h3>
         <span class="radar-kicker">RADAR HISTÓRICO &amp; ALGORITMO DE RUTA MÁS CORTA</span>
-        <h3 class="radar-title">Estás lejos del sitio histórico</h3>
+        <h3 class="radar-title">Escena fuera de alcance</h3>
         <p class="radar-desc">
-          Ninguna figura histórica detectada en esta ubicación.<br>
           Estás a <strong id="ar-radar-distance">—</strong> de <span id="ar-radar-target">UNIFRANZ La Paz</span>.
-          Te encuentras a <strong id="ar-radar-distance">—</strong> de <span id="ar-radar-target">UNIFRANZ La
-            Paz</span>.<br>
-          Sigue la <strong>Ruta Más Corta (Dijkstra / API OSRM)</strong> para activar a Franz Tamayo:
+          Sigue la <strong>ruta más corta</strong> para llegar al sitio histórico.
         </p>
         <p class="radar-subtip">
-          Para que Franz Tamayo aparezca ante ti, debes encontrarte dentro del sitio en el mapa.
+          También puedes simular la llegada para explorar la escena.
         </p>
 
-        <!-- Instrucciones paso a paso de la ruta más corta en tiempo real -->
         <div class="radar-route-steps" id="ar-radar-route-steps"></div>
 
         <div class="radar-actions">
           <button type="button" class="button button-gold radar-btn" id="ar-radar-simulate-btn">
-            🎯 Simular Llegada al Sitio (Ver Animación)
-            <button type="button" class="button button-gold radar-btn" id="ar-radar-walk-route-btn">
-              🚶 Caminar por Ruta Más Corta
-            </button>
-            <button type="button" class="button button-dark radar-btn" id="ar-radar-simulate-btn">
-              🎯 Llegada Instantánea (Test)
-            </button>
-            <button type="button" class="pokear-back-home-btn radar-home-btn" data-close-ar>
-              <span class="back-arrow" aria-hidden="true">‹</span> Volver al Inicio
-            </button>
+            🎯 Simular llegada
+          </button>
+          <button type="button" class="button button-dark radar-btn" id="ar-radar-walk-route-btn">
+            🚶 Seguir ruta
+          </button>
         </div>
       </div>
     </div>
@@ -913,8 +902,10 @@
             <span data-map-toggle-label>Mostrar mapa</span>
           </button>
           <button type="button" class="pokear-chip-btn" id="ar-btn-simulate"
+            aria-label="Simular llegada al sitio para ver la escena"
             title="Simular que estás dentro del sitio para ver las animaciones">
-            🎯 Simular Sitio
+            <span aria-hidden="true">🎯</span>
+            <span class="ar-simulate-label">Simular sitio</span>
           </button>
           <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar y volver a la página principal"
             title="Regresar a la página principal">×</button>

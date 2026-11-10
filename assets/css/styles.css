@@ -4636,7 +4636,27 @@ canvas.a-canvas {
   }
 
   .pokear-top-actions #ar-btn-simulate {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 16px;
+  }
+
+  .ar-simulate-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .pokear-top-actions #ar-btn-toggle-minimap {
@@ -4733,12 +4753,72 @@ canvas.a-canvas {
   }
 
   .pokear-btn-nav {
-    min-width: 42px;
-    padding: 7px 10px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 8px;
   }
 
   .pokear-btn-play {
+    min-height: 48px;
     padding: 8px 12px;
+  }
+
+  .pokear-radar-overlay {
+    inset: calc(58px + env(safe-area-inset-top, 0px)) 0 calc(190px + env(safe-area-inset-bottom, 0px));
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(13, 15, 20, 0.62);
+  }
+
+  .pokear-radar-scan-box {
+    max-height: 100%;
+    padding: 14px;
+    overflow-y: auto;
+    border-radius: 18px;
+  }
+
+  .radar-scan-rings {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 10px;
+  }
+
+  .radar-kicker {
+    font-size: 8px;
+    letter-spacing: 1.2px;
+  }
+
+  .radar-title {
+    margin-bottom: 6px;
+    font-size: 18px;
+  }
+
+  .radar-desc {
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .radar-subtip {
+    margin-bottom: 10px;
+    font-size: 10px;
+  }
+
+  .radar-route-steps {
+    max-height: 18dvh;
+    overflow-y: auto;
+  }
+
+  .radar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .radar-btn {
+    min-height: 44px;
+    padding: 8px;
+    font-size: 11px;
   }
 
   .ar-minimap-drawer[hidden] {
@@ -4831,6 +4911,14 @@ canvas.a-canvas {
   }
 
   .pokear-card-dialog {
+    display: none;
+  }
+
+  .pokear-radar-overlay {
+    inset: calc(48px + env(safe-area-inset-top, 0px)) 0 calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .radar-scan-rings {
     display: none;
   }
 
