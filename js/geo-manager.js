@@ -358,6 +358,15 @@
     if (storySelect) storySelect.value = storyId;
     const sceneSelect = document.getElementById('geo-editor-scene');
     if (sceneSelect) sceneSelect.value = String(sceneIdx);
+    if (state.isSimulated && state.inRange) {
+      const simulatedLat = state.target.coords[0] - 0.000021;
+      const simulatedLng = state.target.coords[1];
+      state.simulatedMovementOrigin = state.realUserCoords
+        ? { lat: state.realUserCoords.lat, lng: state.realUserCoords.lng }
+        : null;
+      state.simulatedMovementAnchor = { lat: simulatedLat, lng: simulatedLng };
+      state.userCoords = { lat: simulatedLat, lng: simulatedLng, accuracy: 4 };
+    }
     if (state.map) state.map.setView(state.target.coords, state.target.zoom, { animate: true });
     if (state.miniMap) state.miniMap.setView(state.target.coords, state.target.zoom, { animate: true });
     refreshSceneMarkers();
@@ -1308,23 +1317,24 @@ function walkShortestPath(targetSceneIdx, onArrival) {
   }, 110);
 }
 
-// 🎯 Colocar la vista de prueba a escala humana y dentro del rango del objetivo
+// 🎯 Colocar la vista de prueba a escala humana (2.3 m frente al usuario) y dentro del rango del objetivo
 function simulateInRange() {
   if (!state.target) return;
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
   }
-  const targetLat = state.target.coords[0];
-  const targetLng = state.target.coords[1];
-  const simulatedLat = targetLat + 0.000025;
-  const simulatedLng = targetLng + 0.000018;
+  const activeCoords = getSceneCoordinates(state.activeStory, state.selectedSceneIndex);
+  const targetLat = activeCoords ? activeCoords[0] : state.target.coords[0];
+  const targetLng = activeCoords ? activeCoords[1] : state.target.coords[1];
+  const simulatedLat = targetLat - 0.000021;
+  const simulatedLng = targetLng;
 
   state.simulatedMovementOrigin = state.realUserCoords
     ? { lat: state.realUserCoords.lat, lng: state.realUserCoords.lng }
     : null;
   state.simulatedMovementAnchor = { lat: simulatedLat, lng: simulatedLng };
-  setUserCoordinates(simulatedLat, simulatedLng, 5, true);
+  setUserCoordinates(simulatedLat, simulatedLng, 4, true);
 
   if (state.map) {
     state.map.setView([simulatedLat, simulatedLng], 18, { animate: true });

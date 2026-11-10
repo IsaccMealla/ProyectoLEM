@@ -3029,31 +3029,38 @@ AFRAME.registerComponent('scene-diorama', {
 
   setActiveScene(idx) {
     this.data.activeScene = clamp(Number(idx) || 0, 0, 4);
+    const isAR = this.data.mode === 'ar';
     this.stations.forEach((st, i) => {
       const isActive = i === this.data.activeScene;
       st.ringMat.opacity = isActive ? 0.95 : 0.38;
       st.pedestalTrimMat.emissiveIntensity = isActive ? 0.9 : 0.25;
       st.photoFrameMat.emissiveIntensity = isActive ? 0.7 : 0.18;
+      if (isAR) {
+        // En AR: el cuadro histórico grande solo se despliega en la estación activa
+        // y las demás estaciones quedan como hitos bajos interactivos sin tapar la cámara
+        st.photoGroup.visible = isActive;
+        const baseScale = isActive ? 0.68 : 0.44;
+        st.group.scale.setScalar(baseScale);
+      }
     });
   },
 
   buildStations() {
     const isAR = this.data.mode === 'ar';
-    // En VR radio amplio (3.95m) y en AR radio cómodo (2.25m) para que estén bien espaciados
-    const radius = isAR ? 2.25 : 3.95;
-    const centerZ = isAR ? -0.35 : -2.6;
-    const scale = isAR ? 0.76 : 1.0;
+    // En VR radio amplio (3.95m) y en AR arco abierto lateral/trasero para despejar el centro
+    const radius = isAR ? 2.15 : 3.95;
+    const centerZ = isAR ? -0.55 : -2.6;
+    const scale = isAR ? 0.65 : 1.0;
     // Ángulos espaciados uniformemente en semicírculo abierto (-108° a +108°)
     const angles = [-1.88, -0.98, 0.0, 0.98, 1.88];
-    // Para la estación central (índice 2), la desplazamos a un costado frontal derecho/izquierdo
-    // para nunca tapar a Franz Tamayo que está en (0, 0, -2.6)
+    // Posiciones abiertas hacia los costados y detrás para dejar a Franz Tamayo (0,0,0) 100% despejado al frente
     const customPositions = isAR
       ? [
-        { x: -2.15, z: -0.95 },
-        { x: -1.35, z: -2.25 },
-        { x: 1.35, z: -2.25 },
-        { x: 2.15, z: -0.95 },
-        { x: 0.0, z: -2.65 }
+        { x: -1.85, z: -0.65 },
+        { x: -1.35, z: -1.65 },
+        { x: 1.35, z: -1.65 },
+        { x: 1.85, z: -0.65 },
+        { x: 1.55, z: 0.25 }
       ]
       : [
         { x: -3.75, z: -1.35 },
@@ -3082,8 +3089,8 @@ AFRAME.registerComponent('scene-diorama', {
       const pos = customPositions[i] || { x: Math.sin(angles[i]) * radius, z: centerZ - Math.cos(angles[i]) * radius };
       const stGroup = new THREE.Group();
       stGroup.position.set(pos.x, 0, pos.z);
-      // Orientar cada estación mirando hacia el centro donde está el visitante / Tamayo
-      stGroup.rotation.y = Math.atan2(-pos.x, (isAR ? 0.5 : -0.8) - pos.z);
+      // Orientar cada estación mirando directamente hacia el visitante (z = +2.3 en AR)
+      stGroup.rotation.y = Math.atan2(-pos.x, (isAR ? 2.3 : -0.8) - pos.z);
       stGroup.scale.setScalar(scale);
 
       const col = new THREE.Color(info.color);
@@ -3292,6 +3299,7 @@ AFRAME.registerComponent('scene-diorama', {
         color: col
       });
     }
+    this.setActiveScene(this.data.activeScene);
   },
 
   tick(time, dtMs) {

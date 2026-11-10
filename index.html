@@ -20,7 +20,6 @@
   <!-- A-Frame y librerías inmersivas -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
   <!-- Leaflet: API de Mapas Interactivos y Geolocalización -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -28,6 +27,7 @@
 
   <!-- Controladores y efectos de la aplicación -->
   <script src="js/tamayo-fx.js" defer></script>
+  <script src="js/ar-scene-life.js" defer></script>
   <script src="js/geo-manager.js" defer></script>
   <script src="js/vr-experience.js" defer></script>
   <script src="js/main.js" defer></script>
@@ -560,293 +560,186 @@
 
         <!-- Cámara del usuario con sensores de orientación / giroscopio 360° -->
         <a-entity id="pokear-camera-rig" position="0 0 0">
-          <a-camera id="pokear-camera" position="0 1.5 0"
+          <a-camera id="pokear-camera" position="0 1.4 0"
             look-controls="touchEnabled: true; magicWindowTrackingEnabled: true">
           </a-camera>
         </a-entity>
 
-        <!-- Anclaje geográfico de la escena, independiente del rig de cámara -->
-        <a-entity id="tamayo-world-anchor" position="0 0 -2.6" visible="false">
+        <!-- Anclaje en el mundo real (frente al visitante a escala natural estilo Pokémon GO) -->
+        <a-entity id="tamayo-world-anchor" position="0 0 -2.35" visible="false">
           <!-- Anillo de presencia holográfico estilo Pokémon GO en el suelo -->
-          <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="0.32" radius-outer="0.55" color="#ffd166"
-            material="emissive: #ffd166; emissiveIntensity: 0.6; opacity: 0.45; transparent: true"></a-ring>
-          <a-circle position="0 0.01 0" rotation="-90 0 0" radius="0.52" color="#000000"
-            material="opacity: 0.35; transparent: true"></a-circle>
+          <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="0.34" radius-outer="0.58" color="#ffd166"
+            material="emissive: #ffd166; emissiveIntensity: 0.7; opacity: 0.55; transparent: true"
+            animation="property: scale; from: 0.94 0.94 0.94; to: 1.08 1.08 1.08; dir: alternate; dur: 1600; loop: true; easing: easeInOutSine"></a-ring>
+          <a-circle position="0 0.01 0" rotation="-90 0 0" radius="0.54" color="#000000"
+            material="opacity: 0.38; transparent: true"></a-circle>
 
           <!-- Entidad con desplazamiento autónomo y caminata (tamayo-walker) -->
           <a-entity id="tamayo-walker-root" tamayo-walker="speed: 0.68; roamRadius: 1.8; autoRoam: false">
-            <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" scale="1.15 1.15 1.15"
+            <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" scale="1.22 1.22 1.22"
               tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false; autoGestures: true"></a-entity>
             <a-entity id="eduardo-abaroa-figure" position="0 0 0" scale="1.7 1.7 1.7" visible="false"></a-entity>
           </a-entity>
 
           <!-- Estudiante acompañante animado en Realidad Aumentada -->
-          <a-entity id="ar-companion-student" position="1.35 0 0.2"
+          <a-entity id="ar-companion-student" position="1.25 0 0.15"
             npc-person="mode: idle; facing: -1.35; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; scale: 0.92"></a-entity>
 
           <!-- Identificador flotante -->
           <a-entity id="ar-character-name" position="0 2.05 0"
-            text="value: FRANZ TAMAYO; align: center; width: 2.1; color: #fff4d4; shader: msdf"></a-entity>
+            text="value: FRANZ TAMAYO; align: center; width: 2.2; color: #fff4d4; shader: msdf"></a-entity>
           <a-text id="ar-model-error-label" value="CARGANDO MODELO 3D..." visible="false" position="0 2.25 0"
             align="center" width="3.2" color="#ffd166"></a-text>
-          <a-entity id="ar-video-panel" position="-1.55 1.7 0.35" visible="false">
-            <a-plane position="0 0 0" width="1.7" height="1" color="#111111"
-              material="opacity: 0.9; transparent: true"></a-plane>
-            <a-video id="ar-scene-video-surface" src="#ar-scene-video" position="0 0 0.01" width="1.62"
-              height="0.91"></a-video>
+          <a-entity id="ar-video-panel" position="-1.35 1.65 0.25" rotation="0 22 0" visible="false">
+            <a-plane position="0 0 0" width="1.55" height="0.92" color="#111111"
+              material="opacity: 0.92; transparent: true"></a-plane>
+            <a-video id="ar-scene-video-surface" src="#ar-scene-video" position="0 0 0.01" width="1.48"
+              height="0.84"></a-video>
           </a-entity>
 
-          <!-- ========================================================
-               OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (Pokémon GO)
-               GALERÍA DE 5 ESTACIONES 3D INTERACTIVAS + FOTOS HISTÓRICAS
-               (Toca cualquier objeto o foto histórica para cambiar de escena)
-               ======================================================== -->
+          <!-- Vida Animada 3D de las 5 Escenas de Franz Tamayo (pergamino, pizarra, construcción 1993, holomapa, birretes y fuegos artificiales) -->
+          <a-entity id="ar-franz-scene-life" position="0 0 0" ar-scene-life="scene: 0; active: true"></a-entity>
+
+          <!-- Galería de Estaciones 3D Interactivas + Fotos Históricas -->
           <a-entity id="ar-interactive-diorama" position="0 0 0" scene-diorama="mode: ar; activeScene: 0"></a-entity>
 
           <!-- ========================================================
-               OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (Espaciados ampliamente)
+               OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (A escala real y cercanos)
                ======================================================== -->
 
           <!-- AR Escena 1: El Despertar (Atril histórico de caoba, reloj de bolsillo y medallón) -->
           <a-entity id="ar-visuals-scene-1" visible="true">
-            <!-- Atril clásico de caoba con reloj de bolsillo -->
-            <a-entity position="-1.05 0 0.1" rotation="0 35 0">
-              <!-- Atril clásico de caoba con reloj de bolsillo (espaciado a -1.65m) -->
-              <a-entity position="-1.65 0 0.25" rotation="0 35 0">
-                <a-cylinder position="0 0.4 0" radius="0.08" height="0.8" color="#3d1f14" roughness="0.8"></a-cylinder>
-                <a-cylinder position="0 0.04 0" radius="0.22" height="0.08" color="#26130b"
-                  roughness="0.85"></a-cylinder>
-                <a-box position="0 0.82 0" rotation="22 0 0" width="0.44" height="0.04" depth="0.36" color="#4a2517"
-                  roughness="0.7"></a-box>
-                <!-- Reloj de bolsillo de época en bronce -->
-                <a-cylinder position="0.08 0.86 0.02" rotation="22 0 0" radius="0.045" height="0.015" color="#d4af37"
-                  material="metalness: 0.8; roughness: 0.3"></a-cylinder>
-                <a-circle position="0.08 0.87 0.02" rotation="-68 0 0" radius="0.038" color="#fefae0"></a-circle>
-                <!-- Placa de bronce grabada -->
-                <a-box position="0 0.5 0.085" width="0.28" height="0.12" depth="0.015" color="#c59b27"
-                  material="metalness: 0.7; roughness: 0.35"></a-box>
-                <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.5 0.095" width="1.2"
-                  color="#1a1202" font="dejavu"></a-text>
-              </a-entity>
-              <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.1" radius-outer="1.35"
-                material="color: #d5aa46; opacity: 0.45; transparent: true"></a-ring>
-              <a-text value="«EL DESPERTAR DE FRANZ TAMAYO»" position="0 2.25 0" align="center" width="2.8"
-                color="#ffd166" font="dejavu"></a-text>
-              <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.25" radius-outer="1.5"
-                material="color: #d5aa46; opacity: 0.45; transparent: true"></a-ring>
-              <a-text value="«EL DESPERTAR DE FRANZ TAMAYO»" position="0 2.35 0" align="center" width="2.8"
-                color="#ffd166" font="dejavu"></a-text>
+            <a-entity position="-0.95 0 0.15" rotation="0 28 0">
+              <a-cylinder position="0 0.4 0" radius="0.08" height="0.8" color="#3d1f14" roughness="0.8"></a-cylinder>
+              <a-cylinder position="0 0.04 0" radius="0.22" height="0.08" color="#26130b" roughness="0.85"></a-cylinder>
+              <a-box position="0 0.82 0" rotation="22 0 0" width="0.44" height="0.04" depth="0.36" color="#4a2517"
+                roughness="0.7"></a-box>
+              <a-cylinder position="0.08 0.86 0.02" rotation="22 0 0" radius="0.045" height="0.015" color="#d4af37"
+                material="metalness: 0.8; roughness: 0.3"></a-cylinder>
+              <a-circle position="0.08 0.87 0.02" rotation="-68 0 0" radius="0.038" color="#fefae0"></a-circle>
+              <a-box position="0 0.5 0.085" width="0.28" height="0.12" depth="0.015" color="#c59b27"
+                material="metalness: 0.7; roughness: 0.35"></a-box>
+              <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.5 0.095" width="1.2"
+                color="#1a1202" font="dejavu"></a-text>
             </a-entity>
+            <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.05" radius-outer="1.25"
+              material="color: #d5aa46; opacity: 0.45; transparent: true"></a-ring>
+            <a-text value="«EL DESPERTAR DE FRANZ TAMAYO»" position="0 2.32 0" align="center" width="2.6"
+              color="#ffd166" font="dejavu"></a-text>
+          </a-entity>
 
-            <!-- AR Escena 2: El Pensamiento y la Educación (Escritorio noble, manuscrito 1910, tintero, pluma y libros) -->
-            <a-entity id="ar-visuals-scene-2" visible="false">
-              <a-entity position="-1.15 0 -0.1" rotation="0 25 0">
-                <a-entity position="-1.75 0 0.15" rotation="0 28 0">
-                  <!-- Mesa de estudio de madera noble con patas torneadas -->
-                  <a-box position="0 0.48 0" width="1.0" height="0.05" depth="0.6" color="#3d1f14"
-                    roughness="0.75"></a-box>
-                  <a-cylinder position="-0.42 0.24 -0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
-                  <a-cylinder position="0.42 0.24 -0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
-                  <a-cylinder position="-0.42 0.24 0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
-                  <a-cylinder position="0.42 0.24 0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
-                  <!-- Gran libro abierto: Creación de la Pedagogía Nacional (1910) -->
-                  <a-box position="0 0.52 0.02" rotation="0 5 0" width="0.44" height="0.025" depth="0.32"
-                    color="#5c1d1d" roughness="0.8"></a-box>
-                  <a-plane position="-0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28"
-                    color="#fefae0"></a-plane>
-                  <a-plane position="0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28"
-                    color="#faf3d2"></a-plane>
-                  <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center"
-                    position="-0.1 0.538 0.02" rotation="-90 5 0" width="0.6" color="#2c1810" font="dejavu"></a-text>
-                  <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
-                    position="0.02 0.538 0.02" rotation="-90 5 0" width="0.55" color="#3c2415" font="dejavu"></a-text>
-                  <!-- Tintero de cristal y pluma clásica de ave blanca -->
-                  <a-cylinder position="0.32 0.525 -0.15" radius="0.035" height="0.045" color="#1a202c"
-                    material="roughness: 0.2; metalness: 0.4"></a-cylinder>
-                  <a-cone position="0.34 0.65 -0.15" rotation="15 20 -12" radius-bottom="0.008" radius-top="0.001"
-                    height="0.22" color="#f8fafc"></a-cone>
-                  <!-- Pergaminos enrollados atados con cinta roja -->
-                  <a-cylinder position="-0.32 0.525 -0.15" rotation="0 30 90" radius="0.028" height="0.22"
-                    color="#edd9b4"></a-cylinder>
-                  <a-torus position="-0.32 0.525 -0.15" rotation="90 30 0" radius="0.03" radius-tubular="0.005"
-                    color="#dc2626"></a-torus>
-                  <!-- Lámpara clásica estilo banquero con tulipa verde esmeralda -->
-                  <a-cylinder position="0.36 0.54 0.16" radius="0.04" height="0.02" color="#b45309"
-                    material="metalness: 0.8"></a-cylinder>
-                  <a-cylinder position="0.36 0.64 0.16" radius="0.01" height="0.18" color="#d97706"
-                    material="metalness: 0.7"></a-cylinder>
-                  <a-cylinder position="0.36 0.73 0.16" rotation="0 0 90" radius="0.035" height="0.12" color="#047857"
-                    material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.3"></a-cylinder>
-                </a-entity>
-                <!-- 2 libros antiguos flotando suavemente en el aire -->
-                <a-entity position="1.1 1.15 -0.2" rotation="12 -25 15"
-                  animation="property: rotation; to: 12 335 15; loop: true; dur: 11000; easing: linear">
-                  <a-entity position="1.65 1.15 0.1" rotation="12 -25 15"
-                    animation="property: rotation; to: 12 335 15; loop: true; dur: 11000; easing: linear">
-                    <a-box width="0.38" height="0.48" depth="0.09" color="#451a03" roughness="0.75"></a-box>
-                    <a-plane position="0.195 0 0" rotation="0 90 0" width="0.08" height="0.44"
-                      color="#fef3c7"></a-plane>
-                  </a-entity>
-                  <a-plane position="0 2.2 0" width="2.4" height="0.38" material="color: #2b1f14; opacity: 0.92">
-                    <a-plane position="0 2.35 0" width="2.4" height="0.38" material="color: #2b1f14; opacity: 0.92">
-                      <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02"
-                        width="2.5" color="#f59e0b" font="dejavu"></a-text>
-                    </a-plane>
-                </a-entity>
+          <!-- AR Escena 2: El Pensamiento y la Educación (Escritorio noble, manuscrito 1910, tintero, pluma y libros) -->
+          <a-entity id="ar-visuals-scene-2" visible="false">
+            <a-entity position="-0.98 0 -0.22" rotation="0 24 0">
+              <a-box position="0 0.48 0" width="0.92" height="0.05" depth="0.54" color="#3d1f14" roughness="0.75"></a-box>
+              <a-cylinder position="-0.38 0.24 -0.2" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+              <a-cylinder position="0.38 0.24 -0.2" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+              <a-cylinder position="-0.38 0.24 0.2" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+              <a-cylinder position="0.38 0.24 0.2" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+              <a-box position="0 0.52 0.02" rotation="0 5 0" width="0.44" height="0.025" depth="0.32" color="#5c1d1d"
+                roughness="0.8"></a-box>
+              <a-plane position="-0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28" color="#fefae0"></a-plane>
+              <a-plane position="0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28" color="#faf3d2"></a-plane>
+              <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center" position="-0.1 0.538 0.02"
+                rotation="-90 5 0" width="0.6" color="#2c1810" font="dejavu"></a-text>
+              <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
+                position="0.02 0.538 0.02" rotation="-90 5 0" width="0.55" color="#3c2415" font="dejavu"></a-text>
+              <a-cylinder position="0.32 0.525 -0.15" radius="0.035" height="0.045" color="#1a202c"
+                material="roughness: 0.2; metalness: 0.4"></a-cylinder>
+              <a-cone position="0.34 0.65 -0.15" rotation="15 20 -12" radius-bottom="0.008" radius-top="0.001"
+                height="0.22" color="#f8fafc"></a-cone>
+              <a-cylinder position="-0.32 0.525 -0.15" rotation="0 30 90" radius="0.028" height="0.22"
+                color="#edd9b4"></a-cylinder>
+              <a-torus position="-0.32 0.525 -0.15" rotation="90 30 0" radius="0.03" radius-tubular="0.005"
+                color="#dc2626"></a-torus>
+              <a-cylinder position="0.34 0.54 0.16" radius="0.04" height="0.02" color="#b45309"
+                material="metalness: 0.8"></a-cylinder>
+              <a-cylinder position="0.34 0.64 0.16" radius="0.01" height="0.18" color="#d97706"
+                material="metalness: 0.7"></a-cylinder>
+              <a-cylinder position="0.34 0.73 0.16" rotation="0 0 90" radius="0.035" height="0.12" color="#047857"
+                material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.3"></a-cylinder>
+            </a-entity>
+            <a-plane position="0 2.35 0" width="2.3" height="0.36" material="color: #2b1f14; opacity: 0.92">
+              <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02" width="2.4"
+                color="#f59e0b" font="dejavu"></a-text>
+            </a-plane>
+          </a-entity>
 
-                <!-- AR Escena 3: El Nacimiento de UNIFRANZ (Monumento de fundación 1990, placa de fundadores y fachada colonial) -->
-                <a-entity id="ar-visuals-scene-3" visible="false">
-                  <!-- Monumento de piedra conmemorativa 1990 -->
-                  <a-entity position="-1.05 0 -0.2" rotation="0 25 0">
-                    <a-entity position="-1.65 0 0.1" rotation="0 28 0">
-                      <a-box position="0 0.1 0" width="0.65" height="0.2" depth="0.5" color="#334155"
-                        roughness="0.85"></a-box>
-                      <a-box position="0 0.5 0" width="0.52" height="0.62" depth="0.38" color="#475569"
-                        roughness="0.8"></a-box>
-                      <!-- Escudo de UNIFRANZ 1990 en bronce dorado -->
-                      <a-cylinder position="0 0.65 0.2" rotation="90 0 0" radius="0.12" height="0.02" color="#b45309"
-                        material="metalness: 0.75; roughness: 0.3"></a-cylinder>
-                      <a-text value="UNIFRANZ\n1990" align="center" position="0 0.65 0.215" width="1.1" color="#fef08a"
-                        font="dejavu"></a-text>
-                      <!-- Placa de bronce fundido con nombres de los fundadores -->
-                      <a-box position="0 0.35 0.2" width="0.44" height="0.24" depth="0.015" color="#78350f"
-                        material="metalness: 0.65; roughness: 0.4"></a-box>
-                      <a-text
-                        value="FUNDACIÓN OFICIAL: 4 NOV 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
-                        align="center" position="0 0.35 0.212" width="1.0" color="#fef08a" font="dejavu"></a-text>
-                    </a-entity>
-                    <!-- Fachada histórica en miniatura de la primera sede en La Paz -->
-                    <a-entity position="1.1 0 -0.2" rotation="0 -25 0">
-                      <a-entity position="1.75 0 0.1" rotation="0 -28 0">
-                        <a-box position="0 0.65 0" width="0.85" height="1.3" depth="0.14" color="#f8fafc"
-                          roughness="0.9"></a-box>
-                        <a-cylinder position="0 1.32 0" rotation="0 0 90" radius="0.14" height="0.88" color="#991b1b"
-                          roughness="0.8"></a-cylinder>
-                        <!-- Portal colonial en arco -->
-                        <a-box position="0 0.38 0.08" width="0.38" height="0.75" depth="0.03" color="#3d1f14"></a-box>
-                        <a-cylinder position="0 0.76 0.08" rotation="90 0 0" radius="0.19" height="0.03"
-                          color="#3d1f14"></a-cylinder>
-                        <!-- Balcón colonial de hierro forjado -->
-                        <a-box position="0 0.88 0.16" width="0.48" height="0.22" depth="0.14" color="#0f172a"
-                          material="metalness: 0.9; roughness: 0.3"></a-box>
-                        <a-text value="SEDE LA PAZ · 1993" align="center" position="0 1.15 0.09" width="1.2"
-                          color="#991b1b" font="dejavu"></a-text>
-                      </a-entity>
-                      <a-torus position="0 1.2 0" rotation="90 0 0" radius="1.45" radius-tubular="0.02" color="#c0392b"
-                        emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
-                      <a-text value="4 DE NOVIEMBRE DE 1990 · NACIMIENTO DE UNIFRANZ" position="0 2.25 0" align="center"
-                        width="2.7" color="#f87171" font="dejavu"></a-text>
-                      <a-torus position="0 1.2 0" rotation="90 0 0" radius="1.55" radius-tubular="0.02" color="#c0392b"
-                        emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
-                      <a-text value="4 DE NOVIEMBRE DE 1990 · NACIMIENTO DE UNIFRANZ" position="0 2.35 0" align="center"
-                        width="2.7" color="#f87171" font="dejavu"></a-text>
-                    </a-entity>
+          <!-- AR Escena 3: El Nacimiento de UNIFRANZ (Monumento de fundación 1990 y placa de fundadores) -->
+          <a-entity id="ar-visuals-scene-3" visible="false">
+            <a-entity position="-0.95 0 -0.25" rotation="0 24 0">
+              <a-box position="0 0.1 0" width="0.65" height="0.2" depth="0.5" color="#334155" roughness="0.85"></a-box>
+              <a-box position="0 0.5 0" width="0.52" height="0.62" depth="0.38" color="#475569" roughness="0.8"></a-box>
+              <a-cylinder position="0 0.65 0.2" rotation="90 0 0" radius="0.12" height="0.02" color="#b45309"
+                material="metalness: 0.75; roughness: 0.3"></a-cylinder>
+              <a-text value="UNIFRANZ\n1990" align="center" position="0 0.65 0.215" width="1.1" color="#fef08a"
+                font="dejavu"></a-text>
+              <a-box position="0 0.35 0.2" width="0.44" height="0.24" depth="0.015" color="#78350f"
+                material="metalness: 0.65; roughness: 0.4"></a-box>
+              <a-text value="FUNDACIÓN OFICIAL: 4 NOV 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
+                align="center" position="0 0.35 0.212" width="1.0" color="#fef08a" font="dejavu"></a-text>
+            </a-entity>
+            <a-torus position="0 1.15 0" rotation="90 0 0" radius="1.28" radius-tubular="0.018" color="#c0392b"
+              emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
+            <a-text value="4 DE NOVIEMBRE DE 1990 · NACIMIENTO DE UNIFRANZ" position="0 2.45 0" align="center"
+              width="2.6" color="#f87171" font="dejavu"></a-text>
+          </a-entity>
 
-                    <!-- AR Escena 4: Una Universidad en Crecimiento (Red Nacional de 4 Campus Iluminados) -->
-                    <a-entity id="ar-visuals-scene-4" visible="false">
-                      <!-- 1. La Paz (Sede Central con aguja y silueta Illimani) -->
-                      <a-entity position="-1.1 0 0.1">
-                        <a-entity position="-1.55 0 0.2">
-                          <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a"
-                            roughness="0.4" material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
-                          <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32"
-                            color="#38bdf8" material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
-                          <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.35 0" width="1.8"
-                            color="#93c5fd" font="dejavu"></a-text>
-                        </a-entity>
-                        <!-- 2. El Alto (Torre tecnológica andina) -->
-                        <a-entity position="-0.45 0 -0.55">
-                          <a-entity position="-0.7 0 -0.85">
-                            <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
-                              material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
-                            <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
-                              material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
-                            <a-text value="EL ALTO" align="center" position="0 1.15 0" width="1.7" color="#7dd3fc"
-                              font="dejavu"></a-text>
-                          </a-entity>
-                          <!-- 3. Cochabamba (Campus Valle y columnata) -->
-                          <a-entity position="0.45 0 -0.55">
-                            <a-entity position="0.7 0 -0.85">
-                              <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
-                                material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
-                              <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
-                                material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
-                              <a-text value="COCHABAMBA" align="center" position="0 1.15 0" width="1.7" color="#7dd3fc"
-                                font="dejavu"></a-text>
-                            </a-entity>
-                            <!-- 4. Santa Cruz (Torre vanguardista bioclimática) -->
-                            <a-entity position="1.1 0 0.1">
-                              <a-entity position="1.55 0 0.2">
-                                <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a"
-                                  roughness="0.4" material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
-                                <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32"
-                                  color="#38bdf8" material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
-                                <a-text value="SANTA CRUZ" align="center" position="0 1.35 0" width="1.8"
-                                  color="#93c5fd" font="dejavu"></a-text>
-                              </a-entity>
-                              <!-- Haces de interconexión nacional -->
-                              <a-cylinder position="-0.78 0.7 -0.22" rotation="45 -55 0" radius="0.012" height="0.95"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-cylinder position="0 0.88 -0.55" rotation="0 90 90" radius="0.012" height="0.9"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-cylinder position="0.78 0.7 -0.22" rotation="45 55 0" radius="0.012" height="0.95"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-text value="EXPANSIÓN NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.25 0"
-                                align="center" width="2.8" color="#67e8f9" font="dejavu"></a-text>
-                              <a-cylinder position="-1.1 0.7 -0.32" rotation="45 -55 0" radius="0.012" height="1.2"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-cylinder position="0 0.88 -0.85" rotation="0 90 90" radius="0.012" height="1.4"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-cylinder position="1.1 0.7 -0.32" rotation="45 55 0" radius="0.012" height="1.2"
-                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
-                              <a-text value="EXPANSIÓN NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 0"
-                                align="center" width="2.8" color="#67e8f9" font="dejavu"></a-text>
-                            </a-entity>
+          <!-- AR Escena 4: Una Universidad en Crecimiento (Red Nacional de 4 Campus Iluminados) -->
+          <a-entity id="ar-visuals-scene-4" visible="false">
+            <a-entity position="-1.15 0 0.1">
+              <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a" roughness="0.4"
+                material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
+              <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32" color="#38bdf8"
+                material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
+              <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.35 0" width="1.6" color="#93c5fd"
+                font="dejavu"></a-text>
+            </a-entity>
+            <a-entity position="-0.55 0 -0.65">
+              <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
+                material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
+              <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
+                material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
+              <a-text value="EL ALTO" align="center" position="0 1.15 0" width="1.5" color="#7dd3fc"
+                font="dejavu"></a-text>
+            </a-entity>
+            <a-entity position="0.55 0 -0.65">
+              <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
+                material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
+              <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
+                material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
+              <a-text value="COCHABAMBA" align="center" position="0 1.15 0" width="1.5" color="#7dd3fc"
+                font="dejavu"></a-text>
+            </a-entity>
+            <a-entity position="1.15 0 0.1">
+              <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a" roughness="0.4"
+                material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
+              <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32" color="#38bdf8"
+                material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
+              <a-text value="SANTA CRUZ" align="center" position="0 1.35 0" width="1.6" color="#93c5fd"
+                font="dejavu"></a-text>
+            </a-entity>
+            <a-text value="EXPANSIÓN NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 0" align="center" width="2.6"
+              color="#67e8f9" font="dejavu"></a-text>
+          </a-entity>
 
-                            <!-- AR Escena 5: El Legado Continúa (Birrete de graduación, escudo UNIFRANZ orbital y antorcha) -->
-                            <a-entity id="ar-visuals-scene-5" visible="false">
-                              <!-- Birrete de graduación 3D flotante con borla dorada -->
-                              <a-entity position="-0.95 1.15 -0.1" rotation="10 20 -8"
-                                animation="property: position; to: -0.95 1.22 -0.1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
-                                <a-entity position="-1.5 1.15 0.1" rotation="10 20 -8"
-                                  animation="property: position; to: -1.5 1.22 0.1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
-                                  <a-box position="0 0 0" width="0.38" height="0.02" depth="0.38" color="#0f172a"
-                                    roughness="0.6"></a-box>
-                                  <a-cylinder position="0 -0.09 0" radius="0.14" height="0.16" color="#0f172a"
-                                    roughness="0.6"></a-cylinder>
-                                  <!-- Botón y borla dorada -->
-                                  <a-cylinder position="0 0.018 0" radius="0.018" height="0.015" color="#eab308"
-                                    material="metalness: 0.8"></a-cylinder>
-                                  <a-cylinder position="0.16 -0.08 0.16" rotation="20 45 0" radius="0.007" height="0.22"
-                                    color="#eab308" material="metalness: 0.7"></a-cylinder>
-                                </a-entity>
-                                <!-- Escudo oficial 3D y anillos orbitales holográficos -->
-                                <a-entity position="0.95 1.15 -0.1">
-                                  <a-entity position="1.5 1.15 0.1">
-                                    <a-torus radius="0.26" radius-tubular="0.015" color="#10b981" emissive="#10b981"
-                                      emissiveIntensity="0.8"
-                                      animation="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"></a-torus>
-                                    <a-torus radius="0.35" radius-tubular="0.012" color="#34d399" emissive="#34d399"
-                                      emissiveIntensity="0.6"
-                                      animation="property: rotation; to: -360 180 360; loop: true; dur: 12000; easing: linear"></a-torus>
-                                    <a-cylinder position="0 0 0" rotation="90 0 0" radius="0.18" height="0.03"
-                                      color="#064e3b"
-                                      material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.5"></a-cylinder>
-                                    <a-text value="UNIFRANZ\nFUTURO" align="center" position="0 0 0.025" width="1.4"
-                                      color="#a7f3d0" font="dejavu"></a-text>
-                                  </a-entity>
-                                  <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.15" radius-outer="1.42"
-                                    material="color: #10b981; emissive: #10b981; emissiveIntensity: 0.6; opacity: 0.5; transparent: true"></a-ring>
-                                  <a-text value="«EL FUTURO ESTÁ EN SUS MANOS»\nINNOVACIÓN · INVESTIGACIÓN · TALENTO"
-                                    position="0 2.25 0" align="center" width="2.8" color="#6ee7b7"
-                                    font="dejavu"></a-text>
-                                  <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.25" radius-outer="1.52"
-                                    material="color: #10b981; emissive: #10b981; emissiveIntensity: 0.6; opacity: 0.5; transparent: true"></a-ring>
-                                  <a-text value="«EL FUTURO ESTÁ EN SUS MANOS»\nINNOVACIÓN · INVESTIGACIÓN · TALENTO"
-                                    position="0 2.35 0" align="center" width="2.8" color="#6ee7b7"
-                                    font="dejavu"></a-text>
-                                </a-entity>
-                              </a-entity>
+          <!-- AR Escena 5: El Legado Continúa (Birrete de graduación, escudo UNIFRANZ orbital y antorcha) -->
+          <a-entity id="ar-visuals-scene-5" visible="false">
+            <a-entity position="-1.05 1.15 0.1" rotation="10 20 -8"
+              animation="property: position; to: -1.05 1.24 0.1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+              <a-box position="0 0 0" width="0.38" height="0.02" depth="0.38" color="#0f172a" roughness="0.6"></a-box>
+              <a-cylinder position="0 -0.09 0" radius="0.14" height="0.16" color="#0f172a" roughness="0.6"></a-cylinder>
+              <a-cylinder position="0 0.018 0" radius="0.018" height="0.015" color="#eab308"
+                material="metalness: 0.8"></a-cylinder>
+              <a-cylinder position="0.16 -0.08 0.16" rotation="20 45 0" radius="0.007" height="0.22" color="#eab308"
+                material="metalness: 0.7"></a-cylinder>
+            </a-entity>
+            <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.05" radius-outer="1.28"
+              material="color: #10b981; emissive: #10b981; emissiveIntensity: 0.6; opacity: 0.5; transparent: true"></a-ring>
+            <a-text value="«EL FUTURO ESTÁ EN SUS MANOS»\nINNOVACIÓN · INVESTIGACIÓN · TALENTO" position="0 2.35 0"
+              align="center" width="2.6" color="#6ee7b7" font="dejavu"></a-text>
+          </a-entity>
+        </a-entity>
       </a-scene>
     </template>
 
@@ -898,6 +791,12 @@
             title="Simular que estás dentro del sitio para ver las animaciones">
             <span aria-hidden="true">🎯</span>
             <span class="ar-simulate-label">Simular sitio</span>
+          </button>
+          <button type="button" class="pokear-chip-btn" id="ar-btn-reanchor"
+            aria-label="Fijar la escena frente a tu cámara"
+            title="Colocar y fijar el personaje frente a tu vista actual">
+            <span aria-hidden="true">📌</span>
+            <span>Fijar aquí</span>
           </button>
           <button type="button" class="pokear-chip-btn" id="ar-btn-toggle-minimap" aria-expanded="false"
             aria-controls="ar-minimap-drawer" title="Mostrar u ocultar el mapa y la ruta de la escena">
@@ -1008,32 +907,21 @@
 
         <!-- Personajes Secundarios Animados (Estudiantes de UNIFRANZ explorando y conversando en la plaza histórica) -->
         <a-entity id="vr-npc-group">
-          <!-- Estudiante 1: Caminando en círculo alrededor de la plaza leyendo notas -->
-          <a-entity id="vr-npc-student-1"
-            npc-person="mode: circle; center: 0 0 -1.2; radius: 4.6; speed: 0.52; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; phase: 0.4"></a-entity>
           <!-- Estudiante 1: Caminando en círculo amplio alrededor de la plaza leyendo notas -->
           <a-entity id="vr-npc-student-1"
             npc-person="mode: circle; center: 0 0 -1.2; radius: 5.4; speed: 0.52; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; phase: 0.4"></a-entity>
 
           <!-- Estudiante 2: Caminando libremente con mochila cerca de las columnas coloniales -->
           <a-entity id="vr-npc-student-2"
-            npc-person="mode: roam; center: -3.4 0 -3.2; radius: 2.2; speed: 0.42; prop: backpack; shirt: #059669; pants: #334155; skin: #b07d4b; phase: 1.8"></a-entity>
-          <a-entity id="vr-npc-student-2"
             npc-person="mode: roam; center: -4.2 0 -3.6; radius: 2.2; speed: 0.42; prop: backpack; shirt: #059669; pants: #334155; skin: #b07d4b; phase: 1.8"></a-entity>
 
           <!-- Pareja de Estudiantes conversando cerca de la arquería (Modo reposo e interacción con gestos) -->
-          <a-entity id="vr-npc-student-3"
-            npc-person="mode: idle; center: 3.2 0 -2.4; facing: -2.1; prop: none; shirt: #dc2626; pants: #1f2937; skin: #cf9b67"></a-entity>
-          <a-entity id="vr-npc-student-4"
-            npc-person="mode: idle; center: 2.4 0 -2.9; facing: 1.0; prop: book; shirt: #d97706; pants: #374151; skin: #a26d3b"></a-entity>
           <a-entity id="vr-npc-student-3"
             npc-person="mode: idle; center: 4.2 0 -2.6; facing: -2.1; prop: none; shirt: #dc2626; pants: #1f2937; skin: #cf9b67"></a-entity>
           <a-entity id="vr-npc-student-4"
             npc-person="mode: idle; center: 3.4 0 -3.1; facing: 1.0; prop: book; shirt: #d97706; pants: #374151; skin: #a26d3b"></a-entity>
 
           <!-- Estudiante 5: Paseando por el perímetro exterior contemplando el monumento y el Illimani -->
-          <a-entity id="vr-npc-student-5"
-            npc-person="mode: circle; center: 0 0 -1.2; radius: 7.2; speed: 0.38; clockwise: false; prop: backpack; shirt: #7c3aed; pants: #111827; skin: #b88352; phase: 3.2"></a-entity>
           <a-entity id="vr-npc-student-5"
             npc-person="mode: circle; center: 0 0 -1.2; radius: 7.4; speed: 0.38; clockwise: false; prop: backpack; shirt: #7c3aed; pants: #111827; skin: #b88352; phase: 3.2"></a-entity>
         </a-entity>
@@ -1372,335 +1260,291 @@
             width="2.35" wrap-count="50" color="#fff0d4"></a-text>
         </a-entity>
         <!-- ========================================================
-             ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA
              ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA (Bien espaciados)
              ======================================================== -->
+        <a-entity id="vr-franz-scene-life" position="0 0 -2.3" ar-scene-life="scene: 0; active: true"></a-entity>
 
         <!-- Visual Escena 1: El Despertar de Franz Tamayo (Atril de caoba con reloj de bolsillo y placa) -->
         <a-entity id="vr-visuals-scene-1" visible="true">
-          <!-- Atril de caoba con reloj y placa histórica -->
-          <a-entity position="-1.45 0 -2.1" rotation="0 40 0">
-            <a-entity position="-1.95 0 -2.1" rotation="0 40 0">
-              <a-cylinder position="0 0.45 0" radius="0.09" height="0.9" color="#3d1f14" roughness="0.8"></a-cylinder>
-              <a-cylinder position="0 0.05 0" radius="0.25" height="0.1" color="#26130b" roughness="0.85"></a-cylinder>
-              <a-box position="0 0.92 0" rotation="22 0 0" width="0.5" height="0.04" depth="0.4" color="#4a2517"
-                roughness="0.7"></a-box>
-              <!-- Reloj de bolsillo de época en bronce dorado -->
-              <a-cylinder position="0.1 0.96 0.02" rotation="22 0 0" radius="0.05" height="0.015" color="#d4af37"
-                material="metalness: 0.8; roughness: 0.3"></a-cylinder>
-              <a-circle position="0.1 0.97 0.02" rotation="-68 0 0" radius="0.042" color="#fefae0"></a-circle>
-              <!-- Placa grabada de bronce -->
-              <a-box position="0 0.55 0.095" width="0.32" height="0.14" depth="0.015" color="#c59b27"
-                material="metalness: 0.7; roughness: 0.35"></a-box>
-              <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.55 0.105" width="1.3"
-                color="#1a1202" font="dejavu"></a-text>
-            </a-entity>
-            <a-ring position="0 0.02 -2.8" rotation="-90 0 0" radius-inner="1.6" radius-outer="2.2"
-              material="color: #d5aa46; opacity: 0.35; transparent: true"></a-ring>
-            <a-text value="1879 — 1956 · EL DESPERTAR DE FRANZ TAMAYO" position="0 2.25 -2.8" align="center" width="3.2"
-              color="#ffe89e" font="dejavu"></a-text>
+          <a-entity position="-1.55 0 -2.1" rotation="0 36 0">
+            <a-cylinder position="0 0.45 0" radius="0.09" height="0.9" color="#3d1f14" roughness="0.8"></a-cylinder>
+            <a-cylinder position="0 0.05 0" radius="0.25" height="0.1" color="#26130b" roughness="0.85"></a-cylinder>
+            <a-box position="0 0.92 0" rotation="22 0 0" width="0.5" height="0.04" depth="0.4" color="#4a2517"
+              roughness="0.7"></a-box>
+            <a-cylinder position="0.1 0.96 0.02" rotation="22 0 0" radius="0.05" height="0.015" color="#d4af37"
+              material="metalness: 0.8; roughness: 0.3"></a-cylinder>
+            <a-circle position="0.1 0.97 0.02" rotation="-68 0 0" radius="0.042" color="#fefae0"></a-circle>
+            <a-box position="0 0.55 0.095" width="0.32" height="0.14" depth="0.015" color="#c59b27"
+              material="metalness: 0.7; roughness: 0.35"></a-box>
+            <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.55 0.105" width="1.3"
+              color="#1a1202" font="dejavu"></a-text>
+          </a-entity>
+          <a-ring position="0 0.02 -2.3" rotation="-90 0 0" radius-inner="1.6" radius-outer="2.2"
+            material="color: #d5aa46; opacity: 0.35; transparent: true"></a-ring>
+          <a-text value="1879 — 1956 · EL DESPERTAR DE FRANZ TAMAYO" position="0 2.25 -2.6" align="center" width="3.2"
+            color="#ffe89e" font="dejavu"></a-text>
+        </a-entity>
+
+        <!-- Visual Escena 2: El Pensamiento y la Educación (Escritorio noble, gran libro 1910, tintero, pluma y pergaminos) -->
+        <a-entity id="vr-visuals-scene-2" visible="false">
+          <a-entity position="-1.55 0 -2.2" rotation="0 30 0">
+            <a-box position="0 0.52 0" width="1.15" height="0.06" depth="0.7" color="#3d1f14"
+              roughness="0.75"></a-box>
+            <a-cylinder position="-0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+            <a-cylinder position="0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+            <a-cylinder position="-0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+            <a-cylinder position="0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+            <a-box position="0 0.57 0.02" rotation="0 5 0" width="0.5" height="0.028" depth="0.36" color="#5c1d1d"
+              roughness="0.8"></a-box>
+            <a-plane position="-0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
+              color="#fefae0"></a-plane>
+            <a-plane position="0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
+              color="#faf3d2"></a-plane>
+            <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center" position="-0.12 0.592 0.02"
+              rotation="-90 5 0" width="0.7" color="#2c1810" font="dejavu"></a-text>
+            <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
+              position="0.02 0.592 0.02" rotation="-90 5 0" width="0.65" color="#3c2415" font="dejavu"></a-text>
+            <a-cylinder position="0.38 0.57 -0.18" radius="0.04" height="0.05" color="#1a202c"
+              material="roughness: 0.2; metalness: 0.4"></a-cylinder>
+            <a-cone position="0.4 0.72 -0.18" rotation="15 20 -12" radius-bottom="0.009" radius-top="0.001"
+              height="0.25" color="#f8fafc"></a-cone>
+            <a-cylinder position="-0.38 0.57 -0.18" rotation="0 30 90" radius="0.032" height="0.26"
+              color="#edd9b4"></a-cylinder>
+            <a-torus position="-0.38 0.57 -0.18" rotation="90 30 0" radius="0.034" radius-tubular="0.006"
+              color="#dc2626"></a-torus>
+            <a-cylinder position="0.42 0.59 0.2" radius="0.045" height="0.02" color="#b45309"
+              material="metalness: 0.8"></a-cylinder>
+            <a-cylinder position="0.42 0.71 0.2" radius="0.012" height="0.22" color="#d97706"
+              material="metalness: 0.7"></a-cylinder>
+            <a-cylinder position="0.42 0.82 0.2" rotation="0 0 90" radius="0.04" height="0.14" color="#047857"
+              material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.4"></a-cylinder>
+          </a-entity>
+          <a-entity position="1.55 1.4 -2.3" rotation="15 25 10"
+            animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
+            <a-box width="0.45" height="0.6" depth="0.12" color="#5c2c16" roughness="0.7"></a-box>
+            <a-plane position="0.23 0 0" rotation="0 90 0" width="0.1" height="0.55" color="#f5e6cc"></a-plane>
+          </a-entity>
+          <a-plane position="0 2.2 -2.6" width="2.4" height="0.4" material="color: #2b1f14; opacity: 0.9">
+            <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02"
+              width="2.6" color="#f39c12" font="dejavu"></a-text>
+          </a-plane>
+        </a-entity>
+
+        <!-- Visual Escena 3: El Nacimiento de UNIFRANZ (Monumento 1990, placa de fundadores y primera sede) -->
+        <a-entity id="vr-visuals-scene-3" visible="false">
+          <a-entity position="-1.5 0 -2.2" rotation="0 30 0">
+            <a-box position="0 0.12 0" width="0.75" height="0.24" depth="0.55" color="#334155"
+              roughness="0.85"></a-box>
+            <a-box position="0 0.58 0" width="0.6" height="0.72" depth="0.42" color="#475569"
+              roughness="0.8"></a-box>
+            <a-cylinder position="0 0.76 0.22" rotation="90 0 0" radius="0.14" height="0.02" color="#b45309"
+              material="metalness: 0.75; roughness: 0.3"></a-cylinder>
+            <a-text value="UNIFRANZ\n1990" align="center" position="0 0.76 0.235" width="1.3" color="#fef08a"
+              font="dejavu"></a-text>
+            <a-box position="0 0.42 0.22" width="0.5" height="0.28" depth="0.015" color="#78350f"
+              material="metalness: 0.65; roughness: 0.4"></a-box>
+            <a-text value="4 DE NOVIEMBRE DE 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
+              align="center" position="0 0.42 0.232" width="1.15" color="#fef08a" font="dejavu"></a-text>
+          </a-entity>
+          <a-entity position="1.55 0 -2.2" rotation="0 -30 0">
+            <a-box position="0 0.75 0" width="0.95" height="1.5" depth="0.16" color="#f8fafc"
+              roughness="0.9"></a-box>
+            <a-cylinder position="0 1.52 0" rotation="0 0 90" radius="0.16" height="0.98" color="#991b1b"
+              roughness="0.8"></a-cylinder>
+            <a-box position="0 0.42 0.09" width="0.42" height="0.84" depth="0.03" color="#3d1f14"></a-box>
+            <a-cylinder position="0 0.84 0.09" rotation="90 0 0" radius="0.21" height="0.03"
+              color="#3d1f14"></a-cylinder>
+            <a-box position="0 0.98 0.18" width="0.54" height="0.25" depth="0.16" color="#0f172a"
+              material="metalness: 0.9; roughness: 0.3"></a-box>
+            <a-text value="SEDE LA PAZ · 1993" align="center" position="0 1.3 0.1" width="1.3" color="#991b1b"
+              font="dejavu"></a-text>
+          </a-entity>
+          <a-torus position="0 1.2 -2.6" rotation="90 0 0" radius="2.2" radius-tubular="0.03" color="#c0392b"
+            emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
+          <a-text value="FUNDACIÓN: ABEL ÁGREDA &amp; CELSA NOGALES DE ÁGREDA · 1990" position="0 2.35 -2.6"
+            align="center" width="2.8" color="#ff7675" font="dejavu"></a-text>
+        </a-entity>
+
+        <!-- Visual Escena 4: Una Universidad en Crecimiento (4 Sedes Nacionales Iluminadas) -->
+        <a-entity id="vr-visuals-scene-4" visible="false">
+          <a-entity position="-1.5 0.9 -2.2">
+            <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+              emissiveIntensity="0.5"></a-cylinder>
+            <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35" color="#00d2d3"
+              material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
+            <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.3 0" width="2.2"
+              color="#74b9ff" font="dejavu"></a-text>
+          </a-entity>
+          <a-entity position="-0.6 0.9 -3.1">
+            <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+              emissiveIntensity="0.5"></a-cylinder>
+            <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
+              emissiveIntensity="0.9"></a-sphere>
+            <a-text value="EL ALTO" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
+              font="dejavu"></a-text>
+          </a-entity>
+          <a-entity position="0.6 0.9 -3.1">
+            <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+              emissiveIntensity="0.5"></a-cylinder>
+            <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
+              emissiveIntensity="0.9"></a-sphere>
+            <a-text value="COCHABAMBA" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
+              font="dejavu"></a-text>
+          </a-entity>
+          <a-entity position="1.5 0.9 -2.2">
+            <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+              emissiveIntensity="0.5"></a-cylinder>
+            <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35"
+              color="#00d2d3" material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
+            <a-text value="SANTA CRUZ" align="center" position="0 1.3 0" width="2.2" color="#74b9ff"
+              font="dejavu"></a-text>
+          </a-entity>
+          <a-cylinder position="-1.05 1.15 -2.65" rotation="25 -45 0" radius="0.015" height="1.4"
+            color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+          <a-cylinder position="0 1.25 -3.1" rotation="0 90 90" radius="0.015" height="1.2"
+            color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+          <a-cylinder position="1.05 1.15 -2.65" rotation="25 45 0" radius="0.015" height="1.4"
+            color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+          <a-text value="PRESENCIA NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 -2.6"
+            align="center" width="3.0" color="#81ecec" font="dejavu"></a-text>
+        </a-entity>
+
+        <!-- Visual Escena 5: El Legado Continúa (Birrete de graduación, escudo orbital UNIFRANZ) -->
+        <a-entity id="vr-visuals-scene-5" visible="false">
+          <a-entity position="-1.4 1.4 -2.2" rotation="10 25 -8"
+            animation="property: position; to: -1.4 1.48 -2.2; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+            <a-box position="0 0 0" width="0.45" height="0.024" depth="0.45" color="#0f172a"
+              roughness="0.6"></a-box>
+            <a-cylinder position="0 -0.1 0" radius="0.16" height="0.18" color="#0f172a"
+              roughness="0.6"></a-cylinder>
+            <a-cylinder position="0 0.02 0" radius="0.02" height="0.018" color="#eab308"
+              material="metalness: 0.8"></a-cylinder>
+            <a-cylinder position="0.18 -0.09 0.18" rotation="20 45 0" radius="0.008" height="0.25"
+              color="#eab308" material="metalness: 0.7"></a-cylinder>
+          </a-entity>
+          <a-entity position="1.4 1.4 -2.2">
+            <a-torus radius="0.35" radius-tubular="0.018" color="#10b981" emissive="#10b981"
+              emissiveIntensity="0.8"
+              animation="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"></a-torus>
+            <a-torus radius="0.46" radius-tubular="0.014" color="#34d399" emissive="#34d399"
+              emissiveIntensity="0.6"
+              animation="property: rotation; to: -360 180 360; loop: true; dur: 12000; easing: linear"></a-torus>
+            <a-cylinder position="0 0 0" rotation="90 0 0" radius="0.22" height="0.04"
+              color="#064e3b"
+              material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.5"></a-cylinder>
+            <a-text value="UNIFRANZ\nFUTURO" align="center" position="0 0 0.03" width="1.6"
+              color="#a7f3d0" font="dejavu"></a-text>
+          </a-entity>
+          <a-torus position="0 2.1 -2.6" rotation="0 0 0" radius="1.4" radius-tubular="0.02"
+            color="#2ecc71" emissive="#2ecc71" emissiveIntensity="0.7"></a-torus>
+          <a-plane position="0 2.4 -2.6" width="2.6" height="0.45"
+            material="color: #0e2417; opacity: 0.92">
+            <a-text value="UNIFRANZ · EL FUTURO ESTÁ EN SUS MANOS" align="center"
+              position="0 0 0.02" width="2.8" color="#55efc4" font="dejavu"></a-text>
+          </a-plane>
+          <a-text value="INNOVACIÓN · INVESTIGACIÓN · NUEVAS GENERACIONES" position="0 0.05 -2.6"
+            align="center" width="2.5" color="#a8e6cf" font="dejavu"></a-text>
+        </a-entity>
+
+        <!-- Luces del escenario VR -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 1.15"></a-entity>
+        <a-entity light="type: directional; color: #fff3cc; intensity: 2.1"
+          position="1 3 1"></a-entity>
+        <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5"
+          position="0 2 -1.1"></a-entity>
+        <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5"
+          position="-1.6 1 -2.6"></a-entity>
+
+        <!-- Panel 3D Flotante con Guion interactivo y Comandos de Voz dentro de VR (Gafas Cardboard) -->
+        <a-entity id="vr-3d-floating-panel" position="-2.15 1.48 -2.25" rotation="0 22 0"
+          scale="0.58 0.58 0.58">
+          <a-plane width="2.0" height="1.42"
+            material="color: #12141c; opacity: 0.78; transparent: true; roughness: 0.7"></a-plane>
+
+          <!-- Feedback Holográfico 3D de Comandos de Voz -->
+          <a-entity id="vr-3d-voice-status" position="0 0.56 0.03" visible="false">
+            <a-plane width="1.88" height="0.22"
+              material="color: #0e2417; opacity: 0.92; transparent: true"></a-plane>
+            <a-text id="vr-3d-voice-status-text" value="🎧 ESCUCHANDO TU VOZ..." align="center"
+              position="0 0 0.02" width="2.1" color="#55efc4" font="dejavu"></a-text>
           </a-entity>
 
-          <!-- Visual Escena 2: El Pensamiento y la Educación (Escritorio noble, gran libro 1910, tintero, pluma y pergaminos) -->
-          <a-entity id="vr-visuals-scene-2" visible="false">
-            <!-- Escritorio histórico de madera noble con accesorios de época -->
-            <a-entity position="-1.55 0 -2.3" rotation="0 30 0">
-              <a-entity position="-2.05 0 -2.3" rotation="0 30 0">
-                <a-box position="0 0.52 0" width="1.15" height="0.06" depth="0.7" color="#3d1f14"
-                  roughness="0.75"></a-box>
-                <a-cylinder position="-0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
-                <a-cylinder position="0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
-                <a-cylinder position="-0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
-                <a-cylinder position="0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
-                <!-- Gran libro abierto: Creación de la Pedagogía Nacional (1910) -->
-                <a-box position="0 0.57 0.02" rotation="0 5 0" width="0.5" height="0.028" depth="0.36" color="#5c1d1d"
-                  roughness="0.8"></a-box>
-                <a-plane position="-0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
-                  color="#fefae0"></a-plane>
-                <a-plane position="0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
-                  color="#faf3d2"></a-plane>
-                <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center" position="-0.12 0.592 0.02"
-                  rotation="-90 5 0" width="0.7" color="#2c1810" font="dejavu"></a-text>
-                <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
-                  position="0.02 0.592 0.02" rotation="-90 5 0" width="0.65" color="#3c2415" font="dejavu"></a-text>
-                <!-- Tintero de cristal y pluma clásica de ave blanca -->
-                <a-cylinder position="0.38 0.57 -0.18" radius="0.04" height="0.05" color="#1a202c"
-                  material="roughness: 0.2; metalness: 0.4"></a-cylinder>
-                <a-cone position="0.4 0.72 -0.18" rotation="15 20 -12" radius-bottom="0.009" radius-top="0.001"
-                  height="0.25" color="#f8fafc"></a-cone>
-                <!-- Pergaminos enrollados atados con cinta roja -->
-                <a-cylinder position="-0.38 0.57 -0.18" rotation="0 30 90" radius="0.032" height="0.26"
-                  color="#edd9b4"></a-cylinder>
-                <a-torus position="-0.38 0.57 -0.18" rotation="90 30 0" radius="0.034" radius-tubular="0.006"
-                  color="#dc2626"></a-torus>
-                <!-- Lámpara clásica de banquero verde esmeralda con luz local -->
-                <a-cylinder position="0.42 0.59 0.2" radius="0.045" height="0.02" color="#b45309"
-                  material="metalness: 0.8"></a-cylinder>
-                <a-cylinder position="0.42 0.71 0.2" radius="0.012" height="0.22" color="#d97706"
-                  material="metalness: 0.7"></a-cylinder>
-                <a-cylinder position="0.42 0.82 0.2" rotation="0 0 90" radius="0.04" height="0.14" color="#047857"
-                  material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.4"></a-cylinder>
-              </a-entity>
-              <!-- Libros antiguos flotantes -->
-              <a-entity position="1.6 1.4 -2.5" rotation="15 25 10"
-                animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
-                <a-entity position="2.05 1.4 -2.5" rotation="15 25 10"
-                  animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
-                  <a-box width="0.45" height="0.6" depth="0.12" color="#5c2c16" roughness="0.7"></a-box>
-                  <a-plane position="0.23 0 0" rotation="0 90 0" width="0.1" height="0.55" color="#f5e6cc"></a-plane>
-                </a-entity>
-                <!-- Pergamino / Manuscrito 1910 -->
-                <a-plane position="0 2.2 -2.8" width="2.4" height="0.4" material="color: #2b1f14; opacity: 0.9">
-                  <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02"
-                    width="2.6" color="#f39c12" font="dejavu"></a-text>
-                </a-plane>
-              </a-entity>
+          <!-- Título de la escena 3D -->
+          <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO"
+            align="center" position="0 0.38 0.02" width="2.3" color="#f1c40f"
+            font="dejavu"></a-text>
 
-              <!-- Visual Escena 3: El Nacimiento de UNIFRANZ (Monumento 1990, placa de fundadores y primera sede) -->
-              <a-entity id="vr-visuals-scene-3" visible="false">
-                <!-- Monumento de piedra conmemorativa de 1990 -->
-                <a-entity position="-1.5 0 -2.3" rotation="0 30 0">
-                  <a-entity position="-2.0 0 -2.3" rotation="0 30 0">
-                    <a-box position="0 0.12 0" width="0.75" height="0.24" depth="0.55" color="#334155"
-                      roughness="0.85"></a-box>
-                    <a-box position="0 0.58 0" width="0.6" height="0.72" depth="0.42" color="#475569"
-                      roughness="0.8"></a-box>
-                    <!-- Escudo de UNIFRANZ 1990 en bronce dorado -->
-                    <a-cylinder position="0 0.76 0.22" rotation="90 0 0" radius="0.14" height="0.02" color="#b45309"
-                      material="metalness: 0.75; roughness: 0.3"></a-cylinder>
-                    <a-text value="UNIFRANZ\n1990" align="center" position="0 0.76 0.235" width="1.3" color="#fef08a"
-                      font="dejavu"></a-text>
-                    <!-- Placa de bronce fundido con fundadores -->
-                    <a-box position="0 0.42 0.22" width="0.5" height="0.28" depth="0.015" color="#78350f"
-                      material="metalness: 0.65; roughness: 0.4"></a-box>
-                    <a-text value="4 DE NOVIEMBRE DE 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
-                      align="center" position="0 0.42 0.232" width="1.15" color="#fef08a" font="dejavu"></a-text>
-                  </a-entity>
-                  <!-- Fachada histórica en miniatura de la primera sede en La Paz -->
-                  <a-entity position="1.6 0 -2.3" rotation="0 -30 0">
-                    <a-entity position="2.05 0 -2.3" rotation="0 -30 0">
-                      <a-box position="0 0.75 0" width="0.95" height="1.5" depth="0.16" color="#f8fafc"
-                        roughness="0.9"></a-box>
-                      <a-cylinder position="0 1.52 0" rotation="0 0 90" radius="0.16" height="0.98" color="#991b1b"
-                        roughness="0.8"></a-cylinder>
-                      <!-- Portal colonial en arco -->
-                      <a-box position="0 0.42 0.09" width="0.42" height="0.84" depth="0.03" color="#3d1f14"></a-box>
-                      <a-cylinder position="0 0.84 0.09" rotation="90 0 0" radius="0.21" height="0.03"
-                        color="#3d1f14"></a-cylinder>
-                      <!-- Balcón colonial de forja -->
-                      <a-box position="0 0.98 0.18" width="0.54" height="0.25" depth="0.16" color="#0f172a"
-                        material="metalness: 0.9; roughness: 0.3"></a-box>
-                      <a-text value="SEDE LA PAZ · 1993" align="center" position="0 1.3 0.1" width="1.3" color="#991b1b"
-                        font="dejavu"></a-text>
-                    </a-entity>
-                    <a-torus position="0 1.2 -2.8" rotation="90 0 0" radius="2.2" radius-tubular="0.03" color="#c0392b"
-                      emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
-                    <a-text value="FUNDACIÓN: ABEL ÁGREDA &amp; CELSA NOGALES DE ÁGREDA · 1990" position="0 2.35 -2.8"
-                      align="center" width="2.8" color="#ff7675" font="dejavu"></a-text>
-                  </a-entity>
+          <!-- Fase y época -->
+          <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center"
+            position="0 0.24 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
 
-                  <!-- Visual Escena 4: Una Universidad en Crecimiento (4 Sedes Nacionales Iluminadas) -->
-                  <a-entity id="vr-visuals-scene-4" visible="false">
-                    <!-- 1. La Paz -->
-                    <a-entity position="-1.5 0.9 -2.3">
-                      <a-entity position="-1.9 0.9 -2.3">
-                        <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
-                          emissiveIntensity="0.5"></a-cylinder>
-                        <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35" color="#00d2d3"
-                          material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
-                        <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.3 0" width="2.2"
-                          color="#74b9ff" font="dejavu"></a-text>
-                      </a-entity>
-                      <!-- 2. El Alto -->
-                      <a-entity position="-0.6 0.9 -3.4">
-                        <a-entity position="-0.75 0.9 -3.55">
-                          <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
-                            emissiveIntensity="0.5"></a-cylinder>
-                          <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
-                            emissiveIntensity="0.9"></a-sphere>
-                          <a-text value="EL ALTO" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
-                            font="dejavu"></a-text>
-                        </a-entity>
-                        <!-- 3. Cochabamba -->
-                        <a-entity position="0.6 0.9 -3.4">
-                          <a-entity position="0.75 0.9 -3.55">
-                            <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
-                              emissiveIntensity="0.5"></a-cylinder>
-                            <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
-                              emissiveIntensity="0.9"></a-sphere>
-                            <a-text value="COCHABAMBA" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
-                              font="dejavu"></a-text>
-                          </a-entity>
-                          <!-- 4. Santa Cruz -->
-                          <a-entity position="1.5 0.9 -2.3">
-                            <a-entity position="1.9 0.9 -2.3">
-                              <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
-                                emissiveIntensity="0.5"></a-cylinder>
-                              <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35"
-                                color="#00d2d3" material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
-                              <a-text value="SANTA CRUZ" align="center" position="0 1.3 0" width="2.2" color="#74b9ff"
-                                font="dejavu"></a-text>
-                            </a-entity>
-                            <!-- Haces holográficos de interconexión -->
-                            <a-cylinder position="-1.05 1.15 -2.85" rotation="25 -45 0" radius="0.015" height="1.4"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-cylinder position="0 1.25 -3.4" rotation="0 90 90" radius="0.015" height="1.2"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-cylinder position="1.05 1.15 -2.85" rotation="25 45 0" radius="0.015" height="1.4"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-cylinder position="-1.32 1.15 -2.92" rotation="25 -45 0" radius="0.015" height="1.5"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-cylinder position="0 1.25 -3.55" rotation="0 90 90" radius="0.015" height="1.5"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-cylinder position="1.32 1.15 -2.92" rotation="25 45 0" radius="0.015" height="1.5"
-                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
-                            <a-text value="PRESENCIA NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 -2.8"
-                              align="center" width="3.0" color="#81ecec" font="dejavu"></a-text>
-                          </a-entity>
+          <!-- Diálogo narrativo 3D -->
+          <a-text id="vr-3d-scene-dialog"
+            value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»"
+            align="center" position="0 -0.02 0.02" width="2.1" color="#ffffff" font="dejavu"
+            wrap-count="36"></a-text>
 
-                          <!-- Visual Escena 5: El Legado Continúa (Birrete de graduación, escudo orbital UNIFRANZ) -->
-                          <a-entity id="vr-visuals-scene-5" visible="false">
-                            <!-- Birrete de graduación 3D flotante -->
-                            <a-entity position="-1.4 1.4 -2.4" rotation="10 25 -8"
-                              animation="property: position; to: -1.4 1.48 -2.4; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
-                              <a-entity position="-1.85 1.4 -2.4" rotation="10 25 -8"
-                                animation="property: position; to: -1.85 1.48 -2.4; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
-                                <a-box position="0 0 0" width="0.45" height="0.024" depth="0.45" color="#0f172a"
-                                  roughness="0.6"></a-box>
-                                <a-cylinder position="0 -0.1 0" radius="0.16" height="0.18" color="#0f172a"
-                                  roughness="0.6"></a-cylinder>
-                                <a-cylinder position="0 0.02 0" radius="0.02" height="0.018" color="#eab308"
-                                  material="metalness: 0.8"></a-cylinder>
-                                <a-cylinder position="0.18 -0.09 0.18" rotation="20 45 0" radius="0.008" height="0.25"
-                                  color="#eab308" material="metalness: 0.7"></a-cylinder>
-                              </a-entity>
-                              <!-- Escudo oficial 3D y anillos orbitales holográficos -->
-                              <a-entity position="1.4 1.4 -2.4">
-                                <a-entity position="1.85 1.4 -2.4">
-                                  <a-torus radius="0.35" radius-tubular="0.018" color="#10b981" emissive="#10b981"
-                                    emissiveIntensity="0.8"
-                                    animation="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"></a-torus>
-                                  <a-torus radius="0.46" radius-tubular="0.014" color="#34d399" emissive="#34d399"
-                                    emissiveIntensity="0.6"
-                                    animation="property: rotation; to: -360 180 360; loop: true; dur: 12000; easing: linear"></a-torus>
-                                  <a-cylinder position="0 0 0" rotation="90 0 0" radius="0.22" height="0.04"
-                                    color="#064e3b"
-                                    material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.5"></a-cylinder>
-                                  <a-text value="UNIFRANZ\nFUTURO" align="center" position="0 0 0.03" width="1.6"
-                                    color="#a7f3d0" font="dejavu"></a-text>
-                                </a-entity>
-                                <a-torus position="0 2.1 -2.8" rotation="0 0 0" radius="1.4" radius-tubular="0.02"
-                                  color="#2ecc71" emissive="#2ecc71" emissiveIntensity="0.7"></a-torus>
-                                <a-plane position="0 2.4 -2.8" width="2.6" height="0.45"
-                                  material="color: #0e2417; opacity: 0.92">
-                                  <a-text value="UNIFRANZ · EL FUTURO ESTÁ EN SUS MANOS" align="center"
-                                    position="0 0 0.02" width="2.8" color="#55efc4" font="dejavu"></a-text>
-                                </a-plane>
-                                <a-text value="INNOVACIÓN · INVESTIGACIÓN · NUEVAS GENERACIONES" position="0 0.05 -2.8"
-                                  align="center" width="2.5" color="#a8e6cf" font="dejavu"></a-text>
-                              </a-entity>
+          <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
+          <a-entity position="0 -0.34 0">
+            <!-- Botón 3D Anterior -->
+            <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
+              <a-plane width="0.68" height="0.22"
+                material="color: #232734; roughness: 0.6"></a-plane>
+              <a-text value="◄ ANTERIOR" align="center" position="0 0 0.02" width="1.9"
+                color="#e0dbd0" font="dejavu"></a-text>
+            </a-entity>
 
-                              <!-- Luces del escenario VR -->
-                              <a-entity light="type: ambient; color: #ffffff; intensity: 1.15"></a-entity>
-                              <a-entity light="type: directional; color: #fff3cc; intensity: 2.1"
-                                position="1 3 1"></a-entity>
-                              <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5"
-                                position="0 2 -1.1"></a-entity>
-                              <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5"
-                                position="-1.6 1 -2.6"></a-entity>
+            <!-- Botón 3D Narración -->
+            <a-entity class="vr-clickable" id="vr-3d-audio-btn" position="0 0 0">
+              <a-plane width="0.95" height="0.22"
+                material="color: #d5aa46; roughness: 0.4"></a-plane>
+              <a-text id="vr-3d-audio-btn-text" value="NARRAR ESCENA" align="center"
+                position="0 0 0.02" width="2.1" color="#191b22" font="dejavu"></a-text>
+            </a-entity>
 
-                              <!-- Panel 3D Flotante con Guion interactivo y Comandos de Voz dentro de VR (Gafas Cardboard) -->
-                              <a-entity id="vr-3d-floating-panel" position="-1.55 1.42 -2.55" rotation="0 0 0"
-                                scale="0.58 0.58 0.58">
-                                <a-entity id="vr-3d-floating-panel" position="-2.15 1.48 -2.25" rotation="0 22 0"
-                                  scale="0.58 0.58 0.58">
-                                  <a-plane width="2.0" height="1.42"
-                                    material="color: #12141c; opacity: 0.78; transparent: true; roughness: 0.7"></a-plane>
+            <!-- Botón 3D Siguiente -->
+            <a-entity class="vr-clickable" id="vr-3d-next-btn" position="0.75 0 0">
+              <a-plane width="0.68" height="0.22"
+                material="color: #232734; roughness: 0.6"></a-plane>
+              <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9"
+                color="#e0dbd0" font="dejavu"></a-text>
+            </a-entity>
+          </a-entity>
 
-                                  <!-- Feedback Holográfico 3D de Comandos de Voz -->
-                                  <a-entity id="vr-3d-voice-status" position="0 0.56 0.03" visible="false">
-                                    <a-plane width="1.88" height="0.22"
-                                      material="color: #0e2417; opacity: 0.92; transparent: true"></a-plane>
-                                    <a-text id="vr-3d-voice-status-text" value="🎧 ESCUCHANDO TU VOZ..." align="center"
-                                      position="0 0 0.02" width="2.1" color="#55efc4" font="dejavu"></a-text>
-                                  </a-entity>
+          <!-- Botón 3D de Comando de Voz Manos Libres para Gafas VR -->
+          <a-entity class="vr-clickable" id="vr-3d-voice-btn" position="0 -0.56 0">
+            <a-plane width="1.6" height="0.18"
+              material="color: #182838; opacity: 0.95; transparent: true; roughness: 0.5"></a-plane>
+            <a-text id="vr-3d-voice-btn-text" value="🎙️ COMANDO DE VOZ (MÍRAME)" align="center"
+              position="0 0 0.02" width="1.9" color="#7cc3f8" font="dejavu"></a-text>
+          </a-entity>
+        </a-entity>
 
-                                  <!-- Título de la escena 3D -->
-                                  <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO"
-                                    align="center" position="0 0.38 0.02" width="2.3" color="#f1c40f"
-                                    font="dejavu"></a-text>
+        <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
+          <a-plane width="0.58" height="0.2"
+            material="color: #7f1d1d; roughness: 0.6"></a-plane>
+          <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff"
+            font="dejavu"></a-text>
+        </a-entity>
 
-                                  <!-- Fase y época -->
-                                  <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center"
-                                    position="0 0.24 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
-
-                                  <!-- Diálogo narrativo 3D -->
-                                  <a-text id="vr-3d-scene-dialog"
-                                    value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»"
-                                    align="center" position="0 -0.02 0.02" width="2.1" color="#ffffff" font="dejavu"
-                                    wrap-count="36"></a-text>
-
-                                  <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
-                                  <a-entity position="0 -0.34 0">
-                                    <!-- Botón 3D Anterior -->
-                                    <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
-                                      <a-plane width="0.68" height="0.22"
-                                        material="color: #232734; roughness: 0.6"></a-plane>
-                                      <a-text value="◄ ANTERIOR" align="center" position="0 0 0.02" width="1.9"
-                                        color="#e0dbd0" font="dejavu"></a-text>
-                                    </a-entity>
-
-                                    <!-- Botón 3D Narración -->
-                                    <a-entity class="vr-clickable" id="vr-3d-audio-btn" position="0 0 0">
-                                      <a-plane width="0.95" height="0.22"
-                                        material="color: #d5aa46; roughness: 0.4"></a-plane>
-                                      <a-text id="vr-3d-audio-btn-text" value="NARRAR ESCENA" align="center"
-                                        position="0 0 0.02" width="2.1" color="#191b22" font="dejavu"></a-text>
-                                    </a-entity>
-
-                                    <!-- Botón 3D Siguiente -->
-                                    <a-entity class="vr-clickable" id="vr-3d-next-btn" position="0.75 0 0">
-                                      <a-plane width="0.68" height="0.22"
-                                        material="color: #232734; roughness: 0.6"></a-plane>
-                                      <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9"
-                                        color="#e0dbd0" font="dejavu"></a-text>
-                                    </a-entity>
-                                  </a-entity>
-
-                                  <!-- Botón 3D de Comando de Voz Manos Libres para Gafas VR -->
-                                  <a-entity class="vr-clickable" id="vr-3d-voice-btn" position="0 -0.56 0">
-                                    <a-plane width="1.6" height="0.18"
-                                      material="color: #182838; opacity: 0.95; transparent: true; roughness: 0.5"></a-plane>
-                                    <a-text id="vr-3d-voice-btn-text" value="🎙️ COMANDO DE VOZ (MÍRAME)" align="center"
-                                      position="0 0 0.02" width="1.9" color="#7cc3f8" font="dejavu"></a-text>
-                                  </a-entity>
-                                </a-entity>
-
-                                <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
-                                  <a-plane width="0.58" height="0.2"
-                                    material="color: #7f1d1d; roughness: 0.6"></a-plane>
-                                  <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff"
-                                    font="dejavu"></a-text>
-                                </a-entity>
-
-                                <!-- Cámara del Usuario con Retícula de Mirada y Túnel del Tiempo para Viaje Temporal -->
-                                <a-entity id="vr-camera-rig" position="0 0 0">
-                                  <a-camera id="vr-camera" position="0 1.6 0"
-                                    look-controls="reverseMouseDrag: false; touchEnabled: true"
-                                    wasd-controls="enabled: false" time-tunnel="count: 280; color: #d5aa46; rings: 8">
-                                    <a-entity cursor="fuse: true; fuseTimeout: 1400" raycaster="objects: .vr-clickable"
-                                      position="0 0 -1"
-                                      geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
-                                      material="color: #f1c40f; shader: flat; opacity: 0.85"
-                                      animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
-                                      animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
-                                    </a-entity>
-                                    <a-circle id="vr-abaroa-transition" position="0 0 -0.45" radius="1"
-                                      visible="false"
-                                      material="shader: flat; color: #000000; transparent: true; side: double"
-                                      scale="0.001 0.001 0.001"></a-circle>
-                                  </a-camera>
-                                </a-entity>
+        <!-- Cámara del Usuario con Retícula de Mirada y Túnel del Tiempo para Viaje Temporal -->
+        <a-entity id="vr-camera-rig" position="0 0 0">
+          <a-camera id="vr-camera" position="0 1.6 0"
+            look-controls="reverseMouseDrag: false; touchEnabled: true"
+            wasd-controls="enabled: false" time-tunnel="count: 280; color: #d5aa46; rings: 8">
+            <a-entity cursor="fuse: true; fuseTimeout: 1400" raycaster="objects: .vr-clickable"
+              position="0 0 -1"
+              geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
+              material="color: #f1c40f; shader: flat; opacity: 0.85"
+              animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
+              animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
+            </a-entity>
+            <a-circle id="vr-abaroa-transition" position="0 0 -0.45" radius="1"
+              visible="false"
+              material="shader: flat; color: #000000; transparent: true; side: double"
+              scale="0.001 0.001 0.001"></a-circle>
+          </a-camera>
+        </a-entity>
       </a-scene>
     </template>
 

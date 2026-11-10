@@ -22,6 +22,7 @@
   // Elementos de la interfaz minimalista Pokémon GO
   const statusPill = document.getElementById('ar-status-pill');
   const btnSimulate = document.getElementById('ar-btn-simulate');
+  const btnReanchor = document.getElementById('ar-btn-reanchor');
   const btnToggleMinimap = document.getElementById('ar-btn-toggle-minimap');
   const minimapDrawer = document.getElementById('ar-minimap-drawer');
   const minimapClose = document.getElementById('ar-minimap-close');
@@ -61,6 +62,11 @@
   let arGeoOrigin = null;
   let arFilteredCoordinates = null;
   let arInitialHeading = null;
+  let arAnchorLocked = false;
+  let lastStepTimestamp = 0;
+  let accelMagnitudeAvg = 9.81;
+
+  const DEFAULT_SPAWN_DISTANCE = 2.35;
 
   function getARUserCoordinates() {
     const geoState = window.HistoriaGeo && window.HistoriaGeo.getState
@@ -69,54 +75,131 @@
     return geoState && geoState.userCoords ? geoState.userCoords : null;
   }
 
-  function projectGeoCoordinates(coords) {
-    if (!arGeoOrigin) return null;
-    const radians = Math.PI / 180;
-    const earthRadius = 6378137;
-    const north = (coords.lat - arGeoOrigin.lat) * radians * earthRadius;
-    const east = (coords.lng - arGeoOrigin.lng) * radians * earthRadius
-      * Math.cos(arGeoOrigin.lat * radians);
-    const heading = (arInitialHeading || 0) * radians;
-    return {
-      x: east * Math.cos(heading) - north * Math.sin(heading),
-      z: -(east * Math.sin(heading) + north * Math.cos(heading))
-    };
+  function getCameraForwardHorizontal() {
+    if (!aSceneInstance || !window.THREE) return { x: 0, z: -1, camPos: { x: 0, y: 1.6, z: 0 } };
+    const cameraEl = aSceneInstance.querySelector('#pokear-camera') || aSceneInstance.querySelector('[camera]');
+    const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
+    const camPos = new THREE.Vector3(0, 1.6, 0);
+    const forward = new THREE.Vector3(0, 0, -1);
+
+    if (cameraEl && cameraEl.object3D) {
+      cameraEl.object3D.updateMatrixWorld(true);
+      cameraEl.object3D.getWorldPosition(camPos);
+      const quat = new THREE.Quaternion();
+      cameraEl.object3D.getWorldQuaternion(quat);
+      forward.applyQuaternion(quat);
+    } else if (cameraRig && cameraRig.object3D) {
+      camPos.copy(cameraRig.object3D.position);
+    }
+
+    forward.y = 0;
+    if (forward.lengthSq() < 0.0001) {
+      forward.set(0, 0, -1);
+    } else {
+      forward.normalize();
+    }
+    return { x: forward.x, z: forward.z, camPos };
+  }
+
+  // Ancla el escenario 3D a distancia natural (2.35m) frente a la vista actual del usuario
+  // y lo deja 100% fijo en el mundo real (estilo Pokémon GO).
+  function placeSceneInFrontOfCamera(distance = DEFAULT_SPAWN_DISTANCE) {
+    if (!aSceneInstance || !window.THREE) return;
+    const anchor = getWorldAnchor();
+    if (!anchor || !anchor.object3D) return;
+
+    const { x: fx, z: fz, camPos } = getCameraForwardHorizontal();
+    const targetX = camPos.x + fx * distance;
+    const targetZ = camPos.z + fz * distance;
+
+    anchor.object3D.position.set(targetX, 0, targetZ);
+    // Orientar el frente (+Z) del escenario directamente hacia la cámara del usuario
+    const yawToCamera = Math.atan2(-fx, -fz);
+    anchor.object3D.rotation.set(0, yawToCamera, 0);
+    anchor.object3D.updateMatrixWorld(true);
+    arAnchorLocked = true;
+
+    const coords = getARUserCoordinates();
+    if (coords) {
+      arGeoOrigin = { lat: coords.lat, lng: coords.lng };
+      arFilteredCoordinates = { lat: coords.lat, lng: coords.lng };
+    }
+  }
+
+  function moveCameraRigAlongView(stepMeters) {
+    if (!aSceneInstance || !arAnchorLocked) return;
+    const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
+    const anchor = getWorldAnchor();
+    if (!cameraRig || !cameraRig.object3D || !anchor || !anchor.object3D) return;
+
+    const { x: fx, z: fz } = getCameraForwardHorizontal();
+    const nextX = cameraRig.object3D.position.x + fx * stepMeters;
+    const nextZ = cameraRig.object3D.position.z + fz * stepMeters;
+
+    const dx = nextX - anchor.object3D.position.x;
+    const dz = nextZ - anchor.object3D.position.z;
+    const distToAnchor = Math.hypot(dx, dz);
+    if (distToAnchor >= 0.85 && distToAnchor <= 6.5) {
+      cameraRig.object3D.position.x = nextX;
+      cameraRig.object3D.position.z = nextZ;
+      cameraRig.object3D.updateMatrixWorld(true);
+    }
+  }
+
+  function getAnchorDistanceMeters() {
+    if (!aSceneInstance) return DEFAULT_SPAWN_DISTANCE;
+    const anchor = getWorldAnchor();
+    const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
+    if (!anchor || !anchor.object3D || !cameraRig || !cameraRig.object3D) return DEFAULT_SPAWN_DISTANCE;
+    const dx = anchor.object3D.position.x - cameraRig.object3D.position.x;
+    const dz = anchor.object3D.position.z - cameraRig.object3D.position.z;
+    return Math.round(Math.hypot(dx, dz) * 10) / 10;
   }
 
   function updateGeographicAnchor(coords = getARUserCoordinates()) {
-    if (!coords || !aSceneInstance) return;
-    if (!arGeoOrigin) arGeoOrigin = { lat: coords.lat, lng: coords.lng };
+    if (!aSceneInstance) return;
+    if (!arAnchorLocked && isARLocationAvailable()) {
+      placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE);
+      return;
+    }
+    if (!coords || !arAnchorLocked) return;
+    const geoState = window.HistoriaGeo && window.HistoriaGeo.getState ? window.HistoriaGeo.getState() : null;
+    if (geoState && geoState.isSimulated) return;
+
     if (!arFilteredCoordinates) {
       arFilteredCoordinates = { lat: coords.lat, lng: coords.lng };
-    } else {
-      const latScale = 111320;
-      const lngScale = latScale * Math.cos(arFilteredCoordinates.lat * Math.PI / 180);
-      const deltaX = (coords.lng - arFilteredCoordinates.lng) * lngScale;
-      const deltaZ = (coords.lat - arFilteredCoordinates.lat) * latScale;
-      const displacement = Math.hypot(deltaX, deltaZ);
-      const noiseThreshold = Math.max(1.5, (coords.accuracy || 15) * 0.25);
-      if (displacement > noiseThreshold) {
-        const smoothing = 0.35;
-        arFilteredCoordinates.lat += (coords.lat - arFilteredCoordinates.lat) * smoothing;
-        arFilteredCoordinates.lng += (coords.lng - arFilteredCoordinates.lng) * smoothing;
-      }
-    }
-    const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
-    const userPosition = projectGeoCoordinates(arFilteredCoordinates);
-    if (cameraRig && userPosition) {
-      cameraRig.object3D.position.x = userPosition.x;
-      cameraRig.object3D.position.z = userPosition.z;
-      cameraRig.object3D.updateMatrixWorld(true);
+      return;
     }
 
-    const anchor = getWorldAnchor();
-    const sceneCoordinates = window.HistoriaGeo?.getSceneCoordinates
-      && window.HistoriaGeo.getSceneCoordinates(currentStoryId, currentSceneIndex);
-    if (!anchor || !sceneCoordinates) return;
-    const scenePosition = projectGeoCoordinates({ lat: sceneCoordinates[0], lng: sceneCoordinates[1] });
-    if (!scenePosition) return;
-    anchor.object3D.position.set(scenePosition.x, 0, scenePosition.z);
-    anchor.object3D.updateMatrixWorld(true);
+    const latScale = 111320;
+    const lngScale = latScale * Math.cos(arFilteredCoordinates.lat * Math.PI / 180);
+    const deltaEast = (coords.lng - arFilteredCoordinates.lng) * lngScale;
+    const deltaNorth = (coords.lat - arFilteredCoordinates.lat) * latScale;
+    const displacement = Math.hypot(deltaEast, deltaNorth);
+    const accuracy = coords.accuracy || 15;
+
+    // Solo desplazar suavemente la cámara si hay caminata real con buena precisión GPS,
+    // manteniendo el escenario 3D completamente estático en su lugar.
+    if (accuracy <= 12 && displacement > 0.8 && displacement < 4.5) {
+      const stepFactor = 0.25;
+      arFilteredCoordinates.lat += (coords.lat - arFilteredCoordinates.lat) * stepFactor;
+      arFilteredCoordinates.lng += (coords.lng - arFilteredCoordinates.lng) * stepFactor;
+      const headingRad = (arInitialHeading || 0) * (Math.PI / 180);
+      const moveX = (deltaEast * Math.cos(headingRad) - deltaNorth * Math.sin(headingRad)) * stepFactor;
+      const moveZ = -(deltaEast * Math.sin(headingRad) + deltaNorth * Math.cos(headingRad)) * stepFactor;
+      const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
+      const anchor = getWorldAnchor();
+      if (cameraRig && anchor) {
+        const nextX = cameraRig.object3D.position.x + moveX;
+        const nextZ = cameraRig.object3D.position.z + moveZ;
+        const dist = Math.hypot(nextX - anchor.object3D.position.x, nextZ - anchor.object3D.position.z);
+        if (dist >= 0.85 && dist <= 6.5) {
+          cameraRig.object3D.position.x = nextX;
+          cameraRig.object3D.position.z = nextZ;
+          cameraRig.object3D.updateMatrixWorld(true);
+        }
+      }
+    }
   }
 
   function getCompassHeading(event) {
@@ -131,17 +214,36 @@
     const heading = getCompassHeading(event);
     if (heading === null) return;
     arInitialHeading = heading;
-    updateGeographicAnchor();
+  }
+
+  // Podómetro por acelerómetro (devicemotion): al dar pasos físicos con el celular,
+  // acerca o mueve suavemente la cámara hacia el modelo estático en el mundo real.
+  function handleARDeviceMotion(event) {
+    if (!aSceneInstance || !arAnchorLocked || !isARLocationAvailable()) return;
+    const acc = event.accelerationIncludingGravity;
+    if (!acc || !Number.isFinite(acc.x) || !Number.isFinite(acc.y) || !Number.isFinite(acc.z)) return;
+    const mag = Math.hypot(acc.x, acc.y, acc.z);
+    accelMagnitudeAvg = accelMagnitudeAvg * 0.9 + mag * 0.1;
+    const delta = mag - accelMagnitudeAvg;
+    const now = performance.now();
+    if (delta > 2.15 && now - lastStepTimestamp > 430) {
+      lastStepTimestamp = now;
+      moveCameraRigAlongView(0.36);
+    }
   }
 
   function requestAROrientationPermission() {
     const OrientationEvent = window.DeviceOrientationEvent;
+    const MotionEvent = window.DeviceMotionEvent;
     if (!OrientationEvent) return Promise.resolve(false);
     let requested;
     try {
       requested = typeof OrientationEvent.requestPermission === 'function'
         ? OrientationEvent.requestPermission()
         : Promise.resolve('granted');
+      if (MotionEvent && typeof MotionEvent.requestPermission === 'function') {
+        MotionEvent.requestPermission().catch(() => {});
+      }
     } catch (error) {
       console.warn('[Historia Viva] No se pudo solicitar acceso a la orientación del dispositivo:', error);
       return Promise.resolve(false);
@@ -150,6 +252,7 @@
       if (permission !== 'granted') return false;
       window.addEventListener('deviceorientation', handleARDeviceOrientation, true);
       window.addEventListener('deviceorientationabsolute', handleARDeviceOrientation, true);
+      window.addEventListener('devicemotion', handleARDeviceMotion, true);
       return true;
     }).catch((error) => {
       console.warn('[Historia Viva] No se concedió acceso a la orientación del dispositivo:', error);
@@ -331,6 +434,7 @@
 
       init() {
         this.lastShot = -1;
+        this.localTime = 0;
         this.onAudioEnded = () => {
           if (this.data.scene !== 1) return;
           const portal = this.el.querySelector('#abaroa-topater-portal');
@@ -342,8 +446,9 @@
       update(oldData) {
         if (oldData.scene !== this.data.scene) {
           this.lastShot = -1;
+          this.localTime = 0;
           const portal = this.el.querySelector('#abaroa-topater-portal');
-          if (portal) portal.setAttribute('visible', 'false');
+          if (portal) portal.setAttribute('visible', String(this.data.scene === 1));
           const strategy = this.el.querySelector('[data-abaroa-scene="1"]');
           if (strategy) {
             delete strategy.dataset.cabreraPointed;
@@ -353,7 +458,7 @@
           if (resistance) delete resistance.dataset.challengePlayed;
           if (this.data.scene === 0) {
             ['#abaroa-route-ring', '#abaroa-map-scan', '[data-abaroa-route-marker]'].forEach((selector) => {
-              this.el.querySelectorAll(selector).forEach((entity) => entity.setAttribute('visible', 'false'));
+              this.el.querySelectorAll(selector).forEach((entity) => entity.setAttribute('visible', 'true'));
             });
           }
         }
@@ -363,35 +468,40 @@
         audio.removeEventListener('ended', this.onAudioEnded);
       },
 
-      tick(time) {
+      tick(time, delta) {
         if (!isARLocationAvailable()) return;
-        const progress = audio.duration > 0 ? audio.currentTime / audio.duration : 0;
+        this.localTime += Math.min(delta || 16, 50) / 1000;
+        const syntheticProgress = (this.localTime % 32) / 32;
+        const progress = (!audio.paused && audio.duration > 0)
+          ? audio.currentTime / audio.duration
+          : syntheticProgress;
+
         const figure = this.el.parentElement && this.el.parentElement.querySelector('#eduardo-abaroa-figure');
-        if (figure) {
-          const revealFigure = this.data.scene !== 0 || audio.currentTime >= 24;
-          if (figure.object3D.visible !== revealFigure) figure.setAttribute('visible', String(revealFigure));
+        if (figure && !figure.object3D.visible && currentStoryId === 'abaroa') {
+          figure.setAttribute('visible', 'true');
         }
         if (this.data.scene === 0) {
-          const routeVisible = audio.currentTime >= 15;
           this.el.querySelectorAll('#abaroa-route-ring, #abaroa-map-scan, [data-abaroa-route-marker]').forEach((entity) => {
-            if (entity.object3D.visible !== routeVisible) entity.setAttribute('visible', String(routeVisible));
+            if (!entity.object3D.visible) entity.setAttribute('visible', 'true');
           });
           return;
         }
-        if (audio.paused) return;
         if (this.data.scene === 1) {
           const strategy = this.el.querySelector('[data-abaroa-scene="1"]');
-          if (strategy && audio.duration > 0) {
-            const strategyProgress = audio.currentTime / audio.duration;
+          if (strategy) {
             const cabrera = this.el.querySelector('#abaroa-cabrera');
             const gesture = cabrera && cabrera.components && cabrera.components['npc-person'];
-            if (strategyProgress >= 0.3 && strategy.dataset.cabreraPointed !== 'true') {
+            if (progress >= 0.25 && strategy.dataset.cabreraPointed !== 'true') {
               strategy.dataset.cabreraPointed = 'true';
               if (gesture) gesture.playGesture('point', 2.8);
             }
-            if (strategyProgress >= 0.58 && strategy.dataset.abaroaReply !== 'true') {
+            if (progress >= 0.55 && strategy.dataset.abaroaReply !== 'true') {
               strategy.dataset.abaroaReply = 'true';
               if (gesture) gesture.playGesture('nod', 2.2);
+            }
+            if (progress < 0.1) {
+              delete strategy.dataset.cabreraPointed;
+              delete strategy.dataset.abaroaReply;
             }
           }
           return;
@@ -400,18 +510,21 @@
           const defenders = this.el.querySelectorAll('[data-abaroa-retreat]');
           defenders.forEach((defender, index) => {
             const startX = Number(defender.dataset.abaroaRetreatStartX);
-            const retreat = Math.max(0, Math.min(1, (progress - 0.76) / 0.2));
-            const target = startX - retreat * (1.1 + index * 0.18);
-            defender.object3D.position.x += (target - defender.object3D.position.x) * 0.025;
+            const retreat = Math.max(0, Math.min(1, (progress - 0.65) / 0.25));
+            const target = startX - retreat * (0.9 + index * 0.18);
+            defender.object3D.position.x += (target - defender.object3D.position.x) * 0.03;
           });
-          const shot = progress > 0.08 && progress < 0.78 ? Math.floor(audio.currentTime / 2.3) : -1;
+          const activeTime = !audio.paused ? audio.currentTime : this.localTime;
+          const shot = Math.floor(activeTime / 2.1);
           const muzzleFlash = this.el.querySelector('#abaroa-muzzle-flash');
-          if (shot !== -1 && shot !== this.lastShot && muzzleFlash) {
+          const cannonFlash = this.el.querySelector('#abaroa-cannon-flash');
+          if (shot !== this.lastShot) {
             this.lastShot = shot;
-            muzzleFlash.emit('abaroa-shot');
+            if (muzzleFlash) muzzleFlash.emit('abaroa-shot');
+            if (cannonFlash && shot % 2 === 0) cannonFlash.emit('abaroa-shot');
           }
         } else if (this.data.scene === 3) {
-          if (progress >= 0.52) {
+          if (progress >= 0.35) {
             const resistance = this.el.querySelector('[data-abaroa-scene="3"]');
             const officer = resistance && resistance.querySelector('#abaroa-final-officer');
             const gesture = officer && officer.components && officer.components['npc-person'];
@@ -419,9 +532,12 @@
               resistance.dataset.challengePlayed = 'true';
               if (gesture) gesture.playGesture('point', 2.5);
             }
+          } else {
+            const resistance = this.el.querySelector('[data-abaroa-scene="3"]');
+            if (resistance) delete resistance.dataset.challengePlayed;
           }
-          const volleyWindow = progress >= 0.74 && progress < 0.9;
-          const flashOn = volleyWindow && time % 950 < 180;
+          const volleyWindow = progress >= 0.55 && progress < 0.92;
+          const flashOn = volleyWindow && time % 850 < 200;
           const officers = this.el.querySelectorAll('[data-abaroa-volley-flash]');
           officers.forEach((flash) => {
             if (flash.object3D.visible === flashOn) return;
@@ -442,7 +558,7 @@
       init() {
         this.source = document.createElement('a-entity');
         this.source.setAttribute('visible', 'true');
-        this.source.setAttribute('scale', '1.7 1.7 1.7');
+        this.source.setAttribute('scale', '1.65 1.65 1.65');
         this.el.appendChild(this.source);
         this.actors = [];
         this.loaded = false;
@@ -495,12 +611,12 @@
           return;
         }
 
-        const count = 1;
+        const count = 3;
         this.actors = [this.source.object3D];
         for (let index = 1; index < count; index++) {
           const actor = model.clone(true);
           actor.visible = true;
-          actor.scale.setScalar(1.7);
+          actor.scale.setScalar(1.65);
           this.el.object3D.add(actor);
           this.actors.push(actor);
         }
@@ -510,54 +626,57 @@
 
       getActorTarget(index, progress) {
         if (this.data.role === 'colorado' && this.data.scene === 1) {
-          const starts = [[-0.8, -2.2], [-0.15, -2.55], [0.5, -2.1], [1.15, -2.55], [1.75, -2.15]];
-          const phase = this.time * 0.7 + index * 1.4;
+          const starts = [[-0.95, -1.25], [0.05, -1.55], [0.95, -1.25]];
+          const phase = this.time * 0.9 + index * 1.4;
           return {
-            x: starts[index][0] + Math.sin(phase) * 0.18,
+            x: starts[index][0] + Math.sin(phase) * 0.22,
             y: 0,
-            z: starts[index][1] + Math.cos(phase) * 0.12,
-            walking: Math.abs(Math.sin(phase)) > 0.35 ? 0.38 : 0
+            z: starts[index][1] + Math.cos(phase) * 0.14,
+            walking: Math.abs(Math.sin(phase)) > 0.3 ? 0.45 : 0.08
           };
         }
 
         if (this.data.role === 'colorado') {
-          const starts = [[-1.6, -2], [-2.1, -2.6], [-2.5, -3.1], [-1.4, -3.3], [-2.8, -2.4]];
-          const retreat = Math.max(0, Math.min(1, (progress - 0.76) / 0.2));
+          const starts = [[-1.15, -1.2], [-1.65, -1.65], [-0.75, -1.8]];
+          const retreat = Math.max(0, Math.min(1, (progress - 0.68) / 0.24));
+          const patrol = Math.sin(this.time * 1.1 + index) * 0.15;
           return {
-            x: starts[index][0] - retreat * (1.2 + index * 0.08),
+            x: starts[index][0] - retreat * (0.85 + index * 0.1) + patrol,
             y: 0,
-            z: starts[index][1] + retreat * 0.45,
-            walking: retreat > 0 ? 1 : 0.06
+            z: starts[index][1] + retreat * 0.3,
+            walking: retreat > 0 ? 0.95 : 0.25
           };
         }
 
         if (this.data.scene === 2) {
-          const starts = [[-2.2, -7], [-0.75, -7.5], [0.75, -7.2], [2.2, -7.7]];
+          const starts = [[-1.35, -3.4], [0, -3.7], [1.35, -3.4]];
           const advance = Math.max(0, Math.min(1, (progress - 0.08) / 0.68));
           return {
-            x: starts[index][0] * (1 - advance * 0.18),
+            x: starts[index][0] * (1 - advance * 0.16),
             y: 0,
-            z: starts[index][1] + advance * 2.8,
-            walking: advance > 0.72 ? 1 : advance > 0.08 ? 0.72 : 0.06
+            z: starts[index][1] + advance * 1.45,
+            walking: advance > 0.72 ? 0.95 : advance > 0.08 ? 0.68 : 0.22
           };
         }
 
-        const starts = [[-1.25, -5.7], [1.25, -5.9], [-1.8, -6.4], [1.8, -6.5]];
-        const advance = Math.max(0, Math.min(1, (progress - 0.52) / 0.2));
+        const starts = [[-0.95, -2.9], [0.95, -2.9], [0, -3.3]];
+        const advance = Math.max(0, Math.min(1, (progress - 0.32) / 0.35));
         return {
           x: starts[index][0],
           y: 0,
-          z: starts[index][1] + advance * 1.7,
-          walking: advance > 0.1 ? 0.35 : 0.04,
-          visible: index < 2
+          z: starts[index][1] + advance * 0.95,
+          walking: advance > 0.08 ? 0.45 : 0.15,
+          visible: true
         };
       },
 
       tick(time, delta) {
         if (!this.data.active || !this.loaded) return;
-        const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
-        const progress = duration ? Math.min(1, audio.currentTime / duration) : 0;
         this.time += Math.min(delta || 16, 50) / 1000;
+        const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+        const progress = (!audio.paused && duration)
+          ? Math.min(1, audio.currentTime / duration)
+          : (this.time % 28) / 28;
 
         this.actors.forEach((actor, index) => {
           const target = this.getActorTarget(index, progress);
@@ -569,8 +688,14 @@
           actor.position.x += (target.x - actor.position.x) * smoothing;
           actor.position.y += (baseY - actor.position.y) * smoothing;
           actor.position.z += (target.z - actor.position.z) * smoothing;
-          actor.rotation.y = Math.atan2(target.x - actor.position.x, target.z - actor.position.z);
-          actor.rotation.x = -0.12 * target.walking;
+          const dx = target.x - actor.position.x;
+          const dz = target.z - actor.position.z;
+          if (Math.hypot(dx, dz) > 0.02) {
+            actor.rotation.y = Math.atan2(dx, dz);
+          } else {
+            actor.rotation.y = 0;
+          }
+          actor.rotation.x = -0.1 * target.walking;
           actor.rotation.z = Math.sin(stride) * 0.035 * target.walking;
         });
       }
@@ -695,49 +820,49 @@
 
     const prologue = addScene(0);
     createStageEntity(prologue, 'a-box', {
-      position: '1.05 0.78 -0.45',
-      width: '1.65',
+      position: '0.88 0.78 -0.25',
+      width: '1.45',
       height: '0.12',
-      depth: '1',
+      depth: '0.88',
       color: '#563a27',
       material: 'roughness: 0.82'
     });
     createStageEntity(prologue, 'a-box', {
-      position: '1.05 0.38 -0.45',
+      position: '0.88 0.38 -0.25',
       width: '0.12',
       height: '0.76',
       depth: '0.12',
       color: '#4a3021'
     });
     createStageEntity(prologue, 'a-plane', {
-      position: '1.05 0.85 -0.45',
+      position: '0.88 0.85 -0.25',
       rotation: '-90 0 0',
-      width: '1.42',
-      height: '0.78',
+      width: '1.3',
+      height: '0.72',
       color: '#b28b58',
       material: 'roughness: 0.95'
     });
     createStageEntity(prologue, 'a-text', {
       value: 'LITORAL · ANTOFAGASTA → CALAMA',
-      position: '1.05 0.89 -0.45',
+      position: '0.88 0.89 -0.25',
       rotation: '-90 0 0',
       align: 'center',
-      width: '1.35',
+      width: '1.25',
       color: '#2e281f'
     });
     const routeRing = createStageEntity(prologue, 'a-torus', {
       id: 'abaroa-route-ring',
-      position: '1.05 0.94 -0.45',
+      position: '0.88 0.94 -0.25',
       rotation: '90 0 0',
-      radius: '0.48',
+      radius: '0.44',
       'radius-tubular': '0.012',
       color: '#39e8d0',
-      material: 'emissive: #39e8d0; emissiveIntensity: 0.7'
+      material: 'emissive: #39e8d0; emissiveIntensity: 0.85'
     });
-    routeRing.setAttribute('visible', 'false');
+    routeRing.setAttribute('visible', 'true');
     routeRing.setAttribute('animation__pulse', 'property: scale; from: 0.88 0.88 0.88; to: 1.12 1.12 1.12; dir: alternate; dur: 1700; loop: true; easing: easeInOutSine');
     routeRing.setAttribute('animation__turn', 'property: rotation; from: 90 0 0; to: 90 360 0; dur: 18000; loop: true; easing: linear');
-    [[0.56, 0.96, -0.42], [1.48, 0.96, -0.48], [1.11, 0.98, -0.44]].forEach((point, index) => {
+    [[0.46, 0.96, -0.22], [1.26, 0.96, -0.28], [0.88, 0.98, -0.24]].forEach((point, index) => {
       const marker = createStageEntity(prologue, 'a-sphere', {
         'data-abaroa-route-marker': '',
         position: `${point[0]} ${point[1]} ${point[2]}`,
@@ -745,114 +870,164 @@
         material: 'color: #6affed; emissive: #28dcca; emissiveIntensity: 1.1'
       });
       marker.setAttribute('animation__pulse', `property: scale; from: 0.75 0.75 0.75; to: 1.45 1.45 1.45; dir: alternate; dur: ${850 + index * 180}; delay: ${index * 220}; loop: true; easing: easeInOutSine`);
-      marker.setAttribute('visible', 'false');
+      marker.setAttribute('visible', 'true');
     });
     const mapScan = createStageEntity(prologue, 'a-torus', {
       id: 'abaroa-map-scan',
-      position: '1.05 1.015 -0.45',
+      position: '0.88 1.015 -0.25',
       rotation: '90 0 0',
       radius: '0.25',
       'radius-tubular': '0.009',
       material: 'color: #65fff0; emissive: #28dcca; emissiveIntensity: 0.6; transparent: true; opacity: 0.75'
     });
-    mapScan.setAttribute('visible', 'false');
-    mapScan.setAttribute('animation__scan', 'property: scale; from: 0.2 0.2 0.2; to: 2.5 2.5 2.5; dur: 2200; loop: true; easing: easeOutQuad');
+    mapScan.setAttribute('visible', 'true');
+    mapScan.setAttribute('animation__scan', 'property: scale; from: 0.2 0.2 0.2; to: 2.3 2.3 2.3; dur: 2200; loop: true; easing: easeOutQuad');
     mapScan.setAttribute('animation__fade', 'property: material.opacity; from: 0.78; to: 0.08; dur: 2200; loop: true; easing: easeOutQuad');
+    // Barco holográfico animado en el puerto de Antofagasta sobre la mesa táctica
+    const holoShip = createStageEntity(prologue, 'a-cone', {
+      position: '0.46 1.04 -0.22',
+      rotation: '90 90 0',
+      'radius-bottom': '0.045',
+      'radius-top': '0.005',
+      height: '0.16',
+      material: 'color: #38bdf8; emissive: #0284c7; emissiveIntensity: 0.85; opacity: 0.88; transparent: true'
+    });
+    holoShip.setAttribute('animation__sail', 'property: position; from: 0.42 1.04 -0.22; to: 0.78 1.04 -0.25; dir: alternate; dur: 3600; loop: true; easing: easeInOutSine');
+    // Brújula táctica dorada giratoria y estandarte tricolor en Escena 1
+    const compassRose = createStageEntity(prologue, 'a-cylinder', {
+      position: '1.38 0.89 0.02',
+      radius: '0.09',
+      height: '0.02',
+      material: 'color: #d4af37; metalness: 0.85; roughness: 0.25'
+    });
+    createStageEntity(compassRose, 'a-box', {
+      position: '0 0.02 0',
+      width: '0.14',
+      height: '0.01',
+      depth: '0.022',
+      material: 'color: #ef4444; emissive: #dc2626; emissiveIntensity: 0.5'
+    }).setAttribute('animation__needle', 'property: rotation; from: 0 -35 0; to: 0 35 0; dir: alternate; dur: 1900; loop: true; easing: easeInOutSine');
+    const prologueFlagPole = createStageEntity(prologue, 'a-cylinder', {
+      position: '-0.95 1.15 -0.35',
+      radius: '0.022',
+      height: '2.3',
+      color: '#5c4028'
+    });
+    const prologueFlag = createStageEntity(prologue, 'a-plane', {
+      position: '-0.62 2.02 -0.35',
+      width: '0.64',
+      height: '0.38',
+      material: 'color: #d72e32; side: double'
+    });
+    createStageEntity(prologueFlag, 'a-plane', {
+      position: '0 0 0.005',
+      width: '0.64',
+      height: '0.125',
+      material: 'color: #facc15; side: double'
+    });
+    createStageEntity(prologueFlag, 'a-plane', {
+      position: '0 -0.125 0.01',
+      width: '0.64',
+      height: '0.125',
+      material: 'color: #15803d; side: double'
+    });
+    prologueFlag.setAttribute('animation__wave', 'property: rotation; from: 0 -8 -3; to: 0 8 4; dir: alternate; dur: 950; loop: true; easing: easeInOutSine');
+    prologueFlagPole.setAttribute('animation__sway', 'property: rotation; from: 0 0 -0.6; to: 0 0 0.6; dir: alternate; dur: 1800; loop: true; easing: easeInOutSine');
 
     const strategy = addScene(1);
     createStageEntity(strategy, 'a-plane', {
-      position: '0 0.015 -2.2',
+      position: '0 0.015 -1.35',
       rotation: '-90 0 0',
-      width: '5.5',
-      height: '4.4',
+      width: '4.6',
+      height: '3.6',
       color: '#a98c65',
       material: 'roughness: 1'
     });
     createStageEntity(strategy, 'a-plane', {
-      position: '-1.5 0.025 -2.4',
+      position: '-1.25 0.025 -1.4',
       rotation: '-90 0 0',
-      width: '1.05',
-      height: '4.2',
+      width: '0.95',
+      height: '3.4',
       color: '#526b69',
       material: 'opacity: 0.78; transparent: true'
     });
     [-1, 1].forEach((side, index) => {
       const building = createStageEntity(strategy, 'a-entity', {
-        position: `${side * 2.45} 0 -6.8`
+        position: `${side * 1.95} 0 -3.1`
       });
       createStageEntity(building, 'a-box', {
-        position: '0 1.15 0',
-        width: index ? '2.2' : '2.7',
-        height: '2.3',
-        depth: '1.6',
+        position: '0 1.05 0',
+        width: index ? '1.8' : '2.1',
+        height: '2.1',
+        depth: '1.2',
         color: index ? '#b88959' : '#9d734b',
         material: 'roughness: 1'
       });
       createStageEntity(building, 'a-box', {
-        position: '0 2.35 0',
-        width: index ? '2.4' : '2.9',
-        height: '0.16',
-        depth: '1.8',
+        position: '0 2.15 0',
+        width: index ? '1.95' : '2.25',
+        height: '0.15',
+        depth: '1.35',
         color: '#68472f'
       });
-      [-0.55, 0.55].forEach((windowX) => createStageEntity(building, 'a-box', {
-        position: `${windowX} 1.25 0.81`,
-        width: '0.34',
-        height: '0.58',
+      [-0.45, 0.45].forEach((windowX) => createStageEntity(building, 'a-box', {
+        position: `${windowX} 1.15 0.61`,
+        width: '0.3',
+        height: '0.5',
         depth: '0.035',
         color: '#382a20'
       }));
     });
     createStageEntity(strategy, 'a-entity', {
       id: 'abaroa-cabrera',
-      position: '-1.25 0 -0.95',
-      'npc-person': 'mode: idle; facing: -0.5; shirt: #5e5543; pants: #39352e; skin: #a77c58; hair: #2a2119; prop: none'
+      position: '-1.1 0 -0.55',
+      'npc-person': 'mode: idle; facing: 0.35; shirt: #5e5543; pants: #39352e; skin: #a77c58; hair: #2a2119; prop: none'
     });
     createStageEntity(strategy, 'a-text', {
       value: 'LADISLAO CABRERA',
-      position: '-1.25 1.95 -0.95',
+      position: '-1.1 1.95 -0.55',
       align: 'center',
       width: '1.5',
       color: '#fff0d4'
     });
-    [[-0.8, -2.2], [-0.15, -2.55], [0.5, -2.1], [1.15, -2.55], [1.75, -2.15]].forEach((point, index) => {
+    [[-0.85, -1.1], [-0.2, -1.35], [0.45, -1.1], [1.05, -1.35], [1.55, -1.1]].forEach((point, index) => {
       const sandbag = createStageEntity(strategy, 'a-box', {
-        position: `${point[0]} 0.2 ${point[1] - 0.35}`,
-        width: '0.5',
-        height: '0.38',
-        depth: '0.42',
+        position: `${point[0]} 0.2 ${point[1]}`,
+        width: '0.46',
+        height: '0.34',
+        depth: '0.38',
         color: '#8e7858'
       });
-      sandbag.setAttribute('animation__lift', `property: position; from: ${point[0]} 0.2 ${point[1] - 0.35}; to: ${point[0]} 0.42 ${point[1] - 0.35}; dir: alternate; dur: ${2600 + index * 280}; delay: ${index * 420}; loop: true; easing: easeInOutSine`);
-      sandbag.setAttribute('animation__settle', `property: rotation; from: -2 0 -3; to: 2 0 3; dir: alternate; dur: ${2100 + index * 240}; loop: true; easing: easeInOutSine`);
+      sandbag.setAttribute('animation__lift', `property: position; from: ${point[0]} 0.2 ${point[1]}; to: ${point[0]} 0.4 ${point[1]}; dir: alternate; dur: ${2200 + index * 240}; delay: ${index * 320}; loop: true; easing: easeInOutSine`);
+      sandbag.setAttribute('animation__settle', `property: rotation; from: -2 0 -3; to: 2 0 3; dir: alternate; dur: ${1900 + index * 200}; loop: true; easing: easeInOutSine`);
     });
-    [[-0.55, -3.2], [0.55, -3.45], [1.65, -3.2], [-1.7, -4.1]].forEach((point, index) => {
+    [[-0.55, -1.85], [0.55, -2.0], [1.35, -1.8]].forEach((point, index) => {
       addStageActor(strategy, `abaroa-strategy-defender-${index + 1}`,
         `${point[0]} 0 ${point[1]}`, {
-          mode: 'roam', radius: 0.22, speed: 0.15, phase: index * 1.4,
+          mode: 'roam', radius: 0.22, speed: 0.18, phase: index * 1.4,
           shirt: index % 2 ? '#625b43' : '#59634b', pants: '#38382f'
         });
     });
-    [-1.5, 0, 1.5].forEach((x, index) => createStageEntity(strategy, 'a-box', {
-      position: `${x} 0.08 -3.1`,
-      width: '1.4',
+    [-1.1, 0, 1.1].forEach((x, index) => createStageEntity(strategy, 'a-box', {
+      position: `${x} 0.08 -1.9`,
+      width: '1.1',
       height: '0.1',
       depth: '0.22',
       rotation: `0 ${index % 2 ? 3 : -3} 0`,
       color: '#624832'
     }));
-    [[-2.3, -1.4], [2.4, -2.5], [-2.2, -3.2], [2.1, -3.7], [-2.45, -5]].forEach((point, index) => {
+    [[-1.7, -0.9], [1.75, -1.4], [-1.6, -2.1], [1.65, -2.2]].forEach((point, index) => {
       const rock = createStageEntity(strategy, 'a-dodecahedron', {
         position: `${point[0]} ${0.12 + (index % 2) * 0.05} ${point[1]}`,
-        radius: String(0.24 + (index % 3) * 0.07),
+        radius: String(0.22 + (index % 3) * 0.06),
         color: index % 2 ? '#76644d' : '#8b785e',
         material: 'roughness: 1'
       });
       rock.setAttribute('animation__settle', `property: rotation; from: -1 0 -1; to: 1 0 1; dir: alternate; dur: ${2800 + index * 250}; loop: true; easing: easeInOutSine`);
     });
-    [-1.15, -1.5, -1.85].forEach((x, index) => {
+    [-1.05, -1.25, -1.45].forEach((x, index) => {
       const ripple = createStageEntity(strategy, 'a-torus', {
-        position: `${x} 0.045 -2.35`,
+        position: `${x} 0.045 -1.35`,
         rotation: '90 0 0',
         radius: '0.16',
         'radius-tubular': '0.012',
@@ -861,92 +1036,140 @@
       ripple.setAttribute('animation__ripple', `property: scale; from: 0.55 0.55 0.55; to: 1.8 1.8 1.8; dur: ${1700 + index * 350}; delay: ${index * 380}; loop: true; easing: easeOutSine`);
     });
     const campfire = createStageEntity(strategy, 'a-cone', {
-      position: '1.85 0.22 -1.1',
-      'radius-bottom': '0.13',
+      position: '1.25 0.22 -0.65',
+      'radius-bottom': '0.14',
       'radius-top': '0.015',
-      height: '0.38',
-      material: 'color: #ff9a42; emissive: #ff6a22; emissiveIntensity: 1.1; transparent: true; opacity: 0.82'
+      height: '0.4',
+      material: 'color: #ff9a42; emissive: #ff6a22; emissiveIntensity: 1.2; transparent: true; opacity: 0.86'
     });
-    campfire.setAttribute('animation__flame', 'property: scale; from: 0.82 0.85 0.82; to: 1.12 1.2 1.12; dir: alternate; dur: 380; loop: true; easing: easeInOutSine');
+    campfire.setAttribute('animation__flame', 'property: scale; from: 0.82 0.85 0.82; to: 1.15 1.25 1.15; dir: alternate; dur: 360; loop: true; easing: easeInOutSine');
     campfire.setAttribute('animation__flicker', 'property: rotation; from: -4 0 -3; to: 5 0 4; dir: alternate; dur: 520; loop: true; easing: easeInOutSine');
+    // Chispas ascendentes de la fogata de campaña
+    [0, 1, 2].forEach((sparkIdx) => {
+      const spark = createStageEntity(strategy, 'a-sphere', {
+        position: `${1.22 + sparkIdx * 0.03} 0.35 -0.65`,
+        radius: '0.022',
+        material: 'color: #fde047; emissive: #f97316; emissiveIntensity: 1.2'
+      });
+      spark.setAttribute('animation__rise', `property: position; from: ${1.2 + sparkIdx * 0.03} 0.32 -0.65; to: ${1.18 + sparkIdx * 0.05} 1.15 -0.62; dur: ${1300 + sparkIdx * 280}; delay: ${sparkIdx * 350}; loop: true; easing: easeOutQuad`);
+    });
     const portal = createStageEntity(strategy, 'a-entity', {
       id: 'abaroa-topater-portal',
-      position: '0 0.04 -4.4',
-      visible: 'false'
+      position: '0 0.04 -2.45',
+      visible: 'true'
     });
     const portalRing = createStageEntity(portal, 'a-ring', {
       rotation: '-90 0 0',
-      'radius-inner': '0.55',
-      'radius-outer': '0.72',
+      'radius-inner': '0.48',
+      'radius-outer': '0.65',
       material: 'color: #42f2d5; emissive: #25c9bd; emissiveIntensity: 0.9; opacity: 0.88; transparent: true'
     });
     portalRing.setAttribute('animation__pulse', 'property: scale; from: 0.85 0.85 0.85; to: 1.18 1.18 1.18; dir: alternate; dur: 900; loop: true; easing: easeInOutSine');
     createStageEntity(portal, 'a-cone', {
       position: '0 0.45 0',
       rotation: '90 0 0',
-      'radius-bottom': '0.23',
+      'radius-bottom': '0.22',
       'radius-top': '0',
-      height: '0.5',
+      height: '0.48',
       material: 'color: #42f2d5; emissive: #25c9bd; emissiveIntensity: 0.8'
     });
     createStageEntity(portal, 'a-text', {
       value: 'HACIA EL PUENTE DE TOPÁTER',
-      position: '0 1.1 0',
+      position: '0 1.05 0',
       align: 'center',
-      width: '2.6',
+      width: '2.3',
       color: '#b9fff4'
     });
 
     const battle = addScene(2);
     createStageEntity(battle, 'a-plane', {
-      position: '0 -0.005 -3.6',
+      position: '0 -0.005 -1.8',
       rotation: '-90 0 0',
-      width: '7',
-      height: '8',
+      width: '5.2',
+      height: '4.6',
       color: '#8e7658',
       material: 'roughness: 1'
     });
+    // Río Loa animado bajo el puente de Topáter
+    createStageEntity(battle, 'a-plane', {
+      position: '0 0.01 -2.1',
+      rotation: '-90 0 0',
+      width: '4.8',
+      height: '1.35',
+      color: '#3b6e75',
+      material: 'opacity: 0.82; transparent: true'
+    });
     createStageEntity(battle, 'a-entity', {
-      position: '0 0.08 -4.4',
+      position: '0 0.08 -2.1',
       id: 'abaroa-topater-bridge'
     });
-    [-1, 0, 1].forEach((x) => createStageEntity(battle, 'a-box', {
-      position: `${x} 0.16 -4.4`,
-      width: '0.92',
-      height: '0.16',
-      depth: '2.8',
+    [-0.85, 0, 0.85].forEach((x) => createStageEntity(battle, 'a-box', {
+      position: `${x} 0.16 -2.1`,
+      width: '0.78',
+      height: '0.14',
+      depth: '2.2',
       color: '#624832'
     }));
-    [-1.45, 1.45].forEach((x) => createStageEntity(battle, 'a-box', {
-      position: `${x} 0.7 -4.4`,
-      width: '0.1',
-      height: '0.12',
-      depth: '2.8',
+    [-1.25, 1.25].forEach((x) => createStageEntity(battle, 'a-box', {
+      position: `${x} 0.65 -2.1`,
+      width: '0.09',
+      height: '0.11',
+      depth: '2.2',
       color: '#493422'
     }));
-    [-1.8, -1.1, 1.1, 1.8].forEach((x, index) => createStageEntity(battle, 'a-box', {
-      position: `${x} 0.32 -1.05`,
-      width: '0.82',
-      height: '0.55',
-      depth: '0.48',
+    [-1.4, -0.85, 0.85, 1.4].forEach((x, index) => createStageEntity(battle, 'a-box', {
+      position: `${x} 0.3 -0.75`,
+      width: '0.68',
+      height: '0.5',
+      depth: '0.42',
       color: index % 2 ? '#9a805c' : '#806747'
     }));
-    [[-0.85, -2.6], [-1.45, -3.3]].forEach((point, index) => {
+    // Cañón histórico de campaña con animación de retroceso y fogonazo
+    const cannon = createStageEntity(battle, 'a-entity', {
+      id: 'abaroa-cannon',
+      position: '1.25 0.28 -1.35',
+      rotation: '0 18 0'
+    });
+    createStageEntity(cannon, 'a-cylinder', {
+      position: '0 0.18 -0.15',
+      rotation: '78 0 0',
+      radius: '0.085',
+      height: '0.75',
+      material: 'color: #27272a; metalness: 0.8; roughness: 0.3'
+    }).setAttribute('animation__recoil', 'property: position; from: 0 0.18 -0.15; to: 0 0.16 -0.04; dir: alternate; dur: 650; loop: true; easing: easeInOutQuad');
+    [-0.22, 0.22].forEach((wheelX) => {
+      createStageEntity(cannon, 'a-torus', {
+        position: `${wheelX} 0.08 0`,
+        rotation: '0 90 0',
+        radius: '0.22',
+        'radius-tubular': '0.025',
+        color: '#451a03'
+      });
+    });
+    const cannonFlash = createStageEntity(cannon, 'a-sphere', {
+      id: 'abaroa-cannon-flash',
+      position: '0 0.26 -0.58',
+      radius: '0.18',
+      scale: '0.1 0.1 0.1',
+      material: 'shader: flat; color: #fde047; emissive: #ea580c; emissiveIntensity: 1.6'
+    });
+    cannonFlash.setAttribute('animation__flash', 'property: scale; from: 0.2 0.2 0.2; to: 1.6 1.6 1.6; dir: alternate; dur: 220; easing: easeOutQuad; startEvents: abaroa-shot');
+    [[-0.75, -1.55], [-1.25, -1.95]].forEach((point, index) => {
       const ally = addStageActor(battle, `abaroa-retreating-ally-${index + 1}`,
         `${point[0]} 0 ${point[1]}`, {
-          mode: 'roam', radius: 0.28, speed: 0.2, phase: index * 1.3,
+          mode: 'roam', radius: 0.24, speed: 0.22, phase: index * 1.3,
           shirt: '#59634b', pants: '#38382f'
         });
       ally.dataset.abaroaRetreat = 'true';
       ally.dataset.abaroaRetreatStartX = String(point[0]);
     });
-    [[-2.65, -8], [2.65, -8.4]].forEach((point, index) => {
+    [[-1.65, -2.85], [1.65, -2.95]].forEach((point, index) => {
       const skirmisher = addStageActor(battle, `abaroa-battle-skirmisher-${index + 1}`,
         `${point[0]} 0 ${point[1]}`, {
-          mode: 'roam', radius: 0.55, speed: 0.32, phase: index * 2.2,
+          mode: 'roam', radius: 0.42, speed: 0.32, phase: index * 2.2,
           shirt: '#4b4d43', pants: '#343630', skin: '#9a765c'
         });
-      skirmisher.setAttribute('scale', '0.9 0.9 0.9');
+      skirmisher.setAttribute('scale', '0.92 0.92 0.92');
     });
     const muzzleFlash = createStageEntity(battle, 'a-sphere', {
       id: 'abaroa-muzzle-flash',
@@ -956,28 +1179,28 @@
       material: 'shader: flat; color: #ffd879; emissive: #ff9a32; emissiveIntensity: 1.5'
     });
     muzzleFlash.setAttribute('animation__flash', 'property: scale; from: 0.2 0.2 0.2; to: 1.7 1.7 1.7; dir: alternate; dur: 170; easing: easeOutQuad; startEvents: abaroa-shot');
-    [[-1.6, 0.72, -3.4], [0.1, 0.82, -4.7], [1.5, 0.66, -5.2], [-0.8, 0.58, -6.1]].forEach((point, index) => {
+    [[-1.1, 0.72, -1.75], [0.1, 0.82, -2.15], [1.1, 0.66, -2.35], [-0.6, 0.58, -2.6]].forEach((point, index) => {
       const smoke = addAnimatedSphere(battle, `abaroa-battle-smoke-${index + 1}`,
-        `${point[0]} ${point[1]} ${point[2]}`, 0.42 + (index % 2) * 0.16, '#837c70',
-        `property: position; from: ${point[0]} ${point[1]} ${point[2]}; to: ${point[0] + (index % 2 ? 0.18 : -0.16)} ${point[1] + 0.55} ${point[2]}; dur: ${2600 + index * 360}; delay: ${index * 260}; loop: true; easing: easeInOutSine`);
-      smoke.setAttribute('animation__expand', `property: scale; from: 0.65 0.7 0.65; to: 1.4 1.25 1.4; dur: ${3100 + index * 280}; delay: ${index * 200}; loop: true; easing: easeInOutSine`);
+        `${point[0]} ${point[1]} ${point[2]}`, 0.36 + (index % 2) * 0.12, '#837c70',
+        `property: position; from: ${point[0]} ${point[1]} ${point[2]}; to: ${point[0] + (index % 2 ? 0.18 : -0.16)} ${point[1] + 0.55} ${point[2]}; dur: ${2200 + index * 320}; delay: ${index * 220}; loop: true; easing: easeInOutSine`);
+      smoke.setAttribute('animation__expand', `property: scale; from: 0.65 0.7 0.65; to: 1.35 1.2 1.35; dur: ${2600 + index * 240}; delay: ${index * 180}; loop: true; easing: easeInOutSine`);
     });
-    [-1.3, 0, 1.3].forEach((x, index) => {
+    [-0.95, 0, 0.95].forEach((x, index) => {
       const plank = createStageEntity(battle, 'a-box', {
-        position: `${x} 0.255 -4.4`,
-        width: '0.88',
+        position: `${x} 0.255 -2.1`,
+        width: '0.72',
         height: '0.035',
-        depth: '2.65',
+        depth: '2.05',
         color: '#876341'
       });
       plank.setAttribute('animation__creak', `property: rotation; from: -0.8 0 0; to: 0.8 0 0; dir: alternate; dur: ${1700 + index * 230}; delay: ${index * 140}; loop: true; easing: easeInOutSine`);
     });
 
     const resistance = addScene(3);
-    const remainingOfficer = addStageActor(resistance, 'abaroa-final-officer', '1.2 0 -5.8', {
+    const remainingOfficer = addStageActor(resistance, 'abaroa-final-officer', '0.95 0 -2.45', {
       mode: 'idle', facing: -0.1, shirt: '#4c4a40', pants: '#343630', skin: '#a17c5c'
     });
-    remainingOfficer.setAttribute('scale', '0.94 0.94 0.94');
+    remainingOfficer.setAttribute('scale', '0.95 0.95 0.95');
     createStageEntity(remainingOfficer, 'a-cylinder', {
       position: '-0.38 1.05 -0.25',
       rotation: '0 0 90',
@@ -985,10 +1208,10 @@
       height: '1',
       color: '#362f26'
     });
-    [-1.25, 1.25].forEach((x) => {
+    [-0.95, 0.95].forEach((x) => {
       createStageEntity(resistance, 'a-sphere', {
         'data-abaroa-volley-flash': '',
-        position: `${x} 1.3 -4.25`,
+        position: `${x} 1.3 -2.15`,
         radius: '0.13',
         scale: '0.001 0.001 0.001',
         visible: 'false',
@@ -996,69 +1219,96 @@
       }).setAttribute('animation__flash', 'property: scale; from: 0.001 0.001 0.001; to: 1.4 1.4 1.4; dir: alternate; dur: 180; easing: easeOutQuad; startEvents: abaroa-shot');
     });
     createStageEntity(resistance, 'a-entity', {
-      position: '0 0.08 -3.8',
+      position: '0 0.08 -1.85',
       id: 'abaroa-final-bridge'
     });
-    [-0.6, 0, 0.6].forEach((x) => createStageEntity(resistance, 'a-box', {
-      position: `${x} 0.08 -3.8`,
-      width: '0.56',
+    [-0.55, 0, 0.55].forEach((x) => createStageEntity(resistance, 'a-box', {
+      position: `${x} 0.08 -1.85`,
+      width: '0.52',
       height: '0.12',
-      depth: '2.8',
+      depth: '2.1',
       color: '#60462f'
     }));
-    [-0.75, 0, 0.75].forEach((x, index) => {
+    [-0.65, 0, 0.65].forEach((x, index) => {
       const plank = createStageEntity(resistance, 'a-box', {
-        position: `${x} 0.16 -3.8`,
-        width: '0.52',
+        position: `${x} 0.16 -1.85`,
+        width: '0.48',
         height: '0.035',
-        depth: '2.55',
+        depth: '1.95',
         color: '#856142'
       });
       plank.setAttribute('animation__creak', `property: rotation; from: -0.45 0 0; to: 0.45 0 0; dir: alternate; dur: ${1300 + index * 180}; loop: true; easing: easeInOutSine`);
     });
-    [[-0.95, 0.35, -2.9], [0.8, 0.42, -4.8], [0.1, 0.32, -5.4]].forEach((point, index) => {
+    // Frase inmortal de Eduardo Abaroa iluminada sobre el puente de Topáter
+    const heroicBanner = createStageEntity(resistance, 'a-entity', {
+      position: '0 2.25 -1.45'
+    });
+    createStageEntity(heroicBanner, 'a-plane', {
+      width: '2.35',
+      height: '0.38',
+      material: 'color: #1c1917; opacity: 0.88; transparent: true; emissive: #78350f; emissiveIntensity: 0.35'
+    });
+    createStageEntity(heroicBanner, 'a-text', {
+      value: '«¿RENDICIÓN? ¡QUE SE RINDA SU ABUELA, CARAJO!»',
+      align: 'center',
+      position: '0 0 0.02',
+      width: '2.25',
+      color: '#fde047'
+    });
+    heroicBanner.setAttribute('animation__float', 'property: position; from: 0 2.22 -1.45; to: 0 2.32 -1.45; dir: alternate; dur: 1900; loop: true; easing: easeInOutSine');
+    [[-0.85, 0.35, -1.55], [0.75, 0.42, -2.1], [0.1, 0.32, -2.4]].forEach((point, index) => {
       const dust = addAnimatedSphere(resistance, `abaroa-stand-dust-${index + 1}`,
-        `${point[0]} ${point[1]} ${point[2]}`, 0.28, '#b6a18a',
+        `${point[0]} ${point[1]} ${point[2]}`, 0.26, '#b6a18a',
         `property: position; from: ${point[0]} ${point[1]} ${point[2]}; to: ${point[0] + (index - 1) * 0.22} ${point[1] + 0.4} ${point[2]}; dur: ${2200 + index * 400}; delay: ${index * 300}; loop: true; easing: easeInOutSine`);
       dust.setAttribute('animation__fade', `property: scale; from: 0.3 0.25 0.3; to: 1.1 0.9 1.1; dur: ${2100 + index * 340}; delay: ${index * 270}; loop: true; easing: easeInOutSine`);
     });
 
     const memorial = addScene(4);
-    [-2.4, -1.2, 0, 1.2, 2.4].forEach((x, index) => {
+    [-1.8, -0.9, 0, 0.9, 1.8].forEach((x, index) => {
       createStageEntity(memorial, 'a-cone', {
-        position: `${x} ${1.1 + (index % 2) * 0.4} -7.2`,
-        'radius-bottom': '1.1',
+        position: `${x} ${0.95 + (index % 2) * 0.3} -3.6`,
+        'radius-bottom': '0.85',
         'radius-top': '0',
-        height: `${2.2 + (index % 2) * 0.8}`,
+        height: `${1.8 + (index % 2) * 0.6}`,
         color: index % 2 ? '#665b4c' : '#75634f',
         material: 'roughness: 1'
       });
     });
     createStageEntity(memorial, 'a-cylinder', {
-      position: '0.95 0.42 -1.2',
-      radius: '0.52',
+      position: '0.85 0.42 -0.85',
+      radius: '0.46',
       height: '0.82',
       color: '#78674e',
       material: 'roughness: 0.76'
     });
     createStageEntity(memorial, 'a-cylinder', {
-      position: '0.95 0.85 -1.2',
-      radius: '0.62',
+      position: '0.85 0.85 -0.85',
+      radius: '0.55',
       height: '0.08',
       color: '#a88854',
       material: 'metalness: 0.45; roughness: 0.38'
     });
     createStageEntity(memorial, 'a-text', {
-      value: 'EDUARDO ABAROA\\nHÉROE DEL TOPÁTER',
-      position: '0.95 1.25 -1.2',
+      value: 'EDUARDO ABAROA\nHÉROE DEL TOPÁTER',
+      position: '0.85 1.25 -0.85',
       align: 'center',
       width: '1.7',
       color: '#fff0d4'
     });
+    // Pebetero con Llama Votiva Eterna en el Memorial
+    const eternalFlame = createStageEntity(memorial, 'a-cone', {
+      id: 'abaroa-eternal-flame',
+      position: '0.85 1.04 -0.85',
+      'radius-bottom': '0.14',
+      'radius-top': '0.01',
+      height: '0.38',
+      material: 'color: #fbbf24; emissive: #ea580c; emissiveIntensity: 1.3; opacity: 0.9; transparent: true'
+    });
+    eternalFlame.setAttribute('animation__flame', 'property: scale; from: 0.85 0.88 0.85; to: 1.18 1.28 1.18; dir: alternate; dur: 420; loop: true; easing: easeInOutSine');
     const memorialRing = createStageEntity(memorial, 'a-torus', {
-      position: '0.95 1.62 -1.2',
+      position: '0.85 1.62 -0.85',
       rotation: '0 90 0',
-      radius: '1.05',
+      radius: '0.95',
       'radius-tubular': '0.018',
       color: '#e0bd72',
       material: 'emissive: #a87933; emissiveIntensity: 0.6'
@@ -1067,17 +1317,17 @@
     memorialRing.setAttribute('animation__breathe', 'property: scale; from: 0.94 0.94 0.94; to: 1.04 1.04 1.04; dir: alternate; dur: 2800; loop: true; easing: easeInOutSine');
     for (let index = 0; index < 5; index++) {
       const orbit = createStageEntity(memorial, 'a-entity', {
-        position: '0.95 1.65 -1.2',
+        position: '0.85 1.65 -0.85',
         rotation: `0 ${index * 72} 0`
       });
       createStageEntity(orbit, 'a-sphere', {
-        position: '0.92 0 0',
-        radius: '0.075',
+        position: '0.85 0 0',
+        radius: '0.07',
         material: 'color: #ffe4a0; emissive: #d7a64b; emissiveIntensity: 0.8'
       }).setAttribute('animation__pulse', `property: scale; from: 0.75 0.75 0.75; to: 1.35 1.35 1.35; dir: alternate; dur: ${1000 + index * 190}; delay: ${index * 150}; loop: true; easing: easeInOutSine`);
       orbit.setAttribute('animation__turn', `property: rotation; from: 0 ${index * 72} 0; to: 0 ${index * 72 + 360} 0; dur: ${18000 + index * 1700}; loop: true; easing: linear`);
     }
-    [[0.35, 1.7, -1.5], [1.55, 1.25, -1.8], [0.5, 2.2, -0.8], [1.42, 2.15, -0.7]].forEach((point, index) => {
+    [[0.35, 1.7, -1.1], [1.45, 1.25, -1.2], [0.5, 2.2, -0.6], [1.32, 2.15, -0.5]].forEach((point, index) => {
       const petal = createStageEntity(memorial, 'a-sphere', {
         position: `${point[0]} ${point[1]} ${point[2]}`,
         radius: '0.035',
@@ -1088,127 +1338,127 @@
     });
     createStageEntity(memorial, 'a-text', {
       value: '1879  ·  1952  ·  MEMORIA VIVA',
-      position: '0.95 2.82 -1.2',
+      position: '0.85 2.65 -0.85',
       align: 'center',
-      width: '2.2',
+      width: '2.1',
       color: '#ffe1a0'
     });
-    [-1.8, 1.8].forEach((x, index) => {
+    [-1.45, 1.45].forEach((x, index) => {
       const pole = createStageEntity(memorial, 'a-cylinder', {
-        position: `${x} 1.65 -2.2`,
+        position: `${x} 1.45 -1.55`,
         radius: '0.025',
-        height: '3.2',
+        height: '2.8',
         color: '#6d5537'
       });
       const flag = createStageEntity(memorial, 'a-plane', {
-        position: `${x + (index ? -0.38 : 0.38)} 2.65 -2.2`,
-        width: '0.76',
-        height: '0.42',
+        position: `${x + (index ? -0.36 : 0.36)} 2.35 -1.55`,
+        width: '0.72',
+        height: '0.4',
         material: 'color: #d72e32; side: double; roughness: 0.8'
       });
       createStageEntity(flag, 'a-plane', {
         position: '0 0 0.006',
-        width: '0.76',
-        height: '0.14',
+        width: '0.72',
+        height: '0.13',
         material: 'color: #f3e8c1; side: double'
       });
       createStageEntity(flag, 'a-plane', {
-        position: '0 -0.14 0.012',
-        width: '0.76',
-        height: '0.14',
+        position: '0 -0.13 0.012',
+        width: '0.72',
+        height: '0.13',
         material: 'color: #1d7b4b; side: double'
       });
       flag.setAttribute('animation__wave', `property: rotation; from: 0 0 -5; to: 0 0 5; dir: alternate; dur: ${900 + index * 240}; loop: true; easing: easeInOutSine`);
       pole.setAttribute('animation__sway', `property: rotation; from: 0 0 -0.7; to: 0 0 0.7; dir: alternate; dur: ${1800 + index * 350}; loop: true; easing: easeInOutSine`);
     });
-    [-1.35, 0, 1.35].forEach((x, index) => {
+    [-1.15, 0, 1.15].forEach((x, index) => {
       createStageEntity(memorial, 'a-cylinder', {
-        position: `${x} 0.32 -3.25`,
-        radius: '0.32',
+        position: `${x} 0.32 -1.95`,
+        radius: '0.28',
         height: '0.64',
         color: '#78674e',
         material: 'roughness: 0.78'
       });
       createStageEntity(memorial, 'a-cylinder', {
-        position: `${x} 0.66 -3.25`,
-        radius: '0.39',
+        position: `${x} 0.66 -1.95`,
+        radius: '0.34',
         height: '0.08',
         color: '#bd9a5c',
         material: 'metalness: 0.38; roughness: 0.42'
       });
       if (index === 0) {
         createStageEntity(memorial, 'a-box', {
-          position: `${x} 0.83 -3.25`,
-          width: '0.52',
+          position: `${x} 0.83 -1.95`,
+          width: '0.48',
           height: '0.055',
           depth: '0.055',
           rotation: '0 0 -6',
           color: '#58422e'
         });
         createStageEntity(memorial, 'a-cylinder', {
-          position: `${x + 0.24} 0.83 -3.25`,
+          position: `${x + 0.22} 0.83 -1.95`,
           rotation: '0 0 90',
           radius: '0.018',
-          height: '0.55',
+          height: '0.5',
           color: '#32271e'
         });
       } else if (index === 1) {
         createStageEntity(memorial, 'a-box', {
-          position: `${x} 0.86 -3.25`,
-          width: '0.36',
+          position: `${x} 0.86 -1.95`,
+          width: '0.34',
           height: '0.025',
-          depth: '0.26',
+          depth: '0.24',
           rotation: '0 0 -12',
           color: '#e8d4a9'
         });
         createStageEntity(memorial, 'a-torus', {
-          position: `${x + 0.18} 0.87 -3.25`,
+          position: `${x + 0.16} 0.87 -1.95`,
           rotation: '0 0 90',
-          radius: '0.12',
+          radius: '0.11',
           'radius-tubular': '0.012',
           color: '#b28b58'
         });
       } else {
         createStageEntity(memorial, 'a-box', {
-          position: `${x} 0.84 -3.25`,
-          width: '0.38',
+          position: `${x} 0.84 -1.95`,
+          width: '0.36',
           height: '0.025',
-          depth: '0.28',
+          depth: '0.26',
           rotation: '-12 0 0',
           color: '#b69261'
         });
         createStageEntity(memorial, 'a-plane', {
-          position: `${x} 0.86 -3.25`,
+          position: `${x} 0.86 -1.95`,
           rotation: '-12 0 0',
-          width: '0.34',
-          height: '0.24',
+          width: '0.32',
+          height: '0.22',
           material: 'color: #c9ab7a; side: double'
         });
       }
       createStageEntity(memorial, 'a-text', {
         value: ['WINCHESTER', 'CARTA', 'MAPA DEL LITORAL'][index],
-        position: `${x} 1.08 -3.25`,
+        position: `${x} 1.08 -1.95`,
         align: 'center',
         width: '0.85',
         color: '#fff0d4'
       });
     });
     createStageEntity(memorial, 'a-torus', {
-      position: '0.95 2.45 -1.2',
+      position: '0.85 2.3 -0.85',
       rotation: '0 90 0',
-      radius: '1.48',
+      radius: '1.25',
       'radius-tubular': '0.012',
       material: 'color: #e8c67d; emissive: #a87933; emissiveIntensity: 0.45; opacity: 0.68; transparent: true'
     });
-    [[-0.3, '1879'], [0.95, '1952'], [2.2, 'HOY']].forEach((point) => {
+    [[-0.2, '1879'], [0.85, '1952'], [1.9, 'HOY']].forEach((point) => {
       createStageEntity(memorial, 'a-sphere', {
-        position: `${point[0]} 2.45 -1.2`,
+        position: `${point[0]} 2.3 -0.85`,
         radius: '0.075',
         material: 'color: #ffe4a0; emissive: #c99c5a; emissiveIntensity: 0.7'
       }).setAttribute('animation__pulse', 'property: scale; from: 0.8 0.8 0.8; to: 1.3 1.3 1.3; dir: alternate; dur: 1250; loop: true; easing: easeInOutSine');
       createStageEntity(memorial, 'a-text', {
         value: point[1],
-        position: `${point[0]} 2.67 -1.2`,
+        position: `${point[0]} 2.52 -0.85`,
         align: 'center',
         width: '0.55',
         color: '#fff0d4'
@@ -1269,24 +1519,34 @@
     const stage = aSceneInstance && aSceneInstance.querySelector('#abaroa-ar-stage');
     const model = aSceneInstance && aSceneInstance.querySelector('#eduardo-abaroa-figure');
     if (!stage || !model) return;
-    stage.setAttribute('visible', String(currentStoryId === 'abaroa'));
+    const isAbaroa = currentStoryId === 'abaroa';
+    stage.setAttribute('visible', String(isAbaroa));
     stage.setAttribute('abaroa-stage-motion', 'scene', sceneIndex);
-    model.setAttribute('visible', String(sceneIndex !== 0 || audio.currentTime >= 24));
+    model.setAttribute('visible', String(isAbaroa));
     stage.querySelectorAll('[data-abaroa-scene]').forEach((group) => {
-      group.setAttribute('visible', String(currentStoryId === 'abaroa' && Number(group.dataset.abaroaScene) === sceneIndex));
+      group.setAttribute('visible', String(isAbaroa && Number(group.dataset.abaroaScene) === sceneIndex));
     });
     model.setAttribute('abaroa-scene-motion', {
       scene: sceneIndex,
-      active: currentStoryId === 'abaroa' && isARLocationAvailable()
+      active: isAbaroa && isARLocationAvailable()
     });
     const formationData = {
       scene: sceneIndex,
-      active: currentStoryId === 'abaroa' && isARLocationAvailable()
+      active: isAbaroa && isARLocationAvailable()
     };
     ['#abaroa-colorado-formation', '#abaroa-chilean-formation'].forEach((selector) => {
       const formation = stage.querySelector(selector);
       if (formation) formation.setAttribute('abaroa-model-formation', formationData);
     });
+  }
+
+  function updateFranzSceneLife(sceneIndex) {
+    if (!aSceneInstance) return;
+    const franzLife = aSceneInstance.querySelector('#ar-franz-scene-life');
+    if (!franzLife) return;
+    const isFranzActive = currentStoryId === 'franz' && isARLocationAvailable();
+    franzLife.setAttribute('visible', String(isFranzActive));
+    franzLife.setAttribute('ar-scene-life', `scene: ${sceneIndex}; active: ${isFranzActive}`);
   }
 
   // ─── Verificación de Rango Geográfico (Geofence) ───
@@ -1305,17 +1565,22 @@
   // ─── Sincronización del Mundo Pokémon GO con la Ubicación Real ───
   function syncSitePresence() {
     const userCoordinates = getARUserCoordinates();
-    updateGeographicAnchor(userCoordinates);
     const inRange = Boolean(userCoordinates) && isInSite();
+    if (!inRange) {
+      arAnchorLocked = false;
+    }
+    updateGeographicAnchor(userCoordinates);
     updateAbaroaStage(currentSceneIndex);
+    updateFranzSceneLife(currentSceneIndex);
     const anchor = getWorldAnchor();
     const animator = getAnimator();
     const walker = getWalker();
     const sceneVideo = aSceneInstance && aSceneInstance.querySelector('#ar-scene-video');
     const videoPanel = aSceneInstance && aSceneInstance.querySelector('#ar-video-panel');
-    const dist = userCoordinates && window.HistoriaGeo && typeof window.HistoriaGeo.getSceneDistance === 'function'
+    const gpsDist = userCoordinates && window.HistoriaGeo && typeof window.HistoriaGeo.getSceneDistance === 'function'
       ? window.HistoriaGeo.getSceneDistance(currentStoryId, currentSceneIndex)
       : null;
+    const stageDist = inRange ? getAnchorDistanceMeters() : gpsDist;
     const targetName = `${currentStoryId === 'abaroa' ? 'Eduardo Abaroa' : 'Franz Tamayo'} · Escena ${currentSceneIndex + 1}`;
 
     if (statusPill) {
@@ -1328,8 +1593,8 @@
           ? window.HistoriaGeo.getState()
           : null;
         statusPill.innerHTML = inRange
-          ? `<span class="ar-status-dot"></span> 🟢 ${geoState && geoState.isSimulated ? 'Simulación activa' : 'Escena disponible'} · ${dist} m`
-          : `<span class="ar-status-dot"></span> 🧭 Escena a ${dist !== null ? dist + ' m' : 'esperando GPS'}`;
+          ? `<span class="ar-status-dot"></span> 🟢 ${geoState && geoState.isSimulated ? 'Simulación activa' : 'Escena fija en sitio'} · ${stageDist} m`
+          : `<span class="ar-status-dot"></span> 🧭 Escena a ${gpsDist !== null ? gpsDist + ' m' : 'esperando GPS'}`;
       }
     }
 
@@ -1349,6 +1614,7 @@
         anchor.setAttribute('visible', 'true');
 
         if (wasHidden) {
+          placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE);
           if (animator) {
             animator.setLocked(false);
             animator.setReveal(1);
@@ -1389,7 +1655,7 @@
         radarOverlay.classList.add('is-active');
       }
       if (radarDistEl) {
-        radarDistEl.textContent = dist !== null ? `${dist} metros` : 'Buscando señal GPS...';
+        radarDistEl.textContent = gpsDist !== null ? `${gpsDist} metros` : 'Buscando señal GPS...';
       }
       if (radarTargetEl) {
         radarTargetEl.textContent = targetName;
@@ -1532,12 +1798,40 @@
         restorePageScrollAndUnlockDOM();
       }
 
-        // ─── Tocar una estación histórica para cambiar de escena ───
+        // ─── Tocar una estación histórica para cambiar de escena o pellizcar para acercarse/alejarse ───
         function setupInteractiveSceneSelection() {
           if (!aSceneInstance) return;
 
           const canvas = aSceneInstance.querySelector('.a-canvas');
           if (!canvas) return;
+
+          // Pellizcar con 2 dedos para caminar hacia adelante/atrás respecto a la escena fija
+          let pinchStartDist = null;
+          canvas.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 2) {
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              pinchStartDist = Math.hypot(dx, dy);
+            }
+          }, { passive: true });
+
+          canvas.addEventListener('touchmove', function (e) {
+            if (e.touches.length === 2 && pinchStartDist !== null) {
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              const dist = Math.hypot(dx, dy);
+              const delta = (dist - pinchStartDist) * 0.008;
+              pinchStartDist = dist;
+              if (Math.abs(delta) > 0.005) {
+                moveCameraRigAlongView(delta);
+                syncSitePresence();
+              }
+            }
+          }, { passive: true });
+
+          canvas.addEventListener('touchend', function () {
+            pinchStartDist = null;
+          }, { passive: true });
 
           canvas.addEventListener('click', function (e) {
             if (currentStoryId !== 'franz') return;
@@ -1596,7 +1890,9 @@
 
           if (btnPrev) btnPrev.disabled = index === 0;
           if (btnNext) btnNext.disabled = index === scenes.length - 1;
-          updateGeographicAnchor();
+          if (!arAnchorLocked && isARLocationAvailable()) {
+            placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE);
+          }
           if (btnAudio) btnAudio.disabled = !s.audio || !isARLocationAvailable();
 
           audio.pause();
@@ -1607,6 +1903,7 @@
 
           setSceneVideo(s.video);
           updateAbaroaStage(index);
+          updateFranzSceneLife(index);
 
           const animator = getAnimator();
           if (animator) {
@@ -1902,9 +2199,11 @@
               stopCamera();
               window.removeEventListener('deviceorientation', handleARDeviceOrientation, true);
               window.removeEventListener('deviceorientationabsolute', handleARDeviceOrientation, true);
+              window.removeEventListener('devicemotion', handleARDeviceMotion, true);
               arGeoOrigin = null;
               arFilteredCoordinates = null;
               arInitialHeading = null;
+              arAnchorLocked = false;
               if (startedGPSForAR && window.HistoriaGeo && typeof window.HistoriaGeo.stopGPSTracking === 'function') {
                 window.HistoriaGeo.stopGPSTracking();
                 startedGPSForAR = false;
@@ -1938,7 +2237,7 @@
 
             window.closeAR = closeAR;
             window.openAR = openAR;
-            window.TamayoAR = { open: openAR, close: closeAR, setScene, setStory };
+            window.TamayoAR = { open: openAR, close: closeAR, setScene, setStory, reanchor: () => placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE) };
 
             // ─── Listeners de Botones y Eventos ───
             function setupListeners() {
@@ -1980,6 +2279,16 @@
                 btnToggleBottomCard.addEventListener('click', () => toggleBottomCard());
               }
 
+              if (btnReanchor) {
+                btnReanchor.addEventListener('click', () => {
+                  placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE);
+                  syncSitePresence();
+                  if (window.HistoriaFX && window.HistoriaFX.beep) {
+                    window.HistoriaFX.beep('ok');
+                  }
+                });
+              }
+
               const triggerSimulate = () => {
                 if (!window.HistoriaGeo || typeof window.HistoriaGeo.simulateInRange !== 'function') {
                   console.error('[Historia Viva] No está disponible la simulación de ubicación para AR.');
@@ -1990,7 +2299,10 @@
                 }
                 arGeoOrigin = null;
                 arFilteredCoordinates = null;
+                arAnchorLocked = false;
                 window.HistoriaGeo.simulateInRange();
+                placeSceneInFrontOfCamera(DEFAULT_SPAWN_DISTANCE);
+                toggleMiniMapDrawer(false);
                 syncSitePresence();
               };
               if (btnSimulate) btnSimulate.addEventListener('click', triggerSimulate);

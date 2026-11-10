@@ -630,6 +630,11 @@ class TamayoVRExperience {
         visualEntity.setAttribute('visible', String(i === scene.id));
       }
     }
+    const vrSceneLife = aScene.querySelector('#vr-franz-scene-life');
+    if (vrSceneLife) {
+      vrSceneLife.setAttribute('visible', 'true');
+      vrSceneLife.setAttribute('ar-scene-life', `scene: ${scene.id - 1}; active: true`);
+    }
 
     // Actualizar tonalidad ambiental del mundo 360
     const world = aScene.querySelector('#vr-surrounding-world') || aScene.querySelector('[vr-world]');
@@ -646,11 +651,13 @@ class TamayoVRExperience {
     }
 
     ['#vr-ambience-layer', '#vr-surrounding-world', '#vr-interactive-diorama', '#vr-npc-group',
-      '#vr-tamayo-figure', '#vr-scene-cue', '#vr-pedestal', '#vr-pedestal-dial', '#vr-pedestal-glow']
+      '#vr-tamayo-figure', '#vr-scene-cue', '#vr-pedestal', '#vr-pedestal-dial', '#vr-pedestal-glow', '#vr-franz-scene-life']
       .forEach((selector) => {
         const entity = aScene.querySelector(selector);
         if (entity) entity.setAttribute('visible', 'false');
       });
+    const vrSceneLife = aScene.querySelector('#vr-franz-scene-life');
+    if (vrSceneLife) vrSceneLife.setAttribute('ar-scene-life', 'scene: 0; active: false');
     for (let index = 1; index <= 5; index++) {
       const entity = aScene.querySelector(`#vr-visuals-scene-${index}`);
       if (entity) entity.setAttribute('visible', 'false');
@@ -664,7 +671,7 @@ class TamayoVRExperience {
     const abaroaScene = aScene.querySelector('#vr-abaroa-scene-1');
     if (abaroaScene) {
       const route = abaroaScene.querySelector('#vr-abaroa-route');
-      if (route) route.setAttribute('visible', 'false');
+      if (route) route.setAttribute('visible', 'true');
       const details = abaroaScene.querySelector('#vr-abaroa-map-info');
       if (details) details.setAttribute('visible', 'false');
       const prompt = abaroaScene.querySelector('#vr-abaroa-timeline-prompt');
@@ -692,7 +699,7 @@ class TamayoVRExperience {
         scenePrompt.setAttribute('value', promptLabels[index]);
       }
     }
-    aScene.querySelector('#vr-abaroa-topater-portal')?.setAttribute('visible', 'false');
+    aScene.querySelector('#vr-abaroa-topater-portal')?.setAttribute('visible', String(scene.id === 2));
     aScene.querySelector('#vr-abaroa-cabrera-arm')?.removeAttribute('animation__point');
     aScene.querySelector('#vr-abaroa-cabrera-arm')?.removeAttribute('animation__lower');
     aScene.querySelector('#vr-abaroa-cabrera-arm')?.setAttribute('rotation', '0 0 0');
@@ -711,7 +718,7 @@ class TamayoVRExperience {
 
     const figure = aScene.querySelector('#vr-abaroa-figure');
     if (figure) {
-      figure.setAttribute('visible', String(scene.id !== 1));
+      figure.setAttribute('visible', 'true');
       figure.setAttribute('position', this.getAbaroaFigurePosition(scene.id));
       figure.setAttribute('rotation', scene.id === 3 ? '0 0 0' : '0 180 0');
       figure.removeAttribute('animation__determination');
