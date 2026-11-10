@@ -3767,6 +3767,10 @@ canvas.a-canvas {
   pointer-events: auto !important;
 }
 
+.pokear-top-actions > * {
+  flex: 0 0 auto;
+}
+
 .ar-status-pill {
   background: rgba(18, 20, 26, 0.88);
   backdrop-filter: blur(10px);
@@ -4650,6 +4654,12 @@ canvas.a-canvas {
     z-index: 140 !important;
   }
 
+  .pokear-topbar > .ar-icon-button {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+  }
+
   .pokear-back-home-btn {
     width: 40px;
     min-width: 40px;
@@ -4666,19 +4676,28 @@ canvas.a-canvas {
   }
 
   .pokear-top-actions {
+    flex: 1 1 0;
+    min-width: 0;
     gap: 6px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 0 6px;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .pokear-top-actions::-webkit-scrollbar {
+    display: none;
   }
 
   #ar-btn-simulate {
-    position: fixed;
-    top: calc(58px + env(safe-area-inset-top, 0px));
-    right: 10px;
-    z-index: 160;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-width: 132px;
+    min-width: 124px;
     min-height: 42px;
     padding: 0 14px;
     border: 1px solid rgba(255, 242, 199, 0.72);
@@ -4715,6 +4734,7 @@ canvas.a-canvas {
   }
 
   .pokear-top-actions .ar-icon-button {
+    flex: 0 0 40px;
     width: 40px;
     height: 40px;
   }
@@ -4947,8 +4967,7 @@ canvas.a-canvas {
   }
 
   #ar-btn-simulate {
-    top: calc(46px + env(safe-area-inset-top, 0px));
-    right: 8px;
+    min-height: 38px;
   }
 
   .pokear-bottom-card {
