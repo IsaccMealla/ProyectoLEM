@@ -115,7 +115,7 @@
     if (!anchor || !sceneCoordinates) return;
     const scenePosition = projectGeoCoordinates({ lat: sceneCoordinates[0], lng: sceneCoordinates[1] });
     if (!scenePosition) return;
-    anchor.object3D.position.set(scenePosition.x, 0, scenePosition.z - 2.6);
+    anchor.object3D.position.set(scenePosition.x, 0, scenePosition.z);
     anchor.object3D.updateMatrixWorld(true);
   }
 

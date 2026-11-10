@@ -183,6 +183,9 @@
     editingSceneLocation: false,
     radius: 50, // metros
     userCoords: null, // { lat, lng, accuracy }
+    realUserCoords: null,
+    simulatedMovementOrigin: null,
+    simulatedMovementAnchor: null,
     gpsErrorMessage: '',
     distance: null, // metros en línea recta
     inRange: false,
@@ -1214,6 +1217,10 @@ function updateDOMUI(info) {
 function setUserCoordinates(lat, lng, accuracy, isSimulated) {
   state.userCoords = { lat: Number(lat), lng: Number(lng), accuracy: accuracy || 15 };
   state.isSimulated = !!isSimulated;
+  if (!isSimulated) {
+    state.simulatedMovementOrigin = null;
+    state.simulatedMovementAnchor = null;
+  }
   state.gpsErrorMessage = '';
   evaluateRange();
 }
@@ -1301,19 +1308,22 @@ function walkShortestPath(targetSceneIdx, onArrival) {
   }, 110);
 }
 
-// 🎯 Simular que el usuario está dentro del rango (a 12 metros del objetivo)
+// 🎯 Colocar la vista de prueba a escala humana y dentro del rango del objetivo
 function simulateInRange() {
   if (!state.target) return;
-  if (state.isTracking) stopGPSTracking();
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
   }
   const targetLat = state.target.coords[0];
   const targetLng = state.target.coords[1];
-  const simulatedLat = targetLat + 0.00008;
-  const simulatedLng = targetLng + 0.00006;
+  const simulatedLat = targetLat + 0.000025;
+  const simulatedLng = targetLng + 0.000018;
 
+  state.simulatedMovementOrigin = state.realUserCoords
+    ? { lat: state.realUserCoords.lat, lng: state.realUserCoords.lng }
+    : null;
+  state.simulatedMovementAnchor = { lat: simulatedLat, lng: simulatedLng };
   setUserCoordinates(simulatedLat, simulatedLng, 5, true);
 
   if (state.map) {
@@ -1338,6 +1348,8 @@ function simulateOutOfRange() {
   const simulatedLat = targetLat + 0.0018;
   const simulatedLng = targetLng + 0.0015;
 
+  state.simulatedMovementOrigin = null;
+  state.simulatedMovementAnchor = null;
   setUserCoordinates(simulatedLat, simulatedLng, 20, true);
   fitBothBounds();
 }
@@ -1372,17 +1384,31 @@ function startGPSTracking() {
   }
 
   state.isTracking = true;
+  state.simulatedMovementOrigin = null;
   updateGPSButtonUI(true);
 
   const onPos = (position) => {
     const { latitude, longitude, accuracy } = position.coords;
-    state.isSimulated = false;
-    setUserCoordinates(latitude, longitude, accuracy, false);
+    state.realUserCoords = { lat: latitude, lng: longitude, accuracy };
+    let userLat = latitude;
+    let userLng = longitude;
+    let isSimulated = false;
+
+    if (state.isSimulated && state.simulatedMovementAnchor) {
+      if (!state.simulatedMovementOrigin) {
+        state.simulatedMovementOrigin = { lat: latitude, lng: longitude };
+      }
+      userLat = state.simulatedMovementAnchor.lat + latitude - state.simulatedMovementOrigin.lat;
+      userLng = state.simulatedMovementAnchor.lng + longitude - state.simulatedMovementOrigin.lng;
+      isSimulated = true;
+    }
+
+    setUserCoordinates(userLat, userLng, accuracy, isSimulated);
     window.dispatchEvent(new CustomEvent('historia:gps-position', {
-      detail: { lat: latitude, lng: longitude, accuracy }
+      detail: { lat: userLat, lng: userLng, accuracy, isSimulated }
     }));
     if (state.map && state.isTracking) {
-      state.map.panTo([latitude, longitude], { animate: true });
+      state.map.panTo([userLat, userLng], { animate: true });
     }
   };
 
