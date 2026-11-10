@@ -62,11 +62,11 @@
   let arFilteredCoordinates = null;
   let arInitialHeading = null;
 
-  function getRealUserCoordinates() {
+  function getARUserCoordinates() {
     const geoState = window.HistoriaGeo && window.HistoriaGeo.getState
       ? window.HistoriaGeo.getState()
       : null;
-    return geoState && geoState.userCoords && !geoState.isSimulated ? geoState.userCoords : null;
+    return geoState && geoState.userCoords ? geoState.userCoords : null;
   }
 
   function projectGeoCoordinates(coords) {
@@ -83,7 +83,7 @@
     };
   }
 
-  function updateGeographicAnchor(coords = getRealUserCoordinates()) {
+  function updateGeographicAnchor(coords = getARUserCoordinates()) {
     if (!coords || !aSceneInstance) return;
     if (!arGeoOrigin) arGeoOrigin = { lat: coords.lat, lng: coords.lng };
     if (!arFilteredCoordinates) {
@@ -1299,12 +1299,12 @@
   }
 
   function isARLocationAvailable() {
-    return Boolean(getRealUserCoordinates()) && isInSite();
+    return Boolean(getARUserCoordinates()) && isInSite();
   }
 
   // ─── Sincronización del Mundo Pokémon GO con la Ubicación Real ───
   function syncSitePresence() {
-    const userCoordinates = getRealUserCoordinates();
+    const userCoordinates = getARUserCoordinates();
     updateGeographicAnchor(userCoordinates);
     const inRange = Boolean(userCoordinates) && isInSite();
     updateAbaroaStage(currentSceneIndex);
@@ -1324,8 +1324,11 @@
       if (!userCoordinates) {
         statusPill.textContent = '📍 Permite ubicación para anclar la escena AR';
       } else {
+        const geoState = window.HistoriaGeo && window.HistoriaGeo.getState
+          ? window.HistoriaGeo.getState()
+          : null;
         statusPill.innerHTML = inRange
-          ? `<span class="ar-status-dot"></span> 🟢 Escena disponible · ${dist} m`
+          ? `<span class="ar-status-dot"></span> 🟢 ${geoState && geoState.isSimulated ? 'Simulación activa' : 'Escena disponible'} · ${dist} m`
           : `<span class="ar-status-dot"></span> 🧭 Escena a ${dist !== null ? dist + ' m' : 'esperando GPS'}`;
       }
     }
@@ -1978,9 +1981,17 @@
               }
 
               const triggerSimulate = () => {
-                if (window.HistoriaGeo && window.HistoriaGeo.simulateInRange) {
-                  window.HistoriaGeo.simulateInRange();
+                if (!window.HistoriaGeo || typeof window.HistoriaGeo.simulateInRange !== 'function') {
+                  console.error('[Historia Viva] No está disponible la simulación de ubicación para AR.');
+                  return;
                 }
+                if (typeof window.HistoriaGeo.setActiveScene === 'function') {
+                  window.HistoriaGeo.setActiveScene(currentStoryId, currentSceneIndex);
+                }
+                arGeoOrigin = null;
+                arFilteredCoordinates = null;
+                window.HistoriaGeo.simulateInRange();
+                syncSitePresence();
               };
               if (btnSimulate) btnSimulate.addEventListener('click', triggerSimulate);
               if (radarSimulateBtn) radarSimulateBtn.addEventListener('click', triggerSimulate);
