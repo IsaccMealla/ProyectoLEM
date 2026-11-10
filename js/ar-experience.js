@@ -1804,6 +1804,7 @@
               const willOpen = typeof forceState === 'boolean' ? forceState : minimapDrawer.hidden;
               minimapDrawer.hidden = !willOpen;
               arView.classList.toggle('has-map-open', willOpen);
+              if (willOpen) toggleBottomCard(false);
               if (btnToggleMinimap) {
                 btnToggleMinimap.setAttribute('aria-expanded', String(willOpen));
                 btnToggleMinimap.setAttribute('aria-label', willOpen ? 'Minimizar mapa' : 'Mostrar mapa');
@@ -1854,8 +1855,8 @@
 
               if (arLoading) arLoading.classList.remove('is-hidden');
               if (statusPill) statusPill.textContent = '🔐 Solicitando permisos de cámara, ubicación y orientación…';
-              toggleMiniMapDrawer(true);
               toggleBottomCard(true);
+              toggleMiniMapDrawer(true);
 
               if (!navigator.geolocation && statusPill) {
                 statusPill.textContent = '📍 Este navegador no permite acceso a la ubicación';

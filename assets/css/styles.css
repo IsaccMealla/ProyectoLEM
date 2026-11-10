@@ -982,7 +982,7 @@ body.ar-active {
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
-  touch-action: none !important;
+  touch-action: auto !important;
   overscroll-behavior: none !important;
 }
 
@@ -4649,6 +4649,8 @@ canvas.a-canvas {
   }
 
   .pokear-topbar {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
     gap: 6px;
     position: relative;
     z-index: 140 !important;
@@ -4676,20 +4678,33 @@ canvas.a-canvas {
   }
 
   .pokear-top-actions {
-    flex: 1 1 0;
+    display: flex;
+    flex: 0 1 auto;
+    width: 100%;
     min-width: 0;
     gap: 6px;
     justify-content: flex-start;
-    overflow-x: auto;
+    overflow-x: scroll;
     overflow-y: hidden;
     padding: 2px 0 6px;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 209, 102, 0.65) rgba(255, 255, 255, 0.14);
     touch-action: pan-x;
     -webkit-overflow-scrolling: touch;
   }
 
   .pokear-top-actions::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  .pokear-top-actions::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 4px;
+  }
+
+  .pokear-top-actions::-webkit-scrollbar-thumb {
+    background: rgba(255, 209, 102, 0.75);
+    border-radius: 4px;
   }
 
   #ar-btn-simulate {
@@ -4753,6 +4768,8 @@ canvas.a-canvas {
   }
 
   .pokear-bottom-card {
+    position: relative;
+    z-index: 130;
     width: 100%;
     max-width: none;
     margin: 0;
@@ -4898,10 +4915,10 @@ canvas.a-canvas {
     position: absolute;
     top: auto;
     right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     left: 8px;
     width: auto;
-    max-height: min(74dvh, 680px);
+    max-height: min(68dvh, 620px);
     padding: 12px;
     overflow-y: auto;
     border-radius: 18px;
@@ -4947,10 +4964,6 @@ canvas.a-canvas {
     width: 100%;
   }
 
-  .pokear-view.has-map-open .pokear-bottom-card {
-    visibility: hidden;
-    pointer-events: none;
-  }
 }
 
 @media (max-width: 700px) and (orientation: landscape) and (max-height: 500px) {
