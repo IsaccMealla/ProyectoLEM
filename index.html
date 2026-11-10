@@ -1,15 +1,20 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#191b22">
-  <meta name="description" content="Recorre el legado de Franz Tamayo y la historia de UNIFRANZ con experiencias educativas de Realidad Aumentada (AR) y Realidad Virtual inmersiva 360° (VR).">
+  <meta name="description"
+    content="Recorre el legado de Franz Tamayo y la historia de UNIFRANZ con experiencias educativas de Realidad Aumentada (AR) y Realidad Virtual inmersiva 360° (VR).">
   <title>Historia Viva | Franz Tamayo &amp; UNIFRANZ (AR &amp; VR)</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
 
   <!-- A-Frame y librerías inmersivas -->
@@ -17,23 +22,33 @@
   <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
+  <!-- Leaflet: API de Mapas Interactivos y Geolocalización -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
   <!-- Controladores y efectos de la aplicación -->
   <script src="js/tamayo-fx.js" defer></script>
+  <script src="js/geo-manager.js" defer></script>
   <script src="js/vr-experience.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/ar-experience.js" defer></script>
 </head>
+
 <body>
-  <div id="file-protocol-warning" style="display:none; position:fixed; top:0; left:0; right:0; z-index:999999; background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 24px; font-family:'DM Sans', sans-serif; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.8); border-bottom:2px solid #ef4444;">
-    <strong style="font-size:15px; display:block; margin-bottom:4px;">⚠️ Estás abriendo el proyecto como archivo local (file://)</strong>
-    <span style="font-size:13px; opacity:0.95;">Los navegadores bloquean la cámara y los modelos 3D bajo <code>file://</code> por políticas de seguridad (CORS).</span><br>
-    <a href="http://localhost:3000" style="display:inline-block; margin-top:10px; padding:8px 20px; background:#ffd166; color:#0d0f14; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px;">
+  <div id="file-protocol-warning"
+    style="display:none; position:fixed; top:0; left:0; right:0; z-index:999999; background:linear-gradient(135deg, #7f1d1d, #991b1b); color:#ffffff; padding:16px 24px; font-family:'DM Sans', sans-serif; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.8); border-bottom:2px solid #ef4444;">
+    <strong style="font-size:15px; display:block; margin-bottom:4px;">⚠️ Estás abriendo el proyecto como archivo local
+      (file://)</strong>
+    <span style="font-size:13px; opacity:0.95;">Los navegadores bloquean la cámara y los modelos 3D bajo
+      <code>file://</code> por políticas de seguridad (CORS).</span><br>
+    <a href="http://localhost:3000"
+      style="display:inline-block; margin-top:10px; padding:8px 20px; background:#ffd166; color:#0d0f14; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,0.3); font-size:13px;">
       👉 Abrir en http://localhost:3000
     </a>
   </div>
   <script>
     if (window.location.protocol === 'file:') {
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function () {
         var w = document.getElementById('file-protocol-warning');
         if (w) w.style.display = 'block';
       });
@@ -49,15 +64,20 @@
     </a>
     <nav class="main-nav" aria-label="Navegación principal">
       <a href="#cronologia">Cronología</a>
+      <a href="#mapa">Mapa GPS</a>
       <a href="#contexto">Contexto</a>
       <a href="#modalidades">Modalidades AR &amp; VR</a>
     </nav>
     <div style="display: flex; gap: 8px;">
-      <button class="header-cta voice-button" id="voice-assistant-toggle" type="button" aria-pressed="false" title="Activar comandos por voz">
+      <button class="header-cta voice-button" id="voice-assistant-toggle" type="button" aria-pressed="false"
+        title="Activar comandos por voz">
         <span aria-hidden="true">🎙️</span> Voz
       </button>
-      <button class="header-cta" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara"><span aria-hidden="true">📷</span> Modo AR</button>
-      <button class="header-cta" type="button" data-open-vr style="background: rgba(33,150,243,0.18); border-color: rgba(33,150,243,0.5); color: #7cc3f8;" title="Iniciar Realidad Virtual 360°"><span aria-hidden="true">🥽</span> Modo VR</button>
+      <button class="header-cta" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara"><span
+          aria-hidden="true">📷</span> Modo AR</button>
+      <button class="header-cta" type="button" data-open-vr
+        style="background: rgba(33,150,243,0.18); border-color: rgba(33,150,243,0.5); color: #7cc3f8;"
+        title="Iniciar Realidad Virtual 360°"><span aria-hidden="true">🥽</span> Modo VR</button>
     </div>
   </header>
 
@@ -72,42 +92,61 @@
       <div class="hero-copy">
         <p class="eyebrow"><span></span> BOLIVIA · PENSAMIENTO · EDUCACIÓN E INNOVACIÓN</p>
         <h1 id="hero-title">Historia Viva: El Legado de Franz Tamayo y UNIFRANZ</h1>
-        <p class="hero-intro">Un viaje interactivo a través del pensamiento, la educación y el futuro de Bolivia. Experimenta la historia en Realidad Aumentada (AR con cámara y marcador) o en Realidad Virtual inmersiva (VR 360° para smartphone o gafas Cardboard).</p>
+        <p class="hero-intro">Un viaje interactivo a través del pensamiento, la educación y el futuro de Bolivia.
+          Experimenta la historia en Realidad Aumentada (AR con cámara y marcador) o en Realidad Virtual inmersiva (VR
+          360° para smartphone o gafas Cardboard).</p>
         <div class="hero-actions">
-          <button class="button button-gold" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span aria-hidden="true">↗</span></button>
-          <button class="button button-dark" type="button" data-open-vr>🥽 Iniciar Experiencia VR (360°) <span aria-hidden="true">↗</span></button>
+          <button class="button button-gold" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span
+              aria-hidden="true">↗</span></button>
+          <button class="button button-dark" type="button" data-open-vr>🥽 Iniciar Experiencia VR (360°) <span
+              aria-hidden="true">↗</span></button>
+          <a class="button button-outline" href="#mapa">📍 Mapa &amp; Rango AR <span aria-hidden="true">↓</span></a>
           <a class="button button-outline" href="#cronologia">Explorar historia <span aria-hidden="true">↓</span></a>
         </div>
-        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA INMERSIVA<br>REALIDAD AUMENTADA &amp; REALIDAD VIRTUAL 360°</span></div>
+        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA INMERSIVA<br>REALIDAD
+            AUMENTADA &amp; REALIDAD VIRTUAL 360°</span></div>
       </div>
-      <div class="hero-art" role="img" aria-label="Ilustración editorial inspirada en Franz Tamayo y el pensamiento boliviano">
+      <div class="hero-art" role="img"
+        aria-label="Ilustración editorial inspirada en Franz Tamayo y el pensamiento boliviano">
         <div class="art-frame">
           <div class="art-sun"></div>
-          <div class="art-statue" aria-hidden="true"><div class="statue-head"></div><div class="statue-body"></div><div class="statue-pedestal"></div></div>
+          <div class="art-statue" aria-hidden="true">
+            <div class="statue-head"></div>
+            <div class="statue-body"></div>
+            <div class="statue-pedestal"></div>
+          </div>
           <div class="art-caption"><span>1879 — 1956</span><span>PENSAMIENTO BOLIVIANO</span></div>
           <div class="art-date">FRANZ TAMAYO</div>
         </div>
         <div class="hero-stamp">AR + VR<br>UNIFRANZ <span>✳</span></div>
       </div>
-      <div class="hero-bottom"><span>BOLIVIA</span><span>COMPATIBLE CON MÓVIL Y GAFAS VR</span><span>01 — 05 ESCENAS</span></div>
+      <div class="hero-bottom"><span>BOLIVIA</span><span>COMPATIBLE CON MÓVIL Y GAFAS VR</span><span>01 — 05
+          ESCENAS</span></div>
     </section>
 
     <!-- Sección de Cronología: Las 5 Escenas -->
     <section class="timeline-section section-pad" id="cronologia" aria-labelledby="timeline-title">
       <div class="section-heading">
-        <div><p class="eyebrow eyebrow-dark"><span></span> IDEAS QUE TRANSFORMAN</p><h2 id="timeline-title">Cinco escenas.<br><em>Un legado que inspira.</em></h2></div>
-        <p class="section-aside">Del pensamiento de Franz Tamayo a una universidad con presencia nacional: un recorrido por la educación como fuerza para imaginar el futuro de Bolivia.</p>
+        <div>
+          <p class="eyebrow eyebrow-dark"><span></span> IDEAS QUE TRANSFORMAN</p>
+          <h2 id="timeline-title">Cinco escenas.<br><em>Un legado que inspira.</em></h2>
+        </div>
+        <p class="section-aside">Del pensamiento de Franz Tamayo a una universidad con presencia nacional: un recorrido
+          por la educación como fuerza para imaginar el futuro de Bolivia.</p>
       </div>
       <div class="timeline-track" role="list" aria-label="Cinco escenas del legado de Franz Tamayo y UNIFRANZ">
         <article class="timeline-item" role="listitem">
-          <button class="timeline-trigger is-active" type="button" aria-expanded="true" aria-controls="event-1" data-scene="0">
+          <button class="timeline-trigger is-active" type="button" aria-expanded="true" aria-controls="event-1"
+            data-scene="0">
             <span class="timeline-dot"></span>
             <span class="timeline-year">1879 — 1956</span>
             <span class="timeline-title">El Despertar de Franz Tamayo</span>
           </button>
           <div class="timeline-detail" id="event-1">
-            <p><strong>Visual:</strong> Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el tiempo para descubrir una historia que une pensamiento, educación y futuro.</p>
-            <p style="font-style: italic; color: #2c2925;">«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»</p>
+            <p><strong>Visual:</strong> Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar
+              en el tiempo para descubrir una historia que une pensamiento, educación y futuro.</p>
+            <p style="font-style: italic; color: #2c2925;">«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador
+              boliviano... ¿Me acompañan?»</p>
             <span>ESCENA 1 · EL DESPERTAR</span>
           </div>
         </article>
@@ -118,8 +157,10 @@
             <span class="timeline-title">El Pensamiento y la Educación</span>
           </button>
           <div class="timeline-detail" id="event-2" hidden>
-            <p><strong>Visual:</strong> Aparecen libros antiguos, manuscritos y una representación de La Paz de principios del siglo XX.</p>
-            <p style="font-style: italic; color: #2c2925;">«En 1910 publiqué Creación de la pedagogía nacional, una obra en la que planteé reflexiones sobre cómo debía pensarse la educación boliviana...»</p>
+            <p><strong>Visual:</strong> Aparecen libros antiguos, manuscritos y una representación de La Paz de
+              principios del siglo XX.</p>
+            <p style="font-style: italic; color: #2c2925;">«En 1910 publiqué Creación de la pedagogía nacional, una obra
+              en la que planteé reflexiones sobre cómo debía pensarse la educación boliviana...»</p>
             <span>ESCENA 2 · LA PEDAGOGÍA</span>
           </div>
         </article>
@@ -130,8 +171,10 @@
             <span class="timeline-title">El Nacimiento de UNIFRANZ</span>
           </button>
           <div class="timeline-detail" id="event-3" hidden>
-            <p><strong>Visual:</strong> Las páginas del libro se transforman en una línea de tiempo. Aparece el año 1990 y luego imágenes históricas de La Paz y los primeros espacios universitarios.</p>
-            <p style="font-style: italic; color: #2c2925;">«El 4 de noviembre de 1990 se fundó la Universidad Privada Franz Tamayo, gracias a la iniciativa de Abel Ágreda y Celsa Nogales de Ágreda...»</p>
+            <p><strong>Visual:</strong> Las páginas del libro se transforman en una línea de tiempo. Aparece el año 1990
+              y luego imágenes históricas de La Paz y los primeros espacios universitarios.</p>
+            <p style="font-style: italic; color: #2c2925;">«El 4 de noviembre de 1990 se fundó la Universidad Privada
+              Franz Tamayo, gracias a la iniciativa de Abel Ágreda y Celsa Nogales de Ágreda...»</p>
             <span>ESCENA 3 · FUNDACIÓN</span>
           </div>
         </article>
@@ -142,8 +185,10 @@
             <span class="timeline-title">Una Universidad en Crecimiento</span>
           </button>
           <div class="timeline-detail" id="event-4" hidden>
-            <p><strong>Visual:</strong> Las primeras aulas se transforman en espacios universitarios modernos. Aparece un mapa de Bolivia donde se iluminan La Paz, El Alto, Cochabamba y Santa Cruz.</p>
-            <p style="font-style: italic; color: #2c2925;">«Con el paso de los años, UNIFRANZ fue creciendo y extendiendo su presencia a otras ciudades de Bolivia...»</p>
+            <p><strong>Visual:</strong> Las primeras aulas se transforman en espacios universitarios modernos. Aparece
+              un mapa de Bolivia donde se iluminan La Paz, El Alto, Cochabamba y Santa Cruz.</p>
+            <p style="font-style: italic; color: #2c2925;">«Con el paso de los años, UNIFRANZ fue creciendo y
+              extendiendo su presencia a otras ciudades de Bolivia...»</p>
             <span>ESCENA 4 · CUATRO CIUDADES</span>
           </div>
         </article>
@@ -154,28 +199,204 @@
             <span class="timeline-title">El Legado Continúa</span>
           </button>
           <div class="timeline-detail" id="event-5" hidden>
-            <p><strong>Visual:</strong> Franz Tamayo aparece en un campus actual rodeado de estudiantes de diferentes carreras. Mira directamente al espectador con el logotipo de UNIFRANZ al fondo.</p>
-            <p style="font-style: italic; color: #2c2925;">«Y hoy, jóvenes universitarios, ustedes son parte de esta historia... ¡El futuro está en sus manos!»</p>
+            <p><strong>Visual:</strong> Franz Tamayo aparece en un campus actual rodeado de estudiantes de diferentes
+              carreras. Mira directamente al espectador con el logotipo de UNIFRANZ al fondo.</p>
+            <p style="font-style: italic; color: #2c2925;">«Y hoy, jóvenes universitarios, ustedes son parte de esta
+              historia... ¡El futuro está en sus manos!»</p>
             <span>ESCENA 5 · EL LEGADO</span>
           </div>
         </article>
       </div>
-      <p class="historical-note">Una invitación a seguir pensando la educación boliviana y el papel de quienes la transforman.</p>
+      <p class="historical-note">Una invitación a seguir pensando la educación boliviana y el papel de quienes la
+        transforman.</p>
     </section>
 
     <!-- Ficha Educativa e Institucional -->
     <section class="context-section" id="contexto" aria-labelledby="context-title">
-      <div class="context-art" aria-hidden="true"><div class="context-sun"></div><div class="context-lines"></div><div class="context-seal">U<br><small>1990</small></div><span class="context-coordinate">EDUCACIÓN · IDENTIDAD · FUTURO</span></div>
+      <div class="context-art" aria-hidden="true">
+        <div class="context-sun"></div>
+        <div class="context-lines"></div>
+        <div class="context-seal">U<br><small>1990</small></div><span class="context-coordinate">EDUCACIÓN · IDENTIDAD ·
+          FUTURO</span>
+      </div>
       <div class="context-copy">
         <p class="eyebrow"><span></span> FICHA EDUCATIVA E INSTITUCIONAL</p>
         <h2 id="context-title">Educar para<br><em>construir Bolivia.</em></h2>
-        <p>Franz Tamayo vinculó la educación con la realidad histórica y cultural del país. Su reflexión invita a preguntarnos qué conocimientos, valores y oportunidades necesita Bolivia para construir su propio futuro.</p>
+        <p>Franz Tamayo vinculó la educación con la realidad histórica y cultural del país. Su reflexión invita a
+          preguntarnos qué conocimientos, valores y oportunidades necesita Bolivia para construir su propio futuro.</p>
         <div class="fact-list">
-          <article class="fact-row"><span class="fact-number">01</span><div><h3>Una pedagogía nacional</h3><p>En 1910, Tamayo planteó que la educación debía comprender y partir de la realidad boliviana.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
-          <article class="fact-row"><span class="fact-number">02</span><div><h3>Una universidad para el país</h3><p>Fundada en 1990, UNIFRANZ amplió su proyecto educativo con presencia en cuatro ciudades.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
-          <article class="fact-row"><span class="fact-number">03</span><div><h3>Formación con impacto</h3><p>La innovación y la investigación conectan el aprendizaje universitario con los desafíos de la sociedad.</p></div><span class="fact-mark" aria-hidden="true">↗</span></article>
+          <article class="fact-row"><span class="fact-number">01</span>
+            <div>
+              <h3>Una pedagogía nacional</h3>
+              <p>En 1910, Tamayo planteó que la educación debía comprender y partir de la realidad boliviana.</p>
+            </div><span class="fact-mark" aria-hidden="true">↗</span>
+          </article>
+          <article class="fact-row"><span class="fact-number">02</span>
+            <div>
+              <h3>Una universidad para el país</h3>
+              <p>Fundada en 1990, UNIFRANZ amplió su proyecto educativo con presencia en cuatro ciudades.</p>
+            </div><span class="fact-mark" aria-hidden="true">↗</span>
+          </article>
+          <article class="fact-row"><span class="fact-number">03</span>
+            <div>
+              <h3>Formación con impacto</h3>
+              <p>La innovación y la investigación conectan el aprendizaje universitario con los desafíos de la sociedad.
+              </p>
+            </div><span class="fact-mark" aria-hidden="true">↗</span>
+          </article>
         </div>
-        <p class="legal-note"><span aria-hidden="true">§</span> En Bolivia, la educación es un derecho reconocido por la Constitución y las leyes. La reflexión pedagógica de Tamayo forma parte del debate histórico sobre el sentido y la orientación de la educación en el país.</p>
+        <p class="legal-note"><span aria-hidden="true">§</span> En Bolivia, la educación es un derecho reconocido por la
+          Constitución y las leyes. La reflexión pedagógica de Tamayo forma parte del debate histórico sobre el sentido
+          y la orientación de la educación en el país.</p>
+      </div>
+    </section>
+
+    <!-- =========================================================================
+         SECCIÓN 3: MAPA DE GEOLOCALIZACIÓN Y RANGO DE ACTIVACIÓN AR
+         ========================================================================= -->
+    <section class="map-section section-pad" id="mapa" aria-labelledby="map-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow eyebrow-dark"><span></span> API DE GEOLOCALIZACIÓN &amp; MAPA</p>
+          <h2 id="map-title">Saber dónde estamos.<br><em>Activar la animación en rango.</em></h2>
+        </div>
+        <p class="section-aside">
+          El modelo 3D de Franz Tamayo y su animación en Realidad Aumentada están vinculados a su entorno geográfico.
+          Para despertar al pensador y activar su animación interactiva, debes encontrarte dentro del radio histórico
+          establecido.
+        </p>
+      </div>
+
+      <!-- Tablero de métricas de ubicación y geocerca -->
+      <div class="geo-dashboard">
+        <div class="geo-card-metrics">
+          <div class="geo-metric-item">
+            <span class="geo-metric-label">ESTADO DE ACTIVACIÓN</span>
+            <div id="geo-status-pill" class="geo-status-pill is-out-of-range">
+              <span class="status-indicator"></span> Calculando...
+            </div>
+          </div>
+          <div class="geo-metric-item">
+            <span class="geo-metric-label">DISTANCIA AL OBJETIVO</span>
+            <div class="geo-metric-value" id="geo-distance-value">—</div>
+          </div>
+          <div class="geo-metric-item">
+            <span class="geo-metric-label">RADIO REQUERIDO</span>
+            <div class="geo-metric-value" id="geo-radius-value">50 m</div>
+          </div>
+          <div class="geo-metric-item">
+            <span class="geo-metric-label">TUS COORDENADAS</span>
+            <div class="geo-metric-sub" id="geo-coords-value">—</div>
+          </div>
+        </div>
+
+        <!-- Banner descriptivo de desbloqueo -->
+        <div id="geo-unlock-status" class="geo-unlock-banner is-locked" aria-live="polite">
+          <strong>🔒 ANIMACIÓN BLOQUEADA POR GEOLOCALIZACIÓN</strong>
+          Debes estar a menos de 50 metros del punto histórico. Acércate o presiona <em>«🎯 Simular estar en rango»</em>
+          para activar a Franz Tamayo.
+        </div>
+
+        <!-- Barra de herramientas del mapa -->
+        <div class="geo-toolbar">
+          <div class="geo-toolbar-group">
+            <label for="geo-landmark-select">📍 Punto Histórico:</label>
+            <select id="geo-landmark-select" class="geo-select">
+              <option value="unifranz_lp" selected>UNIFRANZ La Paz · Sede Central</option>
+              <option value="plaza_tamayo">Plaza Franz Tamayo · Sopocachi</option>
+              <option value="plaza_murillo">Plaza Murillo · Kilómetro Cero</option>
+              <option value="unifranz_ea">UNIFRANZ El Alto</option>
+              <option value="unifranz_cbba">UNIFRANZ Cochabamba</option>
+              <option value="unifranz_scz">UNIFRANZ Santa Cruz</option>
+            </select>
+          </div>
+
+          <div class="geo-toolbar-group">
+            <label for="geo-radius-select">🎯 Radio de Rango:</label>
+            <select id="geo-radius-select" class="geo-select">
+              <option value="25">25 metros (Estricto)</option>
+              <option value="50" selected>50 metros (Recomendado)</option>
+              <option value="100">100 metros (Amplio)</option>
+              <option value="200">200 metros (Campus)</option>
+            </select>
+          </div>
+
+          <div class="geo-toolbar-actions">
+            <button type="button" class="geo-btn geo-btn-primary" id="btn-toggle-gps"
+              title="Seguir ubicación mediante GPS real de tu dispositivo">
+              <span>📡</span> Activar Mi GPS Real
+            </button>
+            <button type="button" class="geo-btn geo-btn-route" id="btn-geo-walk-route"
+              title="Recorrer paso a paso la ruta más corta calculada con el algoritmo de Dijkstra hasta el sitio">
+              <span>🚶</span> Caminar por Ruta Más Corta
+            </button>
+            <button type="button" class="geo-btn geo-btn-gold" id="btn-geo-simulate-in"
+              title="Simular que estás a 12 metros del punto para probar el desbloqueo de la animación">
+              <span>🎯</span> Simular Rango (Test)
+            </button>
+            <button type="button" class="geo-btn geo-btn-dark" id="btn-geo-simulate-out"
+              title="Simular que estás fuera de rango para probar el bloqueo">
+              <span>🔴</span> Alejarme (Fuera)
+              <button type="button" class="geo-btn geo-btn-dark" id="btn-geo-simulate-out"
+                title="Simular que estás fuera de rango para ver cómo el algoritmo calcula la ruta más corta">
+                <span>🔴</span> Alejarme (Probar Ruta)
+              </button>
+              <button type="button" class="geo-btn geo-btn-dark" id="btn-geo-set-here"
+                title="Fijar el objetivo histórico en tu posición actual para probar en tu aula o habitación">
+                <span>📍</span> Fijar Meta Aquí
+              </button>
+              <button type="button" class="geo-btn geo-btn-dark" id="btn-geo-center"
+                title="Ajustar vista para ver tu posición y el objetivo">
+                <button type="button" class="geo-btn geo-btn-dark" id="btn-geo-center"
+                  title="Ajustar vista para ver tu posición, las 5 escenas y la ruta más corta">
+                  <span>🔍</span> Centrar Vista
+                </button>
+          </div>
+        </div>
+
+        <!-- Contenedor del Mapa Leaflet -->
+        <!-- Contenedor del Mapa Leaflet en Tiempo Real -->
+        <div class="map-wrapper">
+          <div id="tamayo-leaflet-map" class="tamayo-leaflet-map"></div>
+          <div class="map-legend">
+            <span><span class="legend-dot legend-target"></span> Objetivo Histórico</span>
+            <span><span class="legend-dot legend-target"></span> Objetivo Central (FT)</span>
+            <span><span class="legend-dot legend-scenes"></span> Estaciones de Escenas (01–05)</span>
+            <span><span class="legend-dot legend-route"></span> Ruta Más Corta (Dijkstra / API)</span>
+            <span><span class="legend-dot legend-circle"></span> Geocerca de Activación</span>
+            <span><span class="legend-dot legend-user"></span> Tu Ubicación (Arrastrable)</span>
+          </div>
+        </div>
+
+        <!-- Panel de Guía de Navegación · Algoritmo de la Ruta Más Corta -->
+        <div class="geo-route-panel" id="geo-route-panel" aria-live="polite">
+          <div class="geo-route-header">
+            <div>
+              <span class="geo-route-algo-badge">ALGORITMO DIJKSTRA + API OSRM EN TIEMPO REAL</span>
+              <h3 class="geo-route-title">Guía de Navegación por la Ruta Más Corta</h3>
+              <p class="geo-route-summary" id="geo-route-summary">Calculando la ruta óptima hacia el sitio histórico...
+              </p>
+            </div>
+            <button type="button" class="button button-gold geo-route-walk-btn"
+              onclick="window.HistoriaGeo && window.HistoriaGeo.walkShortestPath()">
+              🚶 Recorrer Ruta Más Corta
+            </button>
+          </div>
+          <div class="geo-route-steps" id="geo-route-steps"></div>
+        </div>
+
+        <!-- Botón de lanzamiento directo a AR con estado de desbloqueo -->
+        <div class="geo-cta-box">
+          <div>
+            <span class="geo-cta-kicker" id="geo-target-name">UNIFRANZ La Paz · Sede Central</span>
+            <h3>¿Listo para probar la experiencia inmersiva?</h3>
+            <p>Al estar dentro del rango en el mapa, el modelo 3D de Franz Tamayo se despertará, gesticulará y narrará
+              la historia.</p>
+          </div>
+          <button class="button button-gold" id="geo-open-ar-btn" type="button" data-open-ar>
+            🚀 Iniciar Experiencia AR ↗
+          </button>
+        </div>
       </div>
     </section>
 
@@ -186,7 +407,8 @@
           <p class="eyebrow eyebrow-dark"><span></span> TU RECORRIDO INTERACTIVO</p>
           <h2 id="visit-title">Elige cómo vivir<br><em>la experiencia.</em></h2>
         </div>
-        <p>Puedes proyectar a Franz Tamayo en tu espacio con la cámara de tu móvil, o sumergirte en una atmósfera tridimensional 360° compatible con gafas VR Cardboard.</p>
+        <p>Puedes proyectar a Franz Tamayo en tu espacio con la cámara de tu móvil, o sumergirte en una atmósfera
+          tridimensional 360° compatible con gafas VR Cardboard.</p>
       </div>
 
       <!-- Tarjetas de Modalidades -->
@@ -194,12 +416,14 @@
         <!-- Tarjeta AR -->
         <article class="mode-card">
           <div>
-            <span class="badge-ar">📷 REALIDAD AUMENTADA</span>
-            <h3>AR con Marcador HIRO</h3>
-            <p>Abre la cámara de tu teléfono móvil, enfoca el marcador HIRO impreso o en otra pantalla y observa el modelo 3D de Franz Tamayo cobrar vida sobre tu mesa con narración sincronizada.</p>
+            <span class="badge-ar">📱 MODO POKÉMON GO (CÁMARA REAL)</span>
+            <h3>AR en Vivo sin Marcador QR</h3>
+            <p>Abre la cámara de tu teléfono móvil y proyecta a Franz Tamayo en tu entorno real con giroscopio 360°, sin
+              necesidad de códigos QR ni marcadores impresos. Franz Tamayo se materializa únicamente al encontrarte en
+              el sitio histórico, caminando a tu alrededor con voz y animaciones vivas.</p>
           </div>
           <button class="button button-gold" type="button" data-open-ar style="width: 100%; justify-content: center;">
-            🚀 Iniciar Experiencia AR ↗
+            🚀 Iniciar Modo Pokémon GO ↗
           </button>
         </article>
 
@@ -208,7 +432,9 @@
           <div>
             <span class="badge-vr">🥽 REALIDAD VIRTUAL 360°</span>
             <h3>VR Inmersivo &amp; Gafas Cardboard</h3>
-            <p>Sumérgete en un entorno espacial 360° con cielo nocturno, efectos de niebla y un pedestal histórico. Puedes usarlo en pantalla completa o activar el <strong>Modo Gafas VR</strong> para visores tipo Cardboard o VR Box con control por mirada.</p>
+            <p>Sumérgete en un entorno espacial 360° con cielo nocturno, efectos de niebla y un pedestal histórico.
+              Puedes usarlo en pantalla completa o activar el <strong>Modo Gafas VR</strong> para visores tipo Cardboard
+              o VR Box con control por mirada.</p>
           </div>
           <button class="button button-dark" type="button" data-open-vr style="width: 100%; justify-content: center;">
             🥽 Iniciar Experiencia VR ↗
@@ -218,29 +444,52 @@
 
       <!-- Pasos de visita rápida -->
       <div class="steps-grid" style="margin-top: 45px;">
-        <article class="visit-step"><span class="step-index">01</span><div class="step-icon" aria-hidden="true">▧</div><h3>Elige tu modo</h3><p>Elige Realidad Aumentada (cámara) o Realidad Virtual (entorno 360°).</p></article>
-        <article class="visit-step"><span class="step-index">02</span><div class="step-icon" aria-hidden="true">◉</div><h3>Permisos</h3><p>Acepta el acceso a la cámara (en AR) o mueve tu dispositivo para orientarte (en VR).</p></article>
-        <article class="visit-step"><span class="step-index">03</span><div class="step-icon" aria-hidden="true">⌗</div><h3>Interactúa</h3><p>Cambia entre las 5 escenas y lee los subtítulos pedagógicos oficiales.</p></article>
-        <article class="visit-step"><span class="step-index">04</span><div class="step-icon" aria-hidden="true">▷</div><h3>Escucha la voz</h3><p>Presiona el botón de audio o narración para escuchar la locución de Franz Tamayo.</p></article>
+        <article class="visit-step"><span class="step-index">01</span>
+          <div class="step-icon" aria-hidden="true">📍</div>
+          <h3>Ubícate en el sitio</h3>
+          <p>Verifica tu posición en el mapa o usa el modo de simulación rápida.</p>
+        </article>
+        <article class="visit-step"><span class="step-index">02</span>
+          <div class="step-icon" aria-hidden="true">📷</div>
+          <h3>Abre tu cámara</h3>
+          <p>Activa la cámara en vivo sin necesidad de imprimir ningún código QR o papel.</p>
+        </article>
+        <article class="visit-step"><span class="step-index">03</span>
+          <div class="step-icon" aria-hidden="true">🚶</div>
+          <h3>Mira a Franz caminar</h3>
+          <p>Observa a Franz Tamayo pasear por tu espacio y gesticular ante ti.</p>
+        </article>
+        <article class="visit-step"><span class="step-index">04</span>
+          <div class="step-icon" aria-hidden="true">▷</div>
+          <h3>Escucha su voz</h3>
+          <p>Presiona el botón de narración para escuchar su locución histórica.</p>
+        </article>
       </div>
 
-      <!-- Acceso móvil con QR y Marcador HIRO -->
-      <div class="qr-mobile-box" style="display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 35px 0 25px; padding: 24px; background: rgba(229,169,59,0.06); border: 1px solid rgba(229,169,59,0.3); border-radius: 16px;">
+      <!-- Acceso móvil con QR -->
+      <div class="qr-mobile-box"
+        style="display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 35px 0 25px; padding: 24px; background: rgba(229,169,59,0.06); border: 1px solid rgba(229,169,59,0.3); border-radius: 16px;">
         <div style="text-align: center;">
-          <img src="assets/images/qr-experiencia.png" alt="Código QR para abrir en celular" style="width: 140px; height: 140px; border-radius: 12px; background: white; padding: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: block; margin: 0 auto;">
-          <p style="margin-top: 10px; font-size: 11.5px; color: #ffd166; font-weight: 700; letter-spacing: 0.5px;">1. Escanea con tu celular</p>
+          <img src="assets/images/qr-experiencia.png" alt="Código QR para abrir en celular"
+            style="width: 140px; height: 140px; border-radius: 12px; background: white; padding: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: block; margin: 0 auto;">
+          <p style="margin-top: 10px; font-size: 11.5px; color: #ffd166; font-weight: 700; letter-spacing: 0.5px;">1.
+            Escanea para abrir en tu celular</p>
           <small style="color: #ded9cf; font-size: 10px;">Abre https://isaccmealla.github.io/ProyectoLEM/</small>
         </div>
-        <div style="text-align: center;">
-          <a href="assets/images/hiro-marker.png" target="_blank" rel="noopener" title="Clic para ver o descargar marcador en tamaño completo">
-            <img src="assets/images/hiro-marker.png" alt="Marcador HIRO para enfocar con la cámara" style="width: 140px; height: 140px; border-radius: 12px; border: 2px solid #e5a93b; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: block; margin: 0 auto;">
-          </a>
-          <p style="margin-top: 10px; font-size: 11.5px; color: #ffd166; font-weight: 700; letter-spacing: 0.5px;">2. Apunta la cámara a este marcador</p>
-          <small style="color: #ded9cf; font-size: 10px;">Clic para ampliar o imprimir</small>
+        <div style="text-align: center; max-width: 280px;">
+          <span style="font-size: 42px; display: block; margin-bottom: 8px;">📱✨</span>
+          <p style="margin: 0 0 6px; font-size: 13px; color: #ffd166; font-weight: 700;">2. Modo Pokémon GO en vivo</p>
+          <small style="color: #ded9cf; font-size: 11px; line-height: 1.5; display: block;">Sin marcadores ni papeles:
+            apunta tu celular a tu alrededor y Franz Tamayo aparecerá en tu espacio físico al estar en el sitio.</small>
         </div>
       </div>
 
-      <div class="visit-callout"><div><span class="callout-label">LISTO PARA COMENZAR</span><h3>Un legado que sigue creciendo.</h3></div><button class="button button-dark" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span aria-hidden="true">↗</span></button></div>
+      <div class="visit-callout">
+        <div><span class="callout-label">LISTO PARA COMENZAR</span>
+          <h3>Un legado que sigue creciendo.</h3>
+        </div><button class="button button-dark" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span
+            aria-hidden="true">↗</span></button>
+      </div>
     </section>
   </main>
 
@@ -255,157 +504,440 @@
   </footer>
 
   <!-- =========================================================================
-       MODAL 1: REALIDAD AUMENTADA (AR con Cámara y Marcador HIRO)
+       MODAL 1: MODO POKÉMON GO (Realidad Aumentada sin Marcador / Cámara Real)
        ========================================================================= -->
-  <section class="ar-view" id="ar-view" aria-label="Experiencia de realidad aumentada" aria-hidden="true" inert>
+  <section class="ar-view pokear-view" id="ar-view" aria-label="Experiencia de realidad aumentada estilo Pokémon GO"
+    aria-hidden="true" inert>
+    <!-- Video de la cámara real de fondo -->
+    <video id="pokear-video" class="pokear-video" autoplay playsinline muted></video>
+
+    <!-- Indicador de carga inicial -->
     <div class="ar-loading" id="ar-loading" role="status">
       <span class="loader-mark">HV</span>
-      <p>Preparando la experiencia AR…</p>
-      <small>Permite el acceso a la cámara para continuar</small>
+      <p>Iniciando cámara y entorno Pokémon GO…</p>
+      <small>Permite el acceso a la cámara para ver a Franz Tamayo en tu espacio</small>
     </div>
 
+    <!-- Plantilla de la escena A-Frame (transparente sobre la cámara con giroscopio) -->
     <template id="ar-scene-template">
-      <a-scene id="ar-scene" embedded vr-mode-ui="enabled: false" renderer="antialias: false; logarithmicDepthBuffer: false; colorManagement: true; precision: mediump; powerPreference: low-power" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false" loading-screen="enabled: false">
-        <a-assets timeout="10000">
+      <a-scene id="pokear-scene" embedded
+        renderer="alpha: true; antialias: true; colorManagement: true; precision: mediump; powerPreference: high-power"
+        vr-mode-ui="enabled: false" loading-screen="enabled: false">
+        <a-assets timeout="12000">
           <a-asset-item id="franz-tamayo-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
         </a-assets>
-        <a-entity light="type: ambient; color: #ffffff; intensity: 1.25"></a-entity>
-        <a-entity light="type: directional; color: #fff3d5; intensity: 1.6" position="1 3 2"></a-entity>
-        <a-marker preset="hiro" smooth="true" smoothCount="8" smoothTolerance="0.01" smoothThreshold="2">
-          <a-cylinder position="0 0.018 0" radius="0.25" height="0.035" color="#171923" material="metalness: 0.35; roughness: 0.48"></a-cylinder>
-          <a-ring id="tamayo-glow-ring" position="0 0.04 0" rotation="-90 0 0" radius-inner="0.2" radius-outer="0.25" color="#d5aa46" material="emissive: #d5aa46; emissiveIntensity: 0.65; opacity: 0.75; transparent: true"></a-ring>
-          <!-- Dial de la Máquina del Tiempo proyectado en el marcador -->
-          <a-entity id="ar-time-dial" time-dial="radius: 0.38; inner: 0.28; ticks: 48; color: #ffd166; speed: 0.08" position="0 0.022 0" rotation="-90 0 0"></a-entity>
-          <a-entity id="tamayo-orientation">
-            <a-entity id="tamayo-rig">
-              <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" position="0 0.045 0" scale="1 1 1" tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.45; talking: false"></a-entity>
-            </a-entity>
-          </a-entity>
-          <a-entity position="0 1.55 0" text="value: FRANZ TAMAYO; align: center; width: 3; color: #fff4d4; shader: msdf"></a-entity>
-        </a-marker>
-        <a-entity id="ar-camera" camera>
-          <a-entity id="ar-preview-anchor" position="0 -0.48 -2.2" visible="false"></a-entity>
+
+        <!-- Iluminación natural adaptada al entorno real -->
+        <a-entity light="type: ambient; color: #ffffff; intensity: 1.35"></a-entity>
+        <a-entity light="type: directional; color: #fff3d5; intensity: 1.7" position="1.5 4 2.5"></a-entity>
+
+        <!-- Cámara del usuario con sensores de orientación / giroscopio 360° -->
+        <a-entity id="pokear-camera-rig" position="0 0 0">
+          <a-camera id="pokear-camera" position="0 1.5 0"
+            look-controls="touchEnabled: true; magicWindowTrackingEnabled: true">
+          </a-camera>
         </a-entity>
+
+        <!-- Anclaje de Franz Tamayo en el mundo real (frente a la cámara a nivel del suelo) -->
+        <a-entity id="tamayo-world-anchor" position="0 0 -2.6" visible="false">
+          <!-- Anillo de presencia holográfico estilo Pokémon GO en el suelo -->
+          <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="0.32" radius-outer="0.55" color="#ffd166"
+            material="emissive: #ffd166; emissiveIntensity: 0.6; opacity: 0.45; transparent: true"></a-ring>
+          <a-circle position="0 0.01 0" rotation="-90 0 0" radius="0.52" color="#000000"
+            material="opacity: 0.35; transparent: true"></a-circle>
+
+          <!-- Entidad con desplazamiento autónomo y caminata (tamayo-walker) -->
+          <a-entity id="tamayo-walker-root" tamayo-walker="speed: 0.68; roamRadius: 1.8; autoRoam: true">
+            <a-entity id="franz-tamayo-figure" gltf-model="#franz-tamayo-model" scale="1.15 1.15 1.15"
+              tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false; autoGestures: true"></a-entity>
+          </a-entity>
+
+          <!-- Estudiante acompañante animado en Realidad Aumentada -->
+          <a-entity id="ar-companion-student" position="1.35 0 0.2"
+            npc-person="mode: idle; facing: -1.35; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; scale: 0.92"></a-entity>
+
+          <!-- Identificador flotante -->
+          <a-entity position="0 1.95 0"
+            text="value: FRANZ TAMAYO; align: center; width: 3.2; color: #fff4d4; shader: msdf"></a-entity>
+
+          <!-- ========================================================
+               OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (Pokémon GO)
+               GALERÍA DE 5 ESTACIONES 3D INTERACTIVAS + FOTOS HISTÓRICAS
+               (Toca cualquier objeto o foto histórica para cambiar de escena)
+               ======================================================== -->
+          <a-entity id="ar-interactive-diorama" position="0 0 0" scene-diorama="mode: ar; activeScene: 0"></a-entity>
+
+          <!-- ========================================================
+               OBJETOS REALISTAS DINÁMICOS POR ESCENA EN AR (Espaciados ampliamente)
+               ======================================================== -->
+
+          <!-- AR Escena 1: El Despertar (Atril histórico de caoba, reloj de bolsillo y medallón) -->
+          <a-entity id="ar-visuals-scene-1" visible="true">
+            <!-- Atril clásico de caoba con reloj de bolsillo -->
+            <a-entity position="-1.05 0 0.1" rotation="0 35 0">
+              <!-- Atril clásico de caoba con reloj de bolsillo (espaciado a -1.65m) -->
+              <a-entity position="-1.65 0 0.25" rotation="0 35 0">
+                <a-cylinder position="0 0.4 0" radius="0.08" height="0.8" color="#3d1f14" roughness="0.8"></a-cylinder>
+                <a-cylinder position="0 0.04 0" radius="0.22" height="0.08" color="#26130b"
+                  roughness="0.85"></a-cylinder>
+                <a-box position="0 0.82 0" rotation="22 0 0" width="0.44" height="0.04" depth="0.36" color="#4a2517"
+                  roughness="0.7"></a-box>
+                <!-- Reloj de bolsillo de época en bronce -->
+                <a-cylinder position="0.08 0.86 0.02" rotation="22 0 0" radius="0.045" height="0.015" color="#d4af37"
+                  material="metalness: 0.8; roughness: 0.3"></a-cylinder>
+                <a-circle position="0.08 0.87 0.02" rotation="-68 0 0" radius="0.038" color="#fefae0"></a-circle>
+                <!-- Placa de bronce grabada -->
+                <a-box position="0 0.5 0.085" width="0.28" height="0.12" depth="0.015" color="#c59b27"
+                  material="metalness: 0.7; roughness: 0.35"></a-box>
+                <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.5 0.095" width="1.2"
+                  color="#1a1202" font="dejavu"></a-text>
+              </a-entity>
+              <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.1" radius-outer="1.35"
+                material="color: #d5aa46; opacity: 0.45; transparent: true"></a-ring>
+              <a-text value="«EL DESPERTAR DE FRANZ TAMAYO»" position="0 2.25 0" align="center" width="2.8"
+                color="#ffd166" font="dejavu"></a-text>
+              <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.25" radius-outer="1.5"
+                material="color: #d5aa46; opacity: 0.45; transparent: true"></a-ring>
+              <a-text value="«EL DESPERTAR DE FRANZ TAMAYO»" position="0 2.35 0" align="center" width="2.8"
+                color="#ffd166" font="dejavu"></a-text>
+            </a-entity>
+
+            <!-- AR Escena 2: El Pensamiento y la Educación (Escritorio noble, manuscrito 1910, tintero, pluma y libros) -->
+            <a-entity id="ar-visuals-scene-2" visible="false">
+              <a-entity position="-1.15 0 -0.1" rotation="0 25 0">
+                <a-entity position="-1.75 0 0.15" rotation="0 28 0">
+                  <!-- Mesa de estudio de madera noble con patas torneadas -->
+                  <a-box position="0 0.48 0" width="1.0" height="0.05" depth="0.6" color="#3d1f14"
+                    roughness="0.75"></a-box>
+                  <a-cylinder position="-0.42 0.24 -0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+                  <a-cylinder position="0.42 0.24 -0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+                  <a-cylinder position="-0.42 0.24 0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+                  <a-cylinder position="0.42 0.24 0.22" radius="0.03" height="0.48" color="#2c160e"></a-cylinder>
+                  <!-- Gran libro abierto: Creación de la Pedagogía Nacional (1910) -->
+                  <a-box position="0 0.52 0.02" rotation="0 5 0" width="0.44" height="0.025" depth="0.32"
+                    color="#5c1d1d" roughness="0.8"></a-box>
+                  <a-plane position="-0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28"
+                    color="#fefae0"></a-plane>
+                  <a-plane position="0.1 0.535 0.02" rotation="-90 5 0" width="0.2" height="0.28"
+                    color="#faf3d2"></a-plane>
+                  <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center"
+                    position="-0.1 0.538 0.02" rotation="-90 5 0" width="0.6" color="#2c1810" font="dejavu"></a-text>
+                  <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
+                    position="0.02 0.538 0.02" rotation="-90 5 0" width="0.55" color="#3c2415" font="dejavu"></a-text>
+                  <!-- Tintero de cristal y pluma clásica de ave blanca -->
+                  <a-cylinder position="0.32 0.525 -0.15" radius="0.035" height="0.045" color="#1a202c"
+                    material="roughness: 0.2; metalness: 0.4"></a-cylinder>
+                  <a-cone position="0.34 0.65 -0.15" rotation="15 20 -12" radius-bottom="0.008" radius-top="0.001"
+                    height="0.22" color="#f8fafc"></a-cone>
+                  <!-- Pergaminos enrollados atados con cinta roja -->
+                  <a-cylinder position="-0.32 0.525 -0.15" rotation="0 30 90" radius="0.028" height="0.22"
+                    color="#edd9b4"></a-cylinder>
+                  <a-torus position="-0.32 0.525 -0.15" rotation="90 30 0" radius="0.03" radius-tubular="0.005"
+                    color="#dc2626"></a-torus>
+                  <!-- Lámpara clásica estilo banquero con tulipa verde esmeralda -->
+                  <a-cylinder position="0.36 0.54 0.16" radius="0.04" height="0.02" color="#b45309"
+                    material="metalness: 0.8"></a-cylinder>
+                  <a-cylinder position="0.36 0.64 0.16" radius="0.01" height="0.18" color="#d97706"
+                    material="metalness: 0.7"></a-cylinder>
+                  <a-cylinder position="0.36 0.73 0.16" rotation="0 0 90" radius="0.035" height="0.12" color="#047857"
+                    material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.3"></a-cylinder>
+                </a-entity>
+                <!-- 2 libros antiguos flotando suavemente en el aire -->
+                <a-entity position="1.1 1.15 -0.2" rotation="12 -25 15"
+                  animation="property: rotation; to: 12 335 15; loop: true; dur: 11000; easing: linear">
+                  <a-entity position="1.65 1.15 0.1" rotation="12 -25 15"
+                    animation="property: rotation; to: 12 335 15; loop: true; dur: 11000; easing: linear">
+                    <a-box width="0.38" height="0.48" depth="0.09" color="#451a03" roughness="0.75"></a-box>
+                    <a-plane position="0.195 0 0" rotation="0 90 0" width="0.08" height="0.44"
+                      color="#fef3c7"></a-plane>
+                  </a-entity>
+                  <a-plane position="0 2.2 0" width="2.4" height="0.38" material="color: #2b1f14; opacity: 0.92">
+                    <a-plane position="0 2.35 0" width="2.4" height="0.38" material="color: #2b1f14; opacity: 0.92">
+                      <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02"
+                        width="2.5" color="#f59e0b" font="dejavu"></a-text>
+                    </a-plane>
+                </a-entity>
+
+                <!-- AR Escena 3: El Nacimiento de UNIFRANZ (Monumento de fundación 1990, placa de fundadores y fachada colonial) -->
+                <a-entity id="ar-visuals-scene-3" visible="false">
+                  <!-- Monumento de piedra conmemorativa 1990 -->
+                  <a-entity position="-1.05 0 -0.2" rotation="0 25 0">
+                    <a-entity position="-1.65 0 0.1" rotation="0 28 0">
+                      <a-box position="0 0.1 0" width="0.65" height="0.2" depth="0.5" color="#334155"
+                        roughness="0.85"></a-box>
+                      <a-box position="0 0.5 0" width="0.52" height="0.62" depth="0.38" color="#475569"
+                        roughness="0.8"></a-box>
+                      <!-- Escudo de UNIFRANZ 1990 en bronce dorado -->
+                      <a-cylinder position="0 0.65 0.2" rotation="90 0 0" radius="0.12" height="0.02" color="#b45309"
+                        material="metalness: 0.75; roughness: 0.3"></a-cylinder>
+                      <a-text value="UNIFRANZ\n1990" align="center" position="0 0.65 0.215" width="1.1" color="#fef08a"
+                        font="dejavu"></a-text>
+                      <!-- Placa de bronce fundido con nombres de los fundadores -->
+                      <a-box position="0 0.35 0.2" width="0.44" height="0.24" depth="0.015" color="#78350f"
+                        material="metalness: 0.65; roughness: 0.4"></a-box>
+                      <a-text
+                        value="FUNDACIÓN OFICIAL: 4 NOV 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
+                        align="center" position="0 0.35 0.212" width="1.0" color="#fef08a" font="dejavu"></a-text>
+                    </a-entity>
+                    <!-- Fachada histórica en miniatura de la primera sede en La Paz -->
+                    <a-entity position="1.1 0 -0.2" rotation="0 -25 0">
+                      <a-entity position="1.75 0 0.1" rotation="0 -28 0">
+                        <a-box position="0 0.65 0" width="0.85" height="1.3" depth="0.14" color="#f8fafc"
+                          roughness="0.9"></a-box>
+                        <a-cylinder position="0 1.32 0" rotation="0 0 90" radius="0.14" height="0.88" color="#991b1b"
+                          roughness="0.8"></a-cylinder>
+                        <!-- Portal colonial en arco -->
+                        <a-box position="0 0.38 0.08" width="0.38" height="0.75" depth="0.03" color="#3d1f14"></a-box>
+                        <a-cylinder position="0 0.76 0.08" rotation="90 0 0" radius="0.19" height="0.03"
+                          color="#3d1f14"></a-cylinder>
+                        <!-- Balcón colonial de hierro forjado -->
+                        <a-box position="0 0.88 0.16" width="0.48" height="0.22" depth="0.14" color="#0f172a"
+                          material="metalness: 0.9; roughness: 0.3"></a-box>
+                        <a-text value="SEDE LA PAZ · 1993" align="center" position="0 1.15 0.09" width="1.2"
+                          color="#991b1b" font="dejavu"></a-text>
+                      </a-entity>
+                      <a-torus position="0 1.2 0" rotation="90 0 0" radius="1.45" radius-tubular="0.02" color="#c0392b"
+                        emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
+                      <a-text value="4 DE NOVIEMBRE DE 1990 · NACIMIENTO DE UNIFRANZ" position="0 2.25 0" align="center"
+                        width="2.7" color="#f87171" font="dejavu"></a-text>
+                      <a-torus position="0 1.2 0" rotation="90 0 0" radius="1.55" radius-tubular="0.02" color="#c0392b"
+                        emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
+                      <a-text value="4 DE NOVIEMBRE DE 1990 · NACIMIENTO DE UNIFRANZ" position="0 2.35 0" align="center"
+                        width="2.7" color="#f87171" font="dejavu"></a-text>
+                    </a-entity>
+
+                    <!-- AR Escena 4: Una Universidad en Crecimiento (Red Nacional de 4 Campus Iluminados) -->
+                    <a-entity id="ar-visuals-scene-4" visible="false">
+                      <!-- 1. La Paz (Sede Central con aguja y silueta Illimani) -->
+                      <a-entity position="-1.1 0 0.1">
+                        <a-entity position="-1.55 0 0.2">
+                          <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a"
+                            roughness="0.4" material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
+                          <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32"
+                            color="#38bdf8" material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
+                          <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.35 0" width="1.8"
+                            color="#93c5fd" font="dejavu"></a-text>
+                        </a-entity>
+                        <!-- 2. El Alto (Torre tecnológica andina) -->
+                        <a-entity position="-0.45 0 -0.55">
+                          <a-entity position="-0.7 0 -0.85">
+                            <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
+                              material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
+                            <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
+                              material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
+                            <a-text value="EL ALTO" align="center" position="0 1.15 0" width="1.7" color="#7dd3fc"
+                              font="dejavu"></a-text>
+                          </a-entity>
+                          <!-- 3. Cochabamba (Campus Valle y columnata) -->
+                          <a-entity position="0.45 0 -0.55">
+                            <a-entity position="0.7 0 -0.85">
+                              <a-cylinder position="0 0.4 0" radius="0.12" height="0.8" color="#0369a1" roughness="0.5"
+                                material="emissive: #0284c7; emissiveIntensity: 0.4"></a-cylinder>
+                              <a-sphere position="0 0.88 0" radius="0.12" color="#38bdf8"
+                                material="emissive: #38bdf8; emissiveIntensity: 0.9"></a-sphere>
+                              <a-text value="COCHABAMBA" align="center" position="0 1.15 0" width="1.7" color="#7dd3fc"
+                                font="dejavu"></a-text>
+                            </a-entity>
+                            <!-- 4. Santa Cruz (Torre vanguardista bioclimática) -->
+                            <a-entity position="1.1 0 0.1">
+                              <a-entity position="1.55 0 0.2">
+                                <a-box position="0 0.45 0" width="0.22" height="0.9" depth="0.22" color="#1e3a8a"
+                                  roughness="0.4" material="emissive: #1d4ed8; emissiveIntensity: 0.4"></a-box>
+                                <a-cone position="0 1.05 0" radius-bottom="0.14" radius-top="0.01" height="0.32"
+                                  color="#38bdf8" material="emissive: #38bdf8; emissiveIntensity: 0.8"></a-cone>
+                                <a-text value="SANTA CRUZ" align="center" position="0 1.35 0" width="1.8"
+                                  color="#93c5fd" font="dejavu"></a-text>
+                              </a-entity>
+                              <!-- Haces de interconexión nacional -->
+                              <a-cylinder position="-0.78 0.7 -0.22" rotation="45 -55 0" radius="0.012" height="0.95"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-cylinder position="0 0.88 -0.55" rotation="0 90 90" radius="0.012" height="0.9"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-cylinder position="0.78 0.7 -0.22" rotation="45 55 0" radius="0.012" height="0.95"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-text value="EXPANSIÓN NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.25 0"
+                                align="center" width="2.8" color="#67e8f9" font="dejavu"></a-text>
+                              <a-cylinder position="-1.1 0.7 -0.32" rotation="45 -55 0" radius="0.012" height="1.2"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-cylinder position="0 0.88 -0.85" rotation="0 90 90" radius="0.012" height="1.4"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-cylinder position="1.1 0.7 -0.32" rotation="45 55 0" radius="0.012" height="1.2"
+                                color="#67e8f9" material="emissive: #67e8f9; emissiveIntensity: 0.9"></a-cylinder>
+                              <a-text value="EXPANSIÓN NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 0"
+                                align="center" width="2.8" color="#67e8f9" font="dejavu"></a-text>
+                            </a-entity>
+
+                            <!-- AR Escena 5: El Legado Continúa (Birrete de graduación, escudo UNIFRANZ orbital y antorcha) -->
+                            <a-entity id="ar-visuals-scene-5" visible="false">
+                              <!-- Birrete de graduación 3D flotante con borla dorada -->
+                              <a-entity position="-0.95 1.15 -0.1" rotation="10 20 -8"
+                                animation="property: position; to: -0.95 1.22 -0.1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+                                <a-entity position="-1.5 1.15 0.1" rotation="10 20 -8"
+                                  animation="property: position; to: -1.5 1.22 0.1; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+                                  <a-box position="0 0 0" width="0.38" height="0.02" depth="0.38" color="#0f172a"
+                                    roughness="0.6"></a-box>
+                                  <a-cylinder position="0 -0.09 0" radius="0.14" height="0.16" color="#0f172a"
+                                    roughness="0.6"></a-cylinder>
+                                  <!-- Botón y borla dorada -->
+                                  <a-cylinder position="0 0.018 0" radius="0.018" height="0.015" color="#eab308"
+                                    material="metalness: 0.8"></a-cylinder>
+                                  <a-cylinder position="0.16 -0.08 0.16" rotation="20 45 0" radius="0.007" height="0.22"
+                                    color="#eab308" material="metalness: 0.7"></a-cylinder>
+                                </a-entity>
+                                <!-- Escudo oficial 3D y anillos orbitales holográficos -->
+                                <a-entity position="0.95 1.15 -0.1">
+                                  <a-entity position="1.5 1.15 0.1">
+                                    <a-torus radius="0.26" radius-tubular="0.015" color="#10b981" emissive="#10b981"
+                                      emissiveIntensity="0.8"
+                                      animation="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"></a-torus>
+                                    <a-torus radius="0.35" radius-tubular="0.012" color="#34d399" emissive="#34d399"
+                                      emissiveIntensity="0.6"
+                                      animation="property: rotation; to: -360 180 360; loop: true; dur: 12000; easing: linear"></a-torus>
+                                    <a-cylinder position="0 0 0" rotation="90 0 0" radius="0.18" height="0.03"
+                                      color="#064e3b"
+                                      material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.5"></a-cylinder>
+                                    <a-text value="UNIFRANZ\nFUTURO" align="center" position="0 0 0.025" width="1.4"
+                                      color="#a7f3d0" font="dejavu"></a-text>
+                                  </a-entity>
+                                  <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.15" radius-outer="1.42"
+                                    material="color: #10b981; emissive: #10b981; emissiveIntensity: 0.6; opacity: 0.5; transparent: true"></a-ring>
+                                  <a-text value="«EL FUTURO ESTÁ EN SUS MANOS»\nINNOVACIÓN · INVESTIGACIÓN · TALENTO"
+                                    position="0 2.25 0" align="center" width="2.8" color="#6ee7b7"
+                                    font="dejavu"></a-text>
+                                  <a-ring position="0 0.02 0" rotation="-90 0 0" radius-inner="1.25" radius-outer="1.52"
+                                    material="color: #10b981; emissive: #10b981; emissiveIntensity: 0.6; opacity: 0.5; transparent: true"></a-ring>
+                                  <a-text value="«EL FUTURO ESTÁ EN SUS MANOS»\nINNOVACIÓN · INVESTIGACIÓN · TALENTO"
+                                    position="0 2.35 0" align="center" width="2.8" color="#6ee7b7"
+                                    font="dejavu"></a-text>
+                                </a-entity>
+                              </a-entity>
       </a-scene>
     </template>
 
-    <!-- Efecto 2D de Viaje en la Máquina del Tiempo para AR -->
-    <canvas id="ar-warp-canvas" class="ar-warp-canvas"></canvas>
-    <div id="ar-time-banner" class="ar-time-banner" hidden>
-      <span class="time-banner-kicker">⚡ MÁQUINA DEL TIEMPO ⚡</span>
-      <div class="time-banner-year" id="ar-warp-year">1879</div>
-      <div class="time-banner-title" id="ar-warp-title">El Despertar de Franz Tamayo</div>
+    <!-- Escáner Radar (Visible ÚNICAMENTE cuando el usuario está fuera del sitio histórico) -->
+    <!-- Escáner Radar + Ruta Más Corta (Visible cuando el usuario está fuera del sitio histórico) -->
+    <div id="ar-radar-overlay" class="pokear-radar-overlay" hidden>
+      <div class="pokear-radar-scan-box">
+        <div class="radar-scan-rings">
+          <div class="radar-ring r1"></div>
+          <div class="radar-ring r2"></div>
+          <div class="radar-ring r3"></div>
+          <div class="radar-sweep"></div>
+          <span class="radar-icon">📡</span>
+        </div>
+        <span class="radar-kicker">RADAR HISTÓRICO · MODO POKÉMON GO</span>
+        <h3 class="radar-title">Escaneando presencia histórica...</h3>
+        <span class="radar-kicker">RADAR HISTÓRICO &amp; ALGORITMO DE RUTA MÁS CORTA</span>
+        <h3 class="radar-title">Estás lejos del sitio histórico</h3>
+        <p class="radar-desc">
+          Ninguna figura histórica detectada en esta ubicación.<br>
+          Estás a <strong id="ar-radar-distance">—</strong> de <span id="ar-radar-target">UNIFRANZ La Paz</span>.
+          Te encuentras a <strong id="ar-radar-distance">—</strong> de <span id="ar-radar-target">UNIFRANZ La
+            Paz</span>.<br>
+          Sigue la <strong>Ruta Más Corta (Dijkstra / API OSRM)</strong> para activar a Franz Tamayo:
+        </p>
+        <p class="radar-subtip">
+          Para que Franz Tamayo aparezca ante ti, debes encontrarte dentro del sitio en el mapa.
+        </p>
+
+        <!-- Instrucciones paso a paso de la ruta más corta en tiempo real -->
+        <div class="radar-route-steps" id="ar-radar-route-steps"></div>
+
+        <div class="radar-actions">
+          <button type="button" class="button button-gold radar-btn" id="ar-radar-simulate-btn">
+            🎯 Simular Llegada al Sitio (Ver Animación)
+            <button type="button" class="button button-gold radar-btn" id="ar-radar-walk-route-btn">
+              🚶 Caminar por Ruta Más Corta
+            </button>
+            <button type="button" class="button button-dark radar-btn" id="ar-radar-simulate-btn">
+              🎯 Llegada Instantánea (Test)
+            </button>
+            <button type="button" class="pokear-back-home-btn radar-home-btn" data-close-ar>
+              <span class="back-arrow" aria-hidden="true">‹</span> Volver al Inicio
+            </button>
+        </div>
+      </div>
     </div>
 
-    <div class="ar-hud">
-      <div class="ar-topbar">
-        <div class="ar-brand">
-          <span class="brand-mark">HV</span>
-          <span>HISTORIA VIVA <small>EXPERIENCIA AR</small></span>
-        </div>
-        <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar realidad aumentada" title="Volver a la página">×</button>
-      </div>
-
-      <div class="ar-title">
-        <span class="ar-live-dot"></span>
-        <div>
-          <p>HISTORIA VIVA · REALIDAD AUMENTADA</p>
-          <h2>Franz Tamayo en AR - Historia UNIFRANZ</h2>
-        </div>
-      </div>
-
-      <nav class="scene-navigation" aria-label="Navegación de escenas">
-        <button class="ar-control scene-nav-button" type="button" id="ar-nav-previous-scene" aria-label="Escena anterior">← Anterior</button>
-        <span class="scene-navigation-status" id="scene-navigation-status" aria-live="polite">Escena 1 de 5</span>
-        <button class="ar-control scene-nav-button" type="button" id="ar-nav-next-scene" aria-label="Escena siguiente">Siguiente →</button>
-      </nav>
-
-      <div class="ar-bottom-controls">
-        <button class="ar-control" type="button" id="audio-toggle" aria-pressed="false">
-          <span class="control-icon" id="audio-icon" aria-hidden="true">▶</span>
-          <span id="audio-label">Escuchar narración</span>
+    <!-- HUD Minimalista Pokémon GO (Superpuesto en pantalla limpia) -->
+    <div class="pokear-hud">
+      <!-- Barra superior minimalista -->
+      <div class="pokear-topbar">
+        <button class="pokear-back-home-btn" type="button" data-close-ar aria-label="Volver a la página principal"
+          title="Regresar a la página principal">
+          <span class="back-arrow" aria-hidden="true">‹</span> Volver al Inicio
         </button>
-        <button class="ar-control" type="button" id="ar-voice-trigger" data-voice-trigger aria-label="Escuchar comando de voz">
-          <span class="control-icon" aria-hidden="true">🎙️</span>
-          <span>Comando de voz</span>
-        </button>
-        <button class="ar-control" type="button" id="details-toggle" aria-expanded="false" aria-controls="ar-details">
-          <span class="control-icon" aria-hidden="true">i</span>
-          <span>Guion</span>
-        </button>
-      </div>
-
-      <!-- Selector de superficie (Pantalla / Mesa) y reseteo de rotación -->
-      <div class="ar-surface-selector" id="ar-surface-selector" role="group" aria-label="Modo de superficie">
-        <button type="button" class="surface-btn is-active" id="surface-screen-btn" title="El marcador está en la pantalla de una computadora o laptop">
-          <span aria-hidden="true">💻</span> En Pantalla
-        </button>
-        <button type="button" class="surface-btn" id="surface-table-btn" title="El marcador está sobre una mesa o impreso en papel">
-          <span aria-hidden="true">📄</span> En Mesa
-        </button>
-        <button type="button" class="surface-btn-icon" id="reset-pose-btn" title="Centrar y reiniciar rotación de Franz Tamayo">
-          <span aria-hidden="true">🔄</span>
-        </button>
-      </div>
-
-      <!-- Badge de confirmación visual al detectar marcador HIRO -->
-      <div class="ar-detection-badge" id="ar-detection-badge" aria-live="polite" hidden>
-        <span class="badge-icon" aria-hidden="true">✓</span>
-        <div class="badge-content">
-          <strong>Marcador HIRO Detectado</strong>
-          <small id="badge-subtitle">Iniciando experiencia con Franz Tamayo…</small>
-        </div>
-      </div>
-
-      <!-- Cuadro de diálogo del Guion - oculto hasta detectar marcador HIRO -->
-      <aside class="ar-dialog" id="ar-details" aria-live="polite" hidden style="display:none">
-        <div class="dialog-header">
-          <div class="dialog-tags">
-            <span class="dialog-badge" id="scene-kicker">ESCENA 1 DE 5</span>
-            <span class="dialog-period" id="scene-period">1879 — 1956</span>
+        <div class="pokear-top-actions">
+          <div class="ar-status-pill is-out-of-range" id="ar-status-pill">
+            <span class="ar-status-dot"></span> 📡 Calculando...
           </div>
-          <button class="dialog-close-btn" type="button" id="dialog-close" aria-label="Ocultar guion" title="Ocultar texto para observar el modelo">✕</button>
-        </div>
-
-        <div class="dialog-body">
-          <h3 class="dialog-title" id="scene-title">El Despertar de Franz Tamayo</h3>
-          <p class="dialog-text" id="scene-subtitle"></p>
-        </div>
-
-        <!-- Barra de progreso del audio de la escena -->
-        <div class="dialog-progress-wrap" id="audio-progress-wrap" aria-hidden="true">
-          <div class="dialog-progress-bar" id="audio-progress-bar"></div>
-        </div>
-
-        <div class="dialog-footer">
-          <button class="dialog-btn dialog-nav-btn" type="button" id="previous-scene" aria-label="Escena anterior">
-            ← Anterior
+          <button type="button" class="pokear-chip-btn" id="ar-btn-toggle-minimap"
+            title="Ver mapa en tiempo real, ubicación de las 5 escenas y ruta más corta">
+            🗺️ Mapa y Ruta
           </button>
-          
-          <button class="dialog-btn dialog-play-btn" type="button" id="dialog-audio-toggle" aria-pressed="false">
-            <span class="control-icon" id="dialog-audio-icon" aria-hidden="true">▶</span>
-            <span id="dialog-audio-label">Escuchar narración</span>
+          <button type="button" class="pokear-chip-btn" id="ar-btn-simulate"
+            title="Simular que estás dentro del sitio para ver las animaciones">
+            🎯 Simular Sitio
           </button>
-
-          <button class="dialog-btn dialog-nav-btn" type="button" id="next-scene" aria-label="Escena siguiente">
-            Siguiente →
-          </button>
+          <button class="ar-icon-button" type="button" data-close-ar aria-label="Cerrar y volver a la página principal"
+            title="Regresar a la página principal">×</button>
         </div>
-      </aside>
-
-      <!-- Barra flotante compacta cuando el cuadro está minimizado -->
-      <div class="ar-bottom-bar" id="ar-bottom-bar" hidden>
-        <button class="ar-mini-btn" type="button" id="mini-prev-scene" aria-label="Escena anterior">←</button>
-        <button class="ar-mini-btn ar-mini-btn-script" type="button" id="mini-details-toggle" aria-expanded="true" aria-controls="ar-details">
-          <span>📖</span> <span id="mini-scene-status">Escena 1 de 5 · Ver Guion</span>
-        </button>
-        <button class="ar-mini-btn ar-mini-btn-audio" type="button" id="mini-audio-toggle">
-          <span id="mini-audio-icon">▶</span> <span id="mini-audio-text">Audio</span>
-        </button>
-        <button class="ar-mini-btn" type="button" id="mini-next-scene" aria-label="Escena siguiente">→</button>
       </div>
 
-      <p class="ar-hint" id="ar-hint">Busca el marcador HIRO para activar la escena</p>
+      <!-- Mini-Mapa en Tiempo Real con las 5 Escenas y Algoritmo de Ruta Más Corta -->
+      <div class="ar-minimap-drawer" id="ar-minimap-drawer" hidden>
+        <div class="ar-minimap-header">
+          <span>🗺️ MAPA EN TIEMPO REAL · 5 ESCENAS Y RUTA MÁS CORTA</span>
+          <button type="button" class="ar-minimap-close" id="ar-minimap-close" aria-label="Cerrar mini mapa">×</button>
+        </div>
+        <div id="ar-mini-map" class="ar-mini-map"></div>
+        <div class="ar-mini-route-bar">
+          <p id="ar-mini-route-summary">Calculando la ruta más corta...</p>
+          <button type="button" class="pokear-chip-btn"
+            onclick="window.HistoriaGeo && window.HistoriaGeo.walkShortestPath()">
+            🚶 Ir por Ruta Más Corta
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjeta inferior minimalista y responsiva (Solo los 4 botones esenciales) -->
+      <div class="pokear-bottom-card" id="ar-bottom-card">
+        <div class="pokear-card-header">
+          <span class="pokear-card-badge" id="ar-hud-scene-number">ESCENA 1 DE 5</span>
+          <span class="pokear-card-period" id="ar-hud-scene-period">1879 — 1956</span>
+        </div>
+        <h3 class="pokear-card-title" id="ar-hud-scene-title">El Despertar de Franz Tamayo</h3>
+        <p class="pokear-card-dialog" id="ar-hud-scene-text">
+          «¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano...»
+        </p>
+
+        <!-- Barra de progreso de la narración -->
+        <div class="pokear-progress-wrap" aria-hidden="true">
+          <div class="pokear-progress-bar" id="ar-hud-progress-bar"></div>
+        </div>
+
+        <!-- Los 4 botones esenciales -->
+        <div class="pokear-card-controls">
+          <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-prev" aria-label="Escena anterior"
+            title="Escena anterior">
+            ←
+          </button>
+          <button class="pokear-btn pokear-btn-play" type="button" id="ar-btn-audio" aria-pressed="false"
+            title="Escuchar o pausar la narración de Franz Tamayo">
+            <span id="ar-btn-audio-icon" aria-hidden="true">▶</span>
+            <span id="ar-btn-audio-label">Narrar</span>
+          </button>
+          <button class="pokear-btn pokear-btn-walk is-active" type="button" id="ar-btn-walk"
+            title="Alternar paseo y caminata de Franz Tamayo">
+            <span id="ar-btn-walk-icon" aria-hidden="true">🧍</span>
+            <span id="ar-btn-walk-label">Pasear</span>
+          </button>
+          <button class="pokear-btn pokear-btn-nav" type="button" id="ar-btn-next" aria-label="Escena siguiente"
+            title="Escena siguiente">
+            →
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Elemento de audio nativo -->
@@ -423,7 +955,9 @@
     </div>
 
     <template id="vr-scene-template">
-      <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true" renderer="antialias: false; colorManagement: true; logarithmicDepthBuffer: false; precision: mediump; powerPreference: low-power" fog="type: exponential; color: #141722; density: 0.012" loading-screen="enabled: false">
+      <a-scene id="vr-scene" embedded vr-mode-ui="enabled: true"
+        renderer="antialias: false; colorManagement: true; logarithmicDepthBuffer: false; precision: mediump; powerPreference: low-power"
+        fog="type: exponential; color: #141722; density: 0.012" loading-screen="enabled: false">
         <a-assets timeout="12000">
           <a-asset-item id="franz-tamayo-vr-model" src="assets/models/franz_tamayo.glb"></a-asset-item>
         </a-assets>
@@ -431,177 +965,396 @@
         <!-- Capa de Ambientación Espacio-Temporal 360° -->
         <a-entity id="vr-ambience-layer" time-ambience="sky: #0f1118; color: #d5aa46; center: 0 0 -2.3"></a-entity>
 
+        <!-- Entorno 360° Inmersivo y Animado (Plaza histórica, Colonnata, Illimani, Faroles parpadeantes, Cóndores, Pileta con agua y Banderas) -->
+        <a-entity id="vr-surrounding-world" vr-world="center: 0 0 -1.2; color: #d5aa46"></a-entity>
+
+        <!-- Galería 360° de 5 Estaciones Interactivas + Fotografías Históricas Reales («UNIFRANZ: Antes en 1993 y Ahora») -->
+        <a-entity id="vr-interactive-diorama" position="0 0 0" scene-diorama="mode: vr; activeScene: 0"></a-entity>
+
+        <!-- Personajes Secundarios Animados (Estudiantes de UNIFRANZ explorando y conversando en la plaza histórica) -->
+        <a-entity id="vr-npc-group">
+          <!-- Estudiante 1: Caminando en círculo alrededor de la plaza leyendo notas -->
+          <a-entity id="vr-npc-student-1"
+            npc-person="mode: circle; center: 0 0 -1.2; radius: 4.6; speed: 0.52; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; phase: 0.4"></a-entity>
+          <!-- Estudiante 1: Caminando en círculo amplio alrededor de la plaza leyendo notas -->
+          <a-entity id="vr-npc-student-1"
+            npc-person="mode: circle; center: 0 0 -1.2; radius: 5.4; speed: 0.52; prop: book; shirt: #2563eb; pants: #1e293b; skin: #c68a4c; phase: 0.4"></a-entity>
+
+          <!-- Estudiante 2: Caminando libremente con mochila cerca de las columnas coloniales -->
+          <a-entity id="vr-npc-student-2"
+            npc-person="mode: roam; center: -3.4 0 -3.2; radius: 2.2; speed: 0.42; prop: backpack; shirt: #059669; pants: #334155; skin: #b07d4b; phase: 1.8"></a-entity>
+          <a-entity id="vr-npc-student-2"
+            npc-person="mode: roam; center: -4.2 0 -3.6; radius: 2.2; speed: 0.42; prop: backpack; shirt: #059669; pants: #334155; skin: #b07d4b; phase: 1.8"></a-entity>
+
+          <!-- Pareja de Estudiantes conversando cerca de la arquería (Modo reposo e interacción con gestos) -->
+          <a-entity id="vr-npc-student-3"
+            npc-person="mode: idle; center: 3.2 0 -2.4; facing: -2.1; prop: none; shirt: #dc2626; pants: #1f2937; skin: #cf9b67"></a-entity>
+          <a-entity id="vr-npc-student-4"
+            npc-person="mode: idle; center: 2.4 0 -2.9; facing: 1.0; prop: book; shirt: #d97706; pants: #374151; skin: #a26d3b"></a-entity>
+          <a-entity id="vr-npc-student-3"
+            npc-person="mode: idle; center: 4.2 0 -2.6; facing: -2.1; prop: none; shirt: #dc2626; pants: #1f2937; skin: #cf9b67"></a-entity>
+          <a-entity id="vr-npc-student-4"
+            npc-person="mode: idle; center: 3.4 0 -3.1; facing: 1.0; prop: book; shirt: #d97706; pants: #374151; skin: #a26d3b"></a-entity>
+
+          <!-- Estudiante 5: Paseando por el perímetro exterior contemplando el monumento y el Illimani -->
+          <a-entity id="vr-npc-student-5"
+            npc-person="mode: circle; center: 0 0 -1.2; radius: 7.2; speed: 0.38; clockwise: false; prop: backpack; shirt: #7c3aed; pants: #111827; skin: #b88352; phase: 3.2"></a-entity>
+          <a-entity id="vr-npc-student-5"
+            npc-person="mode: circle; center: 0 0 -1.2; radius: 7.4; speed: 0.38; clockwise: false; prop: backpack; shirt: #7c3aed; pants: #111827; skin: #b88352; phase: 3.2"></a-entity>
+        </a-entity>
+
         <!-- Suelo / Pedestal histórico para Franz Tamayo con Dial de la Máquina del Tiempo -->
         <a-cylinder position="0 0.08 -2.3" radius="1.05" height="0.16" color="#181a24" roughness="0.8"></a-cylinder>
-        <a-ring id="vr-pedestal-glow" position="0 0.17 -2.3" rotation="-90 0 0" radius-inner="0.88" radius-outer="1.03" material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
-        <a-entity id="vr-pedestal-dial" time-dial="radius: 1.25; inner: 1.02; ticks: 60; color: #d5aa46; speed: 0.05; hands: true" position="0 0.09 -2.3" rotation="-90 0 0"></a-entity>
+        <a-ring id="vr-pedestal-glow" position="0 0.17 -2.3" rotation="-90 0 0" radius-inner="0.88" radius-outer="1.03"
+          material="color: #d5aa46; emissive: #d5aa46; emissiveIntensity: 0.7"></a-ring>
+        <a-entity id="vr-pedestal-dial"
+          time-dial="radius: 1.25; inner: 1.02; ticks: 60; color: #d5aa46; speed: 0.05; hands: true"
+          position="0 0.09 -2.3" rotation="-90 0 0"></a-entity>
 
         <!-- Modelo 3D Oficial de Franz Tamayo con Animación Viva Procedural (tamayo-animator) -->
         <a-entity id="vr-tamayo-figure" position="0 0.04 -2.3">
           <a-entity id="vr-character-idle">
             <a-entity id="vr-character-pose">
-              <a-entity id="vr-character-model" gltf-model="#franz-tamayo-vr-model" scale="1.65 1.65 1.65" tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false"></a-entity>
+              <a-entity id="vr-character-model" gltf-model="#franz-tamayo-vr-model" scale="1.65 1.65 1.65"
+                tamayo-animator="height: 0.98; glow: #ffd166; bodyFollow: 0.5; talking: false; autoGestures: true"></a-entity>
             </a-entity>
           </a-entity>
         </a-entity>
         <a-entity id="vr-model-error-label" visible="false" position="0 2.05 -2.3">
           <a-text value="CARGANDO PERSONAJE 3D…" align="center" width="3" color="#ffe89e"></a-text>
         </a-entity>
-        <a-entity id="vr-scene-cue" position="0 2.55 -2.3" animation="property: position; to: 0 2.63 -2.3; dir: alternate; dur: 1800; loop: true; easing: easeInOutSine">
-          <a-text id="vr-scene-cue-text" value="MÍRAME · COMENCEMOS" align="center" width="2.8" color="#ffe89e"></a-text>
+        <a-entity id="vr-scene-cue" position="0 2.55 -2.3"
+          animation="property: position; to: 0 2.63 -2.3; dir: alternate; dur: 1800; loop: true; easing: easeInOutSine">
+          <a-text id="vr-scene-cue-text" value="MÍRAME · COMENCEMOS" align="center" width="2.8"
+            color="#ffe89e"></a-text>
         </a-entity>
 
         <!-- ========================================================
              ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA
+             ELEMENTOS VISUALES 3D DINÁMICOS POR CADA ESCENA (Bien espaciados)
              ======================================================== -->
 
-        <!-- Visual Escena 1: El Despertar de Franz Tamayo (Atmósfera auroral e histórica) -->
+        <!-- Visual Escena 1: El Despertar de Franz Tamayo (Atril de caoba con reloj de bolsillo y placa) -->
         <a-entity id="vr-visuals-scene-1" visible="true">
-          <a-ring position="0 0.02 -2.8" rotation="-90 0 0" radius-inner="1.6" radius-outer="2.2" material="color: #d5aa46; opacity: 0.35; transparent: true"></a-ring>
-          <a-text value="1879 — 1956 · EL DESPERTAR" position="0 2.25 -2.8" align="center" width="3.2" color="#ffe89e" font="dejavu"></a-text>
-        </a-entity>
-
-        <!-- Visual Escena 2: El Pensamiento y la Educación (Libros antiguos y manuscrito de 1910) -->
-        <a-entity id="vr-visuals-scene-2" visible="false">
-          <!-- Libros antiguos flotantes -->
-          <a-entity position="-1.5 1.2 -2.5" rotation="15 25 10" animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
-            <a-box width="0.45" height="0.6" depth="0.12" color="#5c2c16" roughness="0.7"></a-box>
-            <a-plane position="0.23 0 0" rotation="0 90 0" width="0.1" height="0.55" color="#f5e6cc"></a-plane>
-          </a-entity>
-          <a-entity position="1.5 1.4 -2.6" rotation="-10 -30 15" animation="property: rotation; to: -10 -390 15; loop: true; dur: 14000; easing: linear">
-            <a-box width="0.5" height="0.65" depth="0.14" color="#3d1f14" roughness="0.8"></a-box>
-            <a-plane position="-0.26 0 0" rotation="0 -90 0" width="0.12" height="0.6" color="#f5e6cc"></a-plane>
-          </a-entity>
-          <!-- Pergamino / Manuscrito 1910 -->
-          <a-plane position="0 2.2 -2.8" width="2.4" height="0.4" material="color: #2b1f14; opacity: 0.9">
-            <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02" width="2.6" color="#f39c12" font="dejavu"></a-text>
-          </a-plane>
-        </a-entity>
-
-        <!-- Visual Escena 3: El Nacimiento de UNIFRANZ (Línea de tiempo 1990 — 1993) -->
-        <a-entity id="vr-visuals-scene-3" visible="false">
-          <a-torus position="0 1.2 -2.8" rotation="90 0 0" radius="2.2" radius-tubular="0.03" color="#c0392b" emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
-          <a-entity position="-1.7 1.8 -2.4">
-            <a-sphere radius="0.16" color="#c0392b" emissive="#c0392b" emissiveIntensity="0.8"></a-sphere>
-            <a-text value="4 NOV 1990\nFUNDACIÓN" align="center" position="0 -0.32 0" width="2.2" color="#ffffff" font="dejavu"></a-text>
-          </a-entity>
-          <a-entity position="1.7 1.8 -2.4">
-            <a-sphere radius="0.16" color="#e74c3c" emissive="#e74c3c" emissiveIntensity="0.8"></a-sphere>
-            <a-text value="AÑO 1993\nAUTORIZACIÓN LEGAL" align="center" position="0 -0.32 0" width="2.2" color="#ffffff" font="dejavu"></a-text>
-          </a-entity>
-          <a-text value="FUNDADORES: ABEL ÁGREDA &amp; CELSA NOGALES DE ÁGREDA" position="0 2.35 -2.8" align="center" width="2.8" color="#ff7675" font="dejavu"></a-text>
-        </a-entity>
-
-        <!-- Visual Escena 4: Una Universidad en Crecimiento (4 Sedes Nacionales Iluminadas) -->
-        <a-entity id="vr-visuals-scene-4" visible="false">
-          <!-- 1. La Paz -->
-          <a-entity position="-1.5 0.9 -2.3">
-            <a-cylinder radius="0.08" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db" emissiveIntensity="0.5"></a-cylinder>
-            <a-sphere position="0 0.85 0" radius="0.14" color="#00d2d3" emissive="#00d2d3" emissiveIntensity="0.9"></a-sphere>
-            <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.15 0" width="2.1" color="#74b9ff" font="dejavu"></a-text>
-          </a-entity>
-          <!-- 2. El Alto -->
-          <a-entity position="-0.6 0.9 -3.4">
-            <a-cylinder radius="0.08" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db" emissiveIntensity="0.5"></a-cylinder>
-            <a-sphere position="0 0.85 0" radius="0.14" color="#00d2d3" emissive="#00d2d3" emissiveIntensity="0.9"></a-sphere>
-            <a-text value="EL ALTO" align="center" position="0 1.15 0" width="2.1" color="#74b9ff" font="dejavu"></a-text>
-          </a-entity>
-          <!-- 3. Cochabamba -->
-          <a-entity position="0.6 0.9 -3.4">
-            <a-cylinder radius="0.08" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db" emissiveIntensity="0.5"></a-cylinder>
-            <a-sphere position="0 0.85 0" radius="0.14" color="#00d2d3" emissive="#00d2d3" emissiveIntensity="0.9"></a-sphere>
-            <a-text value="COCHABAMBA" align="center" position="0 1.15 0" width="2.1" color="#74b9ff" font="dejavu"></a-text>
-          </a-entity>
-          <!-- 4. Santa Cruz -->
-          <a-entity position="1.5 0.9 -2.3">
-            <a-cylinder radius="0.08" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db" emissiveIntensity="0.5"></a-cylinder>
-            <a-sphere position="0 0.85 0" radius="0.14" color="#00d2d3" emissive="#00d2d3" emissiveIntensity="0.9"></a-sphere>
-            <a-text value="SANTA CRUZ" align="center" position="0 1.15 0" width="2.1" color="#74b9ff" font="dejavu"></a-text>
-          </a-entity>
-          <a-text value="PRESENCIA NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 -2.8" align="center" width="3.0" color="#81ecec" font="dejavu"></a-text>
-        </a-entity>
-
-        <!-- Visual Escena 5: El Legado Continúa (Campus del Futuro & Logotipo UNIFRANZ) -->
-        <a-entity id="vr-visuals-scene-5" visible="false">
-          <a-torus position="0 2.1 -2.8" rotation="0 0 0" radius="1.4" radius-tubular="0.02" color="#2ecc71" emissive="#2ecc71" emissiveIntensity="0.7"></a-torus>
-          <a-plane position="0 2.4 -2.8" width="2.6" height="0.45" material="color: #0e2417; opacity: 0.92">
-            <a-text value="UNIFRANZ · EL FUTURO ESTÁ EN SUS MANOS" align="center" position="0 0 0.02" width="2.8" color="#55efc4" font="dejavu"></a-text>
-          </a-plane>
-          <a-text value="INNOVACIÓN · INVESTIGACIÓN · NUEVAS GENERACIONES" position="0 0.05 -2.8" align="center" width="2.5" color="#a8e6cf" font="dejavu"></a-text>
-        </a-entity>
-
-        <!-- Luces del escenario VR -->
-        <a-entity light="type: ambient; color: #ffffff; intensity: 1.15"></a-entity>
-        <a-entity light="type: directional; color: #fff3cc; intensity: 2.1" position="1 3 1"></a-entity>
-        <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5" position="0 2 -1.1"></a-entity>
-        <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5" position="-1.6 1 -2.6"></a-entity>
-
-        <!-- Panel 3D Flotante con Guion interactivo y Comandos de Voz dentro de VR (Gafas Cardboard) -->
-        <a-entity id="vr-3d-floating-panel" position="-1.55 1.42 -2.55" rotation="0 0 0" scale="0.58 0.58 0.58">
-          <a-plane width="2.0" height="1.42" material="color: #12141c; opacity: 0.78; transparent: true; roughness: 0.7"></a-plane>
-
-          <!-- Feedback Holográfico 3D de Comandos de Voz -->
-          <a-entity id="vr-3d-voice-status" position="0 0.56 0.03" visible="false">
-            <a-plane width="1.88" height="0.22" material="color: #0e2417; opacity: 0.92; transparent: true"></a-plane>
-            <a-text id="vr-3d-voice-status-text" value="🎧 ESCUCHANDO TU VOZ..." align="center" position="0 0 0.02" width="2.1" color="#55efc4" font="dejavu"></a-text>
-          </a-entity>
-
-          <!-- Título de la escena 3D -->
-          <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO" align="center" position="0 0.38 0.02" width="2.3" color="#f1c40f" font="dejavu"></a-text>
-
-          <!-- Fase y época -->
-          <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center" position="0 0.24 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
-
-          <!-- Diálogo narrativo 3D -->
-          <a-text id="vr-3d-scene-dialog" value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»" align="center" position="0 -0.02 0.02" width="2.1" color="#ffffff" font="dejavu" wrap-count="36"></a-text>
-
-          <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
-          <a-entity position="0 -0.34 0">
-            <!-- Botón 3D Anterior -->
-            <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
-              <a-plane width="0.68" height="0.22" material="color: #232734; roughness: 0.6"></a-plane>
-              <a-text value="◄ ANTERIOR" align="center" position="0 0 0.02" width="1.9" color="#e0dbd0" font="dejavu"></a-text>
+          <!-- Atril de caoba con reloj y placa histórica -->
+          <a-entity position="-1.45 0 -2.1" rotation="0 40 0">
+            <a-entity position="-1.95 0 -2.1" rotation="0 40 0">
+              <a-cylinder position="0 0.45 0" radius="0.09" height="0.9" color="#3d1f14" roughness="0.8"></a-cylinder>
+              <a-cylinder position="0 0.05 0" radius="0.25" height="0.1" color="#26130b" roughness="0.85"></a-cylinder>
+              <a-box position="0 0.92 0" rotation="22 0 0" width="0.5" height="0.04" depth="0.4" color="#4a2517"
+                roughness="0.7"></a-box>
+              <!-- Reloj de bolsillo de época en bronce dorado -->
+              <a-cylinder position="0.1 0.96 0.02" rotation="22 0 0" radius="0.05" height="0.015" color="#d4af37"
+                material="metalness: 0.8; roughness: 0.3"></a-cylinder>
+              <a-circle position="0.1 0.97 0.02" rotation="-68 0 0" radius="0.042" color="#fefae0"></a-circle>
+              <!-- Placa grabada de bronce -->
+              <a-box position="0 0.55 0.095" width="0.32" height="0.14" depth="0.015" color="#c59b27"
+                material="metalness: 0.7; roughness: 0.35"></a-box>
+              <a-text value="FRANZ TAMAYO\n1879 — 1956" align="center" position="0 0.55 0.105" width="1.3"
+                color="#1a1202" font="dejavu"></a-text>
             </a-entity>
-
-            <!-- Botón 3D Narración -->
-            <a-entity class="vr-clickable" id="vr-3d-audio-btn" position="0 0 0">
-              <a-plane width="0.95" height="0.22" material="color: #d5aa46; roughness: 0.4"></a-plane>
-              <a-text id="vr-3d-audio-btn-text" value="NARRAR ESCENA" align="center" position="0 0 0.02" width="2.1" color="#191b22" font="dejavu"></a-text>
-            </a-entity>
-
-            <!-- Botón 3D Siguiente -->
-            <a-entity class="vr-clickable" id="vr-3d-next-btn" position="0.75 0 0">
-              <a-plane width="0.68" height="0.22" material="color: #232734; roughness: 0.6"></a-plane>
-              <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9" color="#e0dbd0" font="dejavu"></a-text>
-            </a-entity>
+            <a-ring position="0 0.02 -2.8" rotation="-90 0 0" radius-inner="1.6" radius-outer="2.2"
+              material="color: #d5aa46; opacity: 0.35; transparent: true"></a-ring>
+            <a-text value="1879 — 1956 · EL DESPERTAR DE FRANZ TAMAYO" position="0 2.25 -2.8" align="center" width="3.2"
+              color="#ffe89e" font="dejavu"></a-text>
           </a-entity>
 
-          <!-- Botón 3D de Comando de Voz Manos Libres para Gafas VR -->
-          <a-entity class="vr-clickable" id="vr-3d-voice-btn" position="0 -0.56 0">
-            <a-plane width="1.6" height="0.18" material="color: #182838; opacity: 0.95; transparent: true; roughness: 0.5"></a-plane>
-            <a-text id="vr-3d-voice-btn-text" value="🎙️ COMANDO DE VOZ (MÍRAME)" align="center" position="0 0 0.02" width="1.9" color="#7cc3f8" font="dejavu"></a-text>
-          </a-entity>
-        </a-entity>
+          <!-- Visual Escena 2: El Pensamiento y la Educación (Escritorio noble, gran libro 1910, tintero, pluma y pergaminos) -->
+          <a-entity id="vr-visuals-scene-2" visible="false">
+            <!-- Escritorio histórico de madera noble con accesorios de época -->
+            <a-entity position="-1.55 0 -2.3" rotation="0 30 0">
+              <a-entity position="-2.05 0 -2.3" rotation="0 30 0">
+                <a-box position="0 0.52 0" width="1.15" height="0.06" depth="0.7" color="#3d1f14"
+                  roughness="0.75"></a-box>
+                <a-cylinder position="-0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+                <a-cylinder position="0.48 0.26 -0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+                <a-cylinder position="-0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+                <a-cylinder position="0.48 0.26 0.26" radius="0.035" height="0.52" color="#2c160e"></a-cylinder>
+                <!-- Gran libro abierto: Creación de la Pedagogía Nacional (1910) -->
+                <a-box position="0 0.57 0.02" rotation="0 5 0" width="0.5" height="0.028" depth="0.36" color="#5c1d1d"
+                  roughness="0.8"></a-box>
+                <a-plane position="-0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
+                  color="#fefae0"></a-plane>
+                <a-plane position="0.12 0.588 0.02" rotation="-90 5 0" width="0.22" height="0.32"
+                  color="#faf3d2"></a-plane>
+                <a-text value="CREACIÓN DE LA\nPEDAGOGÍA\nNACIONAL\n— 1910 —" align="center" position="-0.12 0.592 0.02"
+                  rotation="-90 5 0" width="0.7" color="#2c1810" font="dejavu"></a-text>
+                <a-text value="«El gran problema\nde la educación\nesencialmente\nboliviana...»" align="left"
+                  position="0.02 0.592 0.02" rotation="-90 5 0" width="0.65" color="#3c2415" font="dejavu"></a-text>
+                <!-- Tintero de cristal y pluma clásica de ave blanca -->
+                <a-cylinder position="0.38 0.57 -0.18" radius="0.04" height="0.05" color="#1a202c"
+                  material="roughness: 0.2; metalness: 0.4"></a-cylinder>
+                <a-cone position="0.4 0.72 -0.18" rotation="15 20 -12" radius-bottom="0.009" radius-top="0.001"
+                  height="0.25" color="#f8fafc"></a-cone>
+                <!-- Pergaminos enrollados atados con cinta roja -->
+                <a-cylinder position="-0.38 0.57 -0.18" rotation="0 30 90" radius="0.032" height="0.26"
+                  color="#edd9b4"></a-cylinder>
+                <a-torus position="-0.38 0.57 -0.18" rotation="90 30 0" radius="0.034" radius-tubular="0.006"
+                  color="#dc2626"></a-torus>
+                <!-- Lámpara clásica de banquero verde esmeralda con luz local -->
+                <a-cylinder position="0.42 0.59 0.2" radius="0.045" height="0.02" color="#b45309"
+                  material="metalness: 0.8"></a-cylinder>
+                <a-cylinder position="0.42 0.71 0.2" radius="0.012" height="0.22" color="#d97706"
+                  material="metalness: 0.7"></a-cylinder>
+                <a-cylinder position="0.42 0.82 0.2" rotation="0 0 90" radius="0.04" height="0.14" color="#047857"
+                  material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.4"></a-cylinder>
+              </a-entity>
+              <!-- Libros antiguos flotantes -->
+              <a-entity position="1.6 1.4 -2.5" rotation="15 25 10"
+                animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
+                <a-entity position="2.05 1.4 -2.5" rotation="15 25 10"
+                  animation="property: rotation; to: 15 385 10; loop: true; dur: 12000; easing: linear">
+                  <a-box width="0.45" height="0.6" depth="0.12" color="#5c2c16" roughness="0.7"></a-box>
+                  <a-plane position="0.23 0 0" rotation="0 90 0" width="0.1" height="0.55" color="#f5e6cc"></a-plane>
+                </a-entity>
+                <!-- Pergamino / Manuscrito 1910 -->
+                <a-plane position="0 2.2 -2.8" width="2.4" height="0.4" material="color: #2b1f14; opacity: 0.9">
+                  <a-text value="«CREACIÓN DE LA PEDAGOGÍA NACIONAL» (1910)" align="center" position="0 0 0.02"
+                    width="2.6" color="#f39c12" font="dejavu"></a-text>
+                </a-plane>
+              </a-entity>
 
-        <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
-          <a-plane width="0.58" height="0.2" material="color: #7f1d1d; roughness: 0.6"></a-plane>
-          <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff" font="dejavu"></a-text>
-        </a-entity>
+              <!-- Visual Escena 3: El Nacimiento de UNIFRANZ (Monumento 1990, placa de fundadores y primera sede) -->
+              <a-entity id="vr-visuals-scene-3" visible="false">
+                <!-- Monumento de piedra conmemorativa de 1990 -->
+                <a-entity position="-1.5 0 -2.3" rotation="0 30 0">
+                  <a-entity position="-2.0 0 -2.3" rotation="0 30 0">
+                    <a-box position="0 0.12 0" width="0.75" height="0.24" depth="0.55" color="#334155"
+                      roughness="0.85"></a-box>
+                    <a-box position="0 0.58 0" width="0.6" height="0.72" depth="0.42" color="#475569"
+                      roughness="0.8"></a-box>
+                    <!-- Escudo de UNIFRANZ 1990 en bronce dorado -->
+                    <a-cylinder position="0 0.76 0.22" rotation="90 0 0" radius="0.14" height="0.02" color="#b45309"
+                      material="metalness: 0.75; roughness: 0.3"></a-cylinder>
+                    <a-text value="UNIFRANZ\n1990" align="center" position="0 0.76 0.235" width="1.3" color="#fef08a"
+                      font="dejavu"></a-text>
+                    <!-- Placa de bronce fundido con fundadores -->
+                    <a-box position="0 0.42 0.22" width="0.5" height="0.28" depth="0.015" color="#78350f"
+                      material="metalness: 0.65; roughness: 0.4"></a-box>
+                    <a-text value="4 DE NOVIEMBRE DE 1990\nFUNDADORES:\nABEL ÁGREDA\n&amp; CELSA NOGALES DE ÁGREDA"
+                      align="center" position="0 0.42 0.232" width="1.15" color="#fef08a" font="dejavu"></a-text>
+                  </a-entity>
+                  <!-- Fachada histórica en miniatura de la primera sede en La Paz -->
+                  <a-entity position="1.6 0 -2.3" rotation="0 -30 0">
+                    <a-entity position="2.05 0 -2.3" rotation="0 -30 0">
+                      <a-box position="0 0.75 0" width="0.95" height="1.5" depth="0.16" color="#f8fafc"
+                        roughness="0.9"></a-box>
+                      <a-cylinder position="0 1.52 0" rotation="0 0 90" radius="0.16" height="0.98" color="#991b1b"
+                        roughness="0.8"></a-cylinder>
+                      <!-- Portal colonial en arco -->
+                      <a-box position="0 0.42 0.09" width="0.42" height="0.84" depth="0.03" color="#3d1f14"></a-box>
+                      <a-cylinder position="0 0.84 0.09" rotation="90 0 0" radius="0.21" height="0.03"
+                        color="#3d1f14"></a-cylinder>
+                      <!-- Balcón colonial de forja -->
+                      <a-box position="0 0.98 0.18" width="0.54" height="0.25" depth="0.16" color="#0f172a"
+                        material="metalness: 0.9; roughness: 0.3"></a-box>
+                      <a-text value="SEDE LA PAZ · 1993" align="center" position="0 1.3 0.1" width="1.3" color="#991b1b"
+                        font="dejavu"></a-text>
+                    </a-entity>
+                    <a-torus position="0 1.2 -2.8" rotation="90 0 0" radius="2.2" radius-tubular="0.03" color="#c0392b"
+                      emissive="#c0392b" emissiveIntensity="0.6"></a-torus>
+                    <a-text value="FUNDACIÓN: ABEL ÁGREDA &amp; CELSA NOGALES DE ÁGREDA · 1990" position="0 2.35 -2.8"
+                      align="center" width="2.8" color="#ff7675" font="dejavu"></a-text>
+                  </a-entity>
 
-        <!-- Cámara del Usuario con Retícula de Mirada y Túnel del Tiempo para Viaje Temporal -->
-        <a-entity id="vr-camera-rig" position="0 0 0">
-          <a-camera id="vr-camera" position="0 1.6 0" look-controls="reverseMouseDrag: false; touchEnabled: true" wasd-controls="enabled: false" time-tunnel="count: 280; color: #d5aa46; rings: 8">
-            <a-entity
-              cursor="fuse: true; fuseTimeout: 1400"
-              raycaster="objects: .vr-clickable"
-              position="0 0 -1"
-              geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
-              material="color: #f1c40f; shader: flat; opacity: 0.85"
-              animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
-              animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
-            </a-entity>
-          </a-camera>
-        </a-entity>
+                  <!-- Visual Escena 4: Una Universidad en Crecimiento (4 Sedes Nacionales Iluminadas) -->
+                  <a-entity id="vr-visuals-scene-4" visible="false">
+                    <!-- 1. La Paz -->
+                    <a-entity position="-1.5 0.9 -2.3">
+                      <a-entity position="-1.9 0.9 -2.3">
+                        <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+                          emissiveIntensity="0.5"></a-cylinder>
+                        <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35" color="#00d2d3"
+                          material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
+                        <a-text value="LA PAZ\nSEDE CENTRAL" align="center" position="0 1.3 0" width="2.2"
+                          color="#74b9ff" font="dejavu"></a-text>
+                      </a-entity>
+                      <!-- 2. El Alto -->
+                      <a-entity position="-0.6 0.9 -3.4">
+                        <a-entity position="-0.75 0.9 -3.55">
+                          <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+                            emissiveIntensity="0.5"></a-cylinder>
+                          <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
+                            emissiveIntensity="0.9"></a-sphere>
+                          <a-text value="EL ALTO" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
+                            font="dejavu"></a-text>
+                        </a-entity>
+                        <!-- 3. Cochabamba -->
+                        <a-entity position="0.6 0.9 -3.4">
+                          <a-entity position="0.75 0.9 -3.55">
+                            <a-cylinder radius="0.09" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+                              emissiveIntensity="0.5"></a-cylinder>
+                            <a-sphere position="0 0.9 0" radius="0.15" color="#00d2d3" emissive="#00d2d3"
+                              emissiveIntensity="0.9"></a-sphere>
+                            <a-text value="COCHABAMBA" align="center" position="0 1.25 0" width="2.2" color="#74b9ff"
+                              font="dejavu"></a-text>
+                          </a-entity>
+                          <!-- 4. Santa Cruz -->
+                          <a-entity position="1.5 0.9 -2.3">
+                            <a-entity position="1.9 0.9 -2.3">
+                              <a-cylinder radius="0.1" height="1.6" color="#3498db" opacity="0.65" emissive="#3498db"
+                                emissiveIntensity="0.5"></a-cylinder>
+                              <a-cone position="0 0.95 0" radius-bottom="0.16" radius-top="0.01" height="0.35"
+                                color="#00d2d3" material="emissive: #00d2d3; emissiveIntensity: 0.9"></a-cone>
+                              <a-text value="SANTA CRUZ" align="center" position="0 1.3 0" width="2.2" color="#74b9ff"
+                                font="dejavu"></a-text>
+                            </a-entity>
+                            <!-- Haces holográficos de interconexión -->
+                            <a-cylinder position="-1.05 1.15 -2.85" rotation="25 -45 0" radius="0.015" height="1.4"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-cylinder position="0 1.25 -3.4" rotation="0 90 90" radius="0.015" height="1.2"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-cylinder position="1.05 1.15 -2.85" rotation="25 45 0" radius="0.015" height="1.4"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-cylinder position="-1.32 1.15 -2.92" rotation="25 -45 0" radius="0.015" height="1.5"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-cylinder position="0 1.25 -3.55" rotation="0 90 90" radius="0.015" height="1.5"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-cylinder position="1.32 1.15 -2.92" rotation="25 45 0" radius="0.015" height="1.5"
+                              color="#81ecec" material="emissive: #81ecec; emissiveIntensity: 0.9"></a-cylinder>
+                            <a-text value="PRESENCIA NACIONAL · 4 CIUDADES CONECTADAS" position="0 2.35 -2.8"
+                              align="center" width="3.0" color="#81ecec" font="dejavu"></a-text>
+                          </a-entity>
+
+                          <!-- Visual Escena 5: El Legado Continúa (Birrete de graduación, escudo orbital UNIFRANZ) -->
+                          <a-entity id="vr-visuals-scene-5" visible="false">
+                            <!-- Birrete de graduación 3D flotante -->
+                            <a-entity position="-1.4 1.4 -2.4" rotation="10 25 -8"
+                              animation="property: position; to: -1.4 1.48 -2.4; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+                              <a-entity position="-1.85 1.4 -2.4" rotation="10 25 -8"
+                                animation="property: position; to: -1.85 1.48 -2.4; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine">
+                                <a-box position="0 0 0" width="0.45" height="0.024" depth="0.45" color="#0f172a"
+                                  roughness="0.6"></a-box>
+                                <a-cylinder position="0 -0.1 0" radius="0.16" height="0.18" color="#0f172a"
+                                  roughness="0.6"></a-cylinder>
+                                <a-cylinder position="0 0.02 0" radius="0.02" height="0.018" color="#eab308"
+                                  material="metalness: 0.8"></a-cylinder>
+                                <a-cylinder position="0.18 -0.09 0.18" rotation="20 45 0" radius="0.008" height="0.25"
+                                  color="#eab308" material="metalness: 0.7"></a-cylinder>
+                              </a-entity>
+                              <!-- Escudo oficial 3D y anillos orbitales holográficos -->
+                              <a-entity position="1.4 1.4 -2.4">
+                                <a-entity position="1.85 1.4 -2.4">
+                                  <a-torus radius="0.35" radius-tubular="0.018" color="#10b981" emissive="#10b981"
+                                    emissiveIntensity="0.8"
+                                    animation="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"></a-torus>
+                                  <a-torus radius="0.46" radius-tubular="0.014" color="#34d399" emissive="#34d399"
+                                    emissiveIntensity="0.6"
+                                    animation="property: rotation; to: -360 180 360; loop: true; dur: 12000; easing: linear"></a-torus>
+                                  <a-cylinder position="0 0 0" rotation="90 0 0" radius="0.22" height="0.04"
+                                    color="#064e3b"
+                                    material="roughness: 0.3; emissive: #059669; emissiveIntensity: 0.5"></a-cylinder>
+                                  <a-text value="UNIFRANZ\nFUTURO" align="center" position="0 0 0.03" width="1.6"
+                                    color="#a7f3d0" font="dejavu"></a-text>
+                                </a-entity>
+                                <a-torus position="0 2.1 -2.8" rotation="0 0 0" radius="1.4" radius-tubular="0.02"
+                                  color="#2ecc71" emissive="#2ecc71" emissiveIntensity="0.7"></a-torus>
+                                <a-plane position="0 2.4 -2.8" width="2.6" height="0.45"
+                                  material="color: #0e2417; opacity: 0.92">
+                                  <a-text value="UNIFRANZ · EL FUTURO ESTÁ EN SUS MANOS" align="center"
+                                    position="0 0 0.02" width="2.8" color="#55efc4" font="dejavu"></a-text>
+                                </a-plane>
+                                <a-text value="INNOVACIÓN · INVESTIGACIÓN · NUEVAS GENERACIONES" position="0 0.05 -2.8"
+                                  align="center" width="2.5" color="#a8e6cf" font="dejavu"></a-text>
+                              </a-entity>
+
+                              <!-- Luces del escenario VR -->
+                              <a-entity light="type: ambient; color: #ffffff; intensity: 1.15"></a-entity>
+                              <a-entity light="type: directional; color: #fff3cc; intensity: 2.1"
+                                position="1 3 1"></a-entity>
+                              <a-entity light="type: point; color: #fff0cf; intensity: 2.5; distance: 7; decay: 1.5"
+                                position="0 2 -1.1"></a-entity>
+                              <a-entity light="type: point; color: #d5aa46; intensity: 0.9; distance: 5"
+                                position="-1.6 1 -2.6"></a-entity>
+
+                              <!-- Panel 3D Flotante con Guion interactivo y Comandos de Voz dentro de VR (Gafas Cardboard) -->
+                              <a-entity id="vr-3d-floating-panel" position="-1.55 1.42 -2.55" rotation="0 0 0"
+                                scale="0.58 0.58 0.58">
+                                <a-entity id="vr-3d-floating-panel" position="-2.15 1.48 -2.25" rotation="0 22 0"
+                                  scale="0.58 0.58 0.58">
+                                  <a-plane width="2.0" height="1.42"
+                                    material="color: #12141c; opacity: 0.78; transparent: true; roughness: 0.7"></a-plane>
+
+                                  <!-- Feedback Holográfico 3D de Comandos de Voz -->
+                                  <a-entity id="vr-3d-voice-status" position="0 0.56 0.03" visible="false">
+                                    <a-plane width="1.88" height="0.22"
+                                      material="color: #0e2417; opacity: 0.92; transparent: true"></a-plane>
+                                    <a-text id="vr-3d-voice-status-text" value="🎧 ESCUCHANDO TU VOZ..." align="center"
+                                      position="0 0 0.02" width="2.1" color="#55efc4" font="dejavu"></a-text>
+                                  </a-entity>
+
+                                  <!-- Título de la escena 3D -->
+                                  <a-text id="vr-3d-scene-title" value="ESCENA 01: EL DESPERTAR DE FRANZ TAMAYO"
+                                    align="center" position="0 0.38 0.02" width="2.3" color="#f1c40f"
+                                    font="dejavu"></a-text>
+
+                                  <!-- Fase y época -->
+                                  <a-text id="vr-3d-scene-phase" value="[ EL DESPERTAR · 1879 — 1956 ]" align="center"
+                                    position="0 0.24 0.02" width="1.8" color="#d5aa46" font="dejavu"></a-text>
+
+                                  <!-- Diálogo narrativo 3D -->
+                                  <a-text id="vr-3d-scene-dialog"
+                                    value="«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano... ¿Me acompañan?»"
+                                    align="center" position="0 -0.02 0.02" width="2.1" color="#ffffff" font="dejavu"
+                                    wrap-count="36"></a-text>
+
+                                  <!-- Controles 3D interactivos con cursor de mirada (Gaze / Manos Libres) -->
+                                  <a-entity position="0 -0.34 0">
+                                    <!-- Botón 3D Anterior -->
+                                    <a-entity class="vr-clickable" id="vr-3d-prev-btn" position="-0.75 0 0">
+                                      <a-plane width="0.68" height="0.22"
+                                        material="color: #232734; roughness: 0.6"></a-plane>
+                                      <a-text value="◄ ANTERIOR" align="center" position="0 0 0.02" width="1.9"
+                                        color="#e0dbd0" font="dejavu"></a-text>
+                                    </a-entity>
+
+                                    <!-- Botón 3D Narración -->
+                                    <a-entity class="vr-clickable" id="vr-3d-audio-btn" position="0 0 0">
+                                      <a-plane width="0.95" height="0.22"
+                                        material="color: #d5aa46; roughness: 0.4"></a-plane>
+                                      <a-text id="vr-3d-audio-btn-text" value="NARRAR ESCENA" align="center"
+                                        position="0 0 0.02" width="2.1" color="#191b22" font="dejavu"></a-text>
+                                    </a-entity>
+
+                                    <!-- Botón 3D Siguiente -->
+                                    <a-entity class="vr-clickable" id="vr-3d-next-btn" position="0.75 0 0">
+                                      <a-plane width="0.68" height="0.22"
+                                        material="color: #232734; roughness: 0.6"></a-plane>
+                                      <a-text value="SIGUIENTE ►" align="center" position="0 0 0.02" width="1.9"
+                                        color="#e0dbd0" font="dejavu"></a-text>
+                                    </a-entity>
+                                  </a-entity>
+
+                                  <!-- Botón 3D de Comando de Voz Manos Libres para Gafas VR -->
+                                  <a-entity class="vr-clickable" id="vr-3d-voice-btn" position="0 -0.56 0">
+                                    <a-plane width="1.6" height="0.18"
+                                      material="color: #182838; opacity: 0.95; transparent: true; roughness: 0.5"></a-plane>
+                                    <a-text id="vr-3d-voice-btn-text" value="🎙️ COMANDO DE VOZ (MÍRAME)" align="center"
+                                      position="0 0 0.02" width="1.9" color="#7cc3f8" font="dejavu"></a-text>
+                                  </a-entity>
+                                </a-entity>
+
+                                <a-entity class="vr-clickable" id="vr-3d-exit-btn" position="0 0.38 -1.9">
+                                  <a-plane width="0.58" height="0.2"
+                                    material="color: #7f1d1d; roughness: 0.6"></a-plane>
+                                  <a-text value="SALIR" align="center" position="0 0 0.02" width="1.4" color="#ffffff"
+                                    font="dejavu"></a-text>
+                                </a-entity>
+
+                                <!-- Cámara del Usuario con Retícula de Mirada y Túnel del Tiempo para Viaje Temporal -->
+                                <a-entity id="vr-camera-rig" position="0 0 0">
+                                  <a-camera id="vr-camera" position="0 1.6 0"
+                                    look-controls="reverseMouseDrag: false; touchEnabled: true"
+                                    wasd-controls="enabled: false" time-tunnel="count: 280; color: #d5aa46; rings: 8">
+                                    <a-entity cursor="fuse: true; fuseTimeout: 1400" raycaster="objects: .vr-clickable"
+                                      position="0 0 -1"
+                                      geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.018"
+                                      material="color: #f1c40f; shader: flat; opacity: 0.85"
+                                      animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1400; from: 1 1 1; to: 0.2 0.2 0.2"
+                                      animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 200; to: 1 1 1">
+                                    </a-entity>
+                                  </a-camera>
+                                </a-entity>
       </a-scene>
     </template>
 
@@ -609,20 +1362,21 @@
     <div class="ar-hud vr-hud">
       <!-- Barra superior -->
       <div class="ar-topbar vr-topbar">
-        <div class="ar-brand vr-brand">
-          <span class="brand-mark">FT</span>
-          <div>
-            <span>FRANZ TAMAYO <small>EXPERIENCIA VR INMERSIVA 360°</small></span>
-          </div>
-        </div>
+        <button class="pokear-back-home-btn vr-back-home-btn" type="button" data-close-vr
+          aria-label="Volver a la página principal" title="Regresar a la página principal">
+          <span class="back-arrow" aria-hidden="true">‹</span> Volver al Inicio
+        </button>
         <div class="vr-top-actions">
-          <button class="vr-cardboard-btn vr-voice-btn" type="button" id="vr-voice-toggle" title="Dar comandos de voz" aria-label="Activar comandos por voz">
+          <button class="vr-cardboard-btn vr-voice-btn" type="button" id="vr-voice-toggle" title="Dar comandos de voz"
+            aria-label="Activar comandos por voz">
             <span aria-hidden="true">🎙️</span> Voz
           </button>
-          <button class="vr-cardboard-btn" type="button" id="vr-btn-enter-cardboard" title="Activar pantalla dividida para gafas de celular">
+          <button class="vr-cardboard-btn" type="button" id="vr-btn-enter-cardboard"
+            title="Activar pantalla dividida para gafas de celular">
             <span aria-hidden="true">🥽</span> Modo Gafas VR
           </button>
-          <button class="ar-icon-button" type="button" data-close-vr aria-label="Cerrar Realidad Virtual" title="Volver a la página">×</button>
+          <button class="ar-icon-button" type="button" data-close-vr aria-label="Cerrar y volver a la página principal"
+            title="Regresar a la página principal">×</button>
         </div>
       </div>
 
@@ -663,7 +1417,8 @@
           <span class="control-icon" aria-hidden="true">🎙️</span>
           <span>Comando de voz</span>
         </button>
-        <button class="ar-control" type="button" id="vr-details-toggle" aria-expanded="false" aria-controls="vr-details-panel">
+        <button class="ar-control" type="button" id="vr-details-toggle" aria-expanded="false"
+          aria-controls="vr-details-panel">
           <span class="control-icon" aria-hidden="true">📜</span>
           <span>Guion</span>
         </button>
@@ -671,11 +1426,13 @@
 
       <!-- Panel de Guion -->
       <aside class="ar-details vr-details" id="vr-details-panel" hidden>
-        <button class="details-close vr-details-close" type="button" id="vr-details-close" aria-label="Cerrar guion">×</button>
+        <button class="details-close vr-details-close" type="button" id="vr-details-close"
+          aria-label="Cerrar guion">×</button>
         <p class="eyebrow"><span></span> GUION NARRATIVO OFICIAL</p>
         <div class="vr-details-content">
           <h4>Ambientación Visual:</h4>
-          <p id="vr-visual-desc">Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el tiempo.</p>
+          <p id="vr-visual-desc">Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el
+            tiempo.</p>
           <h4 style="margin-top: 14px;">Palabras de Franz Tamayo:</h4>
           <p id="vr-dialog-text">«¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano...»</p>
         </div>
@@ -688,4 +1445,5 @@
     </div>
   </section>
 </body>
+
 </html>

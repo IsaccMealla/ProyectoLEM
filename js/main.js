@@ -189,6 +189,44 @@
         });
       }
 
+      // Permitir también clic / toque directo con mouse o pantalla táctil sobre las 5 estaciones 3D y fotos históricas en VR
+      const vrCanvas = aSceneInstance.querySelector('.a-canvas');
+      if (vrCanvas) {
+        let downX = 0;
+        let downY = 0;
+        vrCanvas.addEventListener('pointerdown', function (ev) {
+          downX = ev.clientX;
+          downY = ev.clientY;
+        });
+        vrCanvas.addEventListener('click', function (ev) {
+          if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > 14) return; // Fue arrastre de cámara
+          const dioramaEl = aSceneInstance && aSceneInstance.querySelector('#vr-interactive-diorama');
+          const dioramaComp = dioramaEl && dioramaEl.components && dioramaEl.components['scene-diorama'];
+          const camEl = aSceneInstance && aSceneInstance.querySelector('#vr-camera');
+          const cam = camEl && camEl.getObject3D('camera');
+          if (!dioramaComp || !dioramaComp.group || !cam || !window.THREE) return;
+
+          const rect = vrCanvas.getBoundingClientRect();
+          const mx = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+          const my = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+          const ray = new THREE.Raycaster();
+          ray.setFromCamera(new THREE.Vector2(mx, my), cam);
+          const hits = ray.intersectObjects(dioramaComp.group.children, true);
+          for (let i = 0; i < hits.length; i++) {
+            let obj = hits[i].object;
+            while (obj) {
+              if (typeof obj.userData?.sceneIndex === 'number') {
+                const idx = obj.userData.sceneIndex;
+                if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
+                if (window.tamayoVR) window.tamayoVR.setSceneIndex(idx, true);
+                return;
+              }
+              obj = obj.parent;
+            }
+          }
+        });
+      }
+
       aSceneInstance.addEventListener('enter-vr', function () {
         vrView.classList.remove('is-gyro-view');
         if (vrCardboardBtn) vrCardboardBtn.textContent = '🥽 Vista VR activa';
@@ -202,11 +240,25 @@
     });
   }
 
+  function restoreMainPageScroll() {
+    [document.documentElement, document.body].forEach(function (el) {
+      if (!el) return;
+      el.classList.remove('a-fullscreen', 'ar-active', 'vr-active');
+      el.style.overflow = '';
+      el.style.position = '';
+      el.style.height = '';
+      el.style.width = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.touchAction = '';
+    });
+  }
+
   function openVR() {
     if (!vrView) return;
     const arView = document.getElementById('ar-view');
     if (arView && arView.getAttribute('aria-hidden') === 'false') {
-      document.querySelector('[data-close-ar]')?.click();
+      if (typeof window.closeAR === 'function') window.closeAR();
     }
     if (window.tamayoVR) window.tamayoVR.stopNarration();
     if (window.tamayoVR) window.tamayoVR.unbindGyroscope();
@@ -241,24 +293,36 @@
     if (window.tamayoVR && aSceneInstance) window.tamayoVR.disableCardboardStereo(aSceneInstance);
     if (loadingTimeout) window.clearTimeout(loadingTimeout);
 
-    vrView.setAttribute('aria-hidden', 'true');
-    vrView.inert = true;
-    document.body.style.overflow = '';
-
     if (aSceneInstance && aSceneInstance.is && aSceneInstance.is('vr-mode')) {
-      aSceneInstance.exitVR();
+      try { aSceneInstance.exitVR(); } catch (e) {}
     }
 
     if (aSceneInstance) {
       aSceneInstance.remove();
       aSceneInstance = null;
     }
+
+    vrView.setAttribute('aria-hidden', 'true');
+    vrView.inert = true;
     vrView.classList.remove('is-gyro-view');
     if (vrCardboardBtn) vrCardboardBtn.textContent = '🥽 Modo Gafas VR';
 
-    const openBtn = document.querySelector('[data-open-vr]');
-    if (openBtn) openBtn.focus({ preventScroll: true });
+    restoreMainPageScroll();
+
+    // Regresar al inicio de la página web
+    requestAnimationFrame(function () {
+      restoreMainPageScroll();
+      const inicioEl = document.getElementById('inicio');
+      if (inicioEl) {
+        inicioEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }
+
+  // Hacer funciones accesibles globalmente
+  window.closeVR = closeVR;
+  window.openVR = openVR;
 
   // Event Listeners para abrir y cerrar el modal VR
   document.querySelectorAll('[data-open-vr]').forEach(function (button) {
@@ -266,7 +330,20 @@
   });
 
   document.querySelectorAll('[data-close-vr]').forEach(function (button) {
-    button.addEventListener('click', closeVR);
+    button.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeVR();
+    });
+  });
+
+  // Delegación global en document para asegurar que cualquier botón de cierre VR funcione siempre
+  document.addEventListener('click', function (e) {
+    const closeTarget = e.target.closest('[data-close-vr]');
+    if (closeTarget) {
+      e.preventDefault();
+      closeVR();
+    }
   });
 
   document.addEventListener('keydown', function (e) {
@@ -512,6 +589,37 @@
     }
     if (/centrar|recentrar|reiniciar posición|reiniciar posicion/.test(normalized)) {
       document.dispatchEvent(new CustomEvent('historia:voice-command', { detail: { action: 'center', command: normalized } }));
+      return;
+    }
+
+    // Comandos de voz para el Mapa y Geolocalización
+    if (/dónde estamos|donde estamos|dónde estoy|donde estoy|ubicación|ubicacion|distancia|mapa/.test(normalized)) {
+      const mapEl = document.getElementById('mapa');
+      if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth' });
+      if (window.HistoriaGeo) {
+        const dist = window.HistoriaGeo.getDistance();
+        const inR = window.HistoriaGeo.isInRange();
+        const msg = inR
+          ? `Estás a ${dist}m, dentro del rango histórico. ¡La animación está activa!`
+          : `Estás a ${dist}m del punto histórico. Acércate o di "simular rango".`;
+        updateVoiceStatus(false, msg);
+      }
+      return;
+    }
+
+    if (/simular rango|desbloquear animación|desbloquear animacion|simular gps/.test(normalized)) {
+      if (window.HistoriaGeo && window.HistoriaGeo.simulateInRange) {
+        window.HistoriaGeo.simulateInRange();
+        updateVoiceStatus(false, 'Rango simulado: Animación desbloqueada');
+      }
+      return;
+    }
+
+    if (/gps|activar gps|mi gps/.test(normalized)) {
+      if (window.HistoriaGeo && window.HistoriaGeo.toggleGPSTracking) {
+        window.HistoriaGeo.toggleGPSTracking();
+        updateVoiceStatus(false, 'GPS alternado');
+      }
       return;
     }
 

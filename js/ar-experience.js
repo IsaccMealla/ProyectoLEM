@@ -1,971 +1,674 @@
+/**
+ * Historia Viva · Realidad Aumentada Estilo Pokémon GO (Sin QR / Sin Marcador)
+ * ---------------------------------------------------------------------------
+ * - Visualización inmersiva en el mundo real mediante la cámara del móvil y giroscopio.
+ * - Sin necesidad de marcadores impresos ni códigos QR.
+ * - Bloqueo geográfico con Radar y Algoritmo de Ruta Más Corta (Dijkstra + OSRM API):
+ *   Si el usuario está lejos, le muestra por dónde ir paso a paso y en el Mini-Mapa en vivo.
+ * - Al estar en el sitio, Franz Tamayo camina, ejecuta movimientos grabados en cada escena,
+ *   articula su boca al hablar y está rodeado de 5 estaciones 3D interactivas y fotos históricas reales.
+ * - Al tocar cualquier objeto 3D o fotografía histórica, se cambia automáticamente a esa escena.
+ */
 (function () {
   'use strict';
 
-  var arView = document.getElementById('ar-view');
-  var sceneTemplate = document.getElementById('ar-scene-template');
-  var loading = document.getElementById('ar-loading');
-  var hint = document.getElementById('ar-hint');
-  var audio = document.getElementById('narration-audio');
+  const arView = document.getElementById('ar-view');
+  const arSceneTemplate = document.getElementById('ar-scene-template');
+  const arLoading = document.getElementById('ar-loading');
+  const pokearVideo = document.getElementById('pokear-video');
+  const audio = document.getElementById('narration-audio');
 
-  // Badge de confirmación visual al detectar marcador
-  var detectionBadge = document.getElementById('ar-detection-badge');
-  var badgeSubtitle = document.getElementById('badge-subtitle');
-  var badgeTimeout = null;
+  // Elementos de la interfaz minimalista Pokémon GO
+  const statusPill = document.getElementById('ar-status-pill');
+  const btnSimulate = document.getElementById('ar-btn-simulate');
+  const btnToggleMinimap = document.getElementById('ar-btn-toggle-minimap');
+  const minimapDrawer = document.getElementById('ar-minimap-drawer');
+  const minimapClose = document.getElementById('ar-minimap-close');
 
-  // Elementos del cuadro de diálogo
-  var dialog = document.getElementById('ar-details');
-  var dialogCloseBtn = document.getElementById('dialog-close');
-  var sceneKicker = document.getElementById('scene-kicker');
-  var scenePeriod = document.getElementById('scene-period');
-  var sceneTitle = document.getElementById('scene-title');
-  var sceneSubtitle = document.getElementById('scene-subtitle');
-  var audioProgressBar = document.getElementById('audio-progress-bar');
-  var previousSceneButton = document.getElementById('ar-nav-previous-scene');
-  var nextSceneButton = document.getElementById('ar-nav-next-scene');
-  var audioToggle = document.getElementById('audio-toggle');
-  var audioIcon = document.getElementById('audio-icon');
-  var audioLabel = document.getElementById('audio-label');
-  var dialogAudioToggle = document.getElementById('dialog-audio-toggle');
-  var dialogAudioIcon = document.getElementById('dialog-audio-icon');
-  var dialogAudioLabel = document.getElementById('dialog-audio-label');
+  const radarOverlay = document.getElementById('ar-radar-overlay');
+  const radarDistEl = document.getElementById('ar-radar-distance');
+  const radarTargetEl = document.getElementById('ar-radar-target');
+  const radarSimulateBtn = document.getElementById('ar-radar-simulate-btn');
+  const radarWalkRouteBtn = document.getElementById('ar-radar-walk-route-btn');
 
-  // Barra flotante compacta
-  var bottomBar = document.getElementById('ar-bottom-bar');
-  var detailsToggle = document.getElementById('details-toggle');
-  var miniDetailsToggle = document.getElementById('mini-details-toggle');
-  var miniSceneStatus = document.getElementById('mini-scene-status');
-  var miniPrevScene = document.getElementById('mini-prev-scene');
-  var miniNextScene = document.getElementById('mini-next-scene');
-  var miniAudioToggle = document.getElementById('mini-audio-toggle');
-  var miniAudioIcon = document.getElementById('mini-audio-icon');
-  var miniAudioText = document.getElementById('mini-audio-text');
+  // Tarjeta inferior minimalista
+  const hudSceneNumber = document.getElementById('ar-hud-scene-number');
+  const hudSceneTitle = document.getElementById('ar-hud-scene-title');
+  const hudScenePeriod = document.getElementById('ar-hud-scene-period');
+  const hudSceneText = document.getElementById('ar-hud-scene-text');
+  const hudProgressBar = document.getElementById('ar-hud-progress-bar');
 
-  // Máquina del tiempo 2D overlay & FX
-  var warpCanvas = document.getElementById('ar-warp-canvas');
-  var warpBanner = document.getElementById('ar-time-banner');
-  var arWarpOverlay = null;
-  try {
-    if (window.HistoriaFX && warpCanvas && warpBanner) {
-      arWarpOverlay = window.HistoriaFX.createWarpOverlay(warpCanvas, warpBanner);
-    }
-  } catch (e) {
-    console.warn('[Historia Viva] No se pudo inicializar warp overlay:', e);
+  // Los 4 botones esenciales
+  const btnPrev = document.getElementById('ar-btn-prev');
+  const btnAudio = document.getElementById('ar-btn-audio');
+  const btnAudioIcon = document.getElementById('ar-btn-audio-icon');
+  const btnAudioLabel = document.getElementById('ar-btn-audio-label');
+  const btnNext = document.getElementById('ar-btn-next');
+  const btnWalk = document.getElementById('ar-btn-walk');
+  const btnWalkIcon = document.getElementById('ar-btn-walk-icon');
+  const btnWalkLabel = document.getElementById('ar-btn-walk-label');
+
+  const scenes = window.HistoriaVivaScenes || [];
+  let aSceneInstance = null;
+  let videoStream = null;
+  let currentSceneIndex = 0;
+  let isAudioPlaying = false;
+  let isWalkingMode = true;
+
+  // ─── Limpieza total de bloqueo de pantalla de A-Frame ───
+  function restorePageScrollAndUnlockDOM() {
+    [document.documentElement, document.body].forEach((el) => {
+      if (!el) return;
+      el.classList.remove('a-fullscreen', 'ar-active', 'vr-active');
+      el.style.overflow = '';
+      el.style.position = '';
+      el.style.height = '';
+      el.style.width = '';
+      el.style.top = '';
+      el.style.left = '';
+      el.style.touchAction = '';
+    });
   }
 
-  function getArAnimator() {
-    if (!arScene) return null;
-    var figure = arScene.querySelector('#franz-tamayo-figure');
-    return (figure && figure.components) ? figure.components['tamayo-animator'] : null;
-  }
-
-  var scenes = window.HistoriaVivaScenes || [];
-  var arScene = null;
-  var arPreviewModel = null;
-  var selectedScene = 0;
-  var isAudioPlaying = false;
-  var markerFound = false;
-  var arTimeout;
-  var videoWatcher = null;
-  var dialogMinimized = false; // usuario minimizó manualmente
-
-  // ─── Soporte de decodificador Draco (local + CDN) ───
+  // ─── Soporte de Draco para modelos 3D ───
   function configureDracoSupport(sceneEl) {
     if (window.AFRAME) {
-      var gltfSystem = AFRAME.systems && AFRAME.systems['gltf-model'];
+      const gltfSystem = AFRAME.systems && AFRAME.systems['gltf-model'];
       if (gltfSystem && gltfSystem.schema && gltfSystem.schema.dracoDecoderPath) {
         gltfSystem.schema.dracoDecoderPath.default = new URL('assets/draco/', window.location.href).href;
       }
     }
     if (sceneEl && sceneEl.systems && sceneEl.systems['gltf-model']) {
-      var sys = sceneEl.systems['gltf-model'];
+      const sys = sceneEl.systems['gltf-model'];
       if (!sys.dracoLoader && window.THREE && THREE.DRACOLoader) {
         try {
-          var draco = new THREE.DRACOLoader();
+          const draco = new THREE.DRACOLoader();
           draco.setDecoderPath(new URL('assets/draco/', window.location.href).href);
           sys.dracoLoader = draco;
         } catch (e) {
-          console.warn('[Historia Viva] No se pudo inicializar DRACOLoader:', e);
+          console.warn('[Historia Viva] Error inicializando Draco:', e);
         }
       }
     }
   }
 
-  // Ejecutar configuración inicial de Draco si AFRAME ya está listo
-  if (window.AFRAME) configureDracoSupport();
-  window.addEventListener('DOMContentLoaded', function () {
-    configureDracoSupport();
-  });
+  // ─── Obtener referencias a componentes 3D ───
+  function getWorldAnchor() {
+    return aSceneInstance ? aSceneInstance.querySelector('#tamayo-world-anchor') : null;
+  }
 
-  // ─── Badge de detección visual ───
-  function showDetectionBadge(title, subtitle, autoFadeMs) {
-    if (!detectionBadge) return;
-    clearTimeout(badgeTimeout);
-    detectionBadge.classList.remove('is-leaving');
-    detectionBadge.hidden = false;
-    detectionBadge.style.display = 'flex';
-    var strong = detectionBadge.querySelector('strong');
-    if (strong && title) strong.textContent = title;
-    if (badgeSubtitle && subtitle) badgeSubtitle.textContent = subtitle;
+  function getAnimator() {
+    if (!aSceneInstance) return null;
+    const figure = aSceneInstance.querySelector('#franz-tamayo-figure');
+    return figure && figure.components ? figure.components['tamayo-animator'] : null;
+  }
 
-    if (autoFadeMs) {
-      badgeTimeout = setTimeout(function () {
-        hideDetectionBadge();
-      }, autoFadeMs);
+  function getWalker() {
+    if (!aSceneInstance) return null;
+    const walker = aSceneInstance.querySelector('#tamayo-walker-root');
+    return walker && walker.components ? walker.components['tamayo-walker'] : null;
+  }
+
+  function getDiorama() {
+    if (!aSceneInstance) return null;
+    const d = aSceneInstance.querySelector('#ar-interactive-diorama');
+    return d && d.components ? d.components['scene-diorama'] : null;
+  }
+
+  // ─── Verificación de Rango Geográfico (Geofence) ───
+  function isInSite() {
+    if (window.HistoriaGeo && typeof window.HistoriaGeo.isInRange === 'function') {
+      return window.HistoriaGeo.isInRange();
+    }
+    return true;
+  }
+
+  // ─── Sincronización del Mundo Pokémon GO con la Ubicación Real ───
+  function syncSitePresence() {
+    const inRange = isInSite();
+    const anchor = getWorldAnchor();
+    const animator = getAnimator();
+    const walker = getWalker();
+
+    const dist =
+      window.HistoriaGeo && typeof window.HistoriaGeo.getDistance === 'function'
+        ? window.HistoriaGeo.getDistance()
+        : null;
+    const target =
+      window.HistoriaGeo && typeof window.HistoriaGeo.getTarget === 'function'
+        ? window.HistoriaGeo.getTarget()
+        : null;
+    const targetName = target ? target.name : 'UNIFRANZ La Paz';
+
+    if (statusPill) {
+      statusPill.classList.toggle('is-in-range', inRange);
+      statusPill.classList.toggle('is-out-of-range', !inRange);
+      statusPill.innerHTML = inRange
+        ? `<span class="ar-status-dot"></span> 🟢 En Sitio (${dist !== null ? dist + 'm' : 'Activo'})`
+        : `<span class="ar-status-dot"></span> 🧭 Lejos (${dist !== null ? dist + 'm' : 'Buscando...'})`;
+    }
+
+    if (inRange) {
+      if (radarOverlay) {
+        radarOverlay.classList.remove('is-active');
+        radarOverlay.hidden = true;
+      }
+
+      if (anchor) {
+        const wasHidden = anchor.getAttribute('visible') === 'false';
+        anchor.setAttribute('visible', 'true');
+
+        if (wasHidden) {
+          if (animator) {
+            animator.setLocked(false);
+            animator.setReveal(1);
+            animator.playSceneChoreography(currentSceneIndex);
+          }
+          if (window.HistoriaFX && window.HistoriaFX.beep) {
+            window.HistoriaFX.beep('success');
+          }
+          if (window.HistoriaFX && window.HistoriaFX.whoosh) {
+            window.HistoriaFX.whoosh('forward', 1.2);
+          }
+        }
+      }
+
+      if (animator) {
+        animator.setLocked(false);
+      }
+      if (walker && isWalkingMode) {
+        walker.setRoaming(true);
+      }
+
+      if (btnAudio) btnAudio.disabled = false;
+      if (btnWalk) btnWalk.disabled = false;
+    } else {
+      if (anchor) {
+        anchor.setAttribute('visible', 'false');
+      }
+      if (animator) {
+        animator.setLocked(true);
+      }
+      if (walker) {
+        walker.setRoaming(false);
+      }
+
+      pauseAudio();
+
+      if (radarOverlay) {
+        radarOverlay.hidden = false;
+        radarOverlay.classList.add('is-active');
+      }
+      if (radarDistEl) {
+        radarDistEl.textContent = dist !== null ? `${dist} metros` : 'Buscando señal...';
+      }
+      if (radarTargetEl) {
+        radarTargetEl.textContent = targetName;
+      }
+
+      if (btnAudio) btnAudio.disabled = true;
+      if (btnWalk) btnWalk.disabled = true;
     }
   }
 
-  function hideDetectionBadge() {
-    if (!detectionBadge) return;
-    clearTimeout(badgeTimeout);
-    detectionBadge.classList.add('is-leaving');
-    badgeTimeout = setTimeout(function () {
-      detectionBadge.hidden = true;
-      detectionBadge.style.display = 'none';
-      detectionBadge.classList.remove('is-leaving');
-    }, 300);
-  }
+  // ─── Gestión de la Cámara Real del Teléfono (Passthrough WebRTC) ───
+  async function startCamera() {
+    if (!pokearVideo) return;
+    stopCamera();
 
-  // ─── Detección y calibración responsiva según pantalla y dispositivo ───
-  function getDeviceProfile() {
-    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth <= 800);
-    var w = window.innerWidth || document.documentElement.clientWidth;
-    var h = window.innerHeight || document.documentElement.clientHeight;
-    var isPortrait = h > w;
-    return {
-      isMobile: isMobile,
-      width: w,
-      height: h,
-      isPortrait: isPortrait
+    const constraints = {
+      audio: false,
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
     };
-  }
-
-  // Ajusta la escala del modelo 3D y su pedestal en tiempo real según el dispositivo
-  var currentOrientationMode = 'screen'; // 'screen' (-90deg para pantalla vertical) o 'table' (0deg para mesa)
-  var userRotationY = 0;
-  var userTiltX = 0;
-  var touchStartX = 0;
-  var touchStartY = 0;
-  var isTouchingScene = false;
-  var hasLockedInitialPose = false;
-
-  function updateTamayoPose() {
-    var orientationEl = arScene ? arScene.querySelector('#tamayo-orientation') : null;
-    var rigEl = arScene ? arScene.querySelector('#tamayo-rig') : null;
-    if (!orientationEl) return;
-
-    var baseRotX = currentOrientationMode === 'screen' ? 90 : 0;
-    orientationEl.setAttribute('rotation', (baseRotX + userTiltX) + ' 0 0');
-    if (rigEl) {
-      rigEl.setAttribute('rotation', '0 ' + userRotationY + ' 0');
-    }
-  }
-
-  // Alinea a Franz Tamayo de frente a la cámara en el instante de detección y luego congela
-  // su orientación para que quede firmemente anclado en su espacio virtual 3D
-  function alignTamayoToCamera() {
-    if (!arScene || !markerFound) return;
-    var markerEl = arScene.querySelector('a-marker');
-    var orientationEl = arScene.querySelector('#tamayo-orientation');
-    var rigEl = arScene ? arScene.querySelector('#tamayo-rig') : null;
-    if (!markerEl || !orientationEl || !rigEl) return;
-
-    var camera = arScene.camera;
-    if (!camera) {
-      var camEl = arScene.querySelector('[camera]');
-      if (camEl) camera = camEl.getObject3D('camera');
-    }
 
     try {
-      if (camera && markerEl.object3D) {
-        var cameraWorldPos = new THREE.Vector3();
-        camera.getWorldPosition(cameraWorldPos);
-        var cameraLocalPos = markerEl.object3D.worldToLocal(cameraWorldPos.clone());
-
-        if (currentOrientationMode === 'screen') {
-          // En modo pantalla (monitor vertical): el cuerpo se extiende a lo largo de -Z
-          // y el pecho mira hacia +Y (hacia el usuario).
-          var yaw = 0;
-          if (Math.abs(cameraLocalPos.y) > 0.02 || Math.abs(cameraLocalPos.x) > 0.02) {
-            yaw = Math.atan2(cameraLocalPos.x, Math.max(0.1, cameraLocalPos.y)) * (180 / Math.PI);
-          }
-          var pitch = 0;
-          if (Math.abs(cameraLocalPos.y) > 0.02) {
-            pitch = -Math.atan2(cameraLocalPos.z, Math.max(0.1, cameraLocalPos.y)) * (180 / Math.PI);
-            pitch = Math.max(-20, Math.min(20, pitch));
-          }
-
-          userRotationY = yaw;
-          userTiltX = pitch;
-        } else {
-          // En modo mesa (superficie horizontal):
-          var tableYaw = 0;
-          if (Math.abs(cameraLocalPos.z) > 0.02 || Math.abs(cameraLocalPos.x) > 0.02) {
-            tableYaw = Math.atan2(cameraLocalPos.x, Math.max(0.1, cameraLocalPos.z)) * (180 / Math.PI);
-          }
-          userRotationY = tableYaw;
-          userTiltX = 0;
-        }
-
-        updateTamayoPose();
-        hasLockedInitialPose = true;
-        console.log('[Historia Viva] Franz Tamayo orientado y fijado en su espacio virtual: yaw=' + userRotationY.toFixed(1) + '°, pitch=' + userTiltX.toFixed(1) + '°');
-      } else {
-        updateTamayoPose();
-      }
-    } catch (e) {
-      console.warn('[Historia Viva] Error en alignTamayoToCamera:', e);
-      updateTamayoPose();
-    }
-  }
-
-  function setSurfaceMode(mode) {
-    currentOrientationMode = mode;
-    userTiltX = 0;
-    userRotationY = 0;
-    hasLockedInitialPose = false;
-
-    var screenBtn = document.getElementById('surface-screen-btn');
-    var tableBtn = document.getElementById('surface-table-btn');
-    if (screenBtn) screenBtn.classList.toggle('is-active', mode === 'screen');
-    if (tableBtn) tableBtn.classList.toggle('is-active', mode === 'table');
-
-    updateTamayoPose();
-    alignTamayoToCamera();
-
-    if (hint) {
-      hint.textContent = mode === 'screen'
-        ? '💻 Modo Pantalla activo · Franz Tamayo de pie frente a ti'
-        : '📄 Modo Mesa activo · Franz Tamayo erguido sobre la mesa';
-    }
-  }
-
-  function resetPose() {
-    userRotationY = 0;
-    userTiltX = 0;
-    hasLockedInitialPose = false;
-    alignTamayoToCamera();
-    if (hint) {
-      hint.textContent = '🔄 Franz Tamayo centrado de frente a tu cámara';
-    }
-  }
-
-  function adjustSceneForDevice() {
-    var rig = arScene ? arScene.querySelector('#tamayo-rig') : null;
-    if (!rig) return;
-
-    var dev = getDeviceProfile();
-
-    // Escala calibrada dinámicamente para que Franz Tamayo se vea grande, imponente y nítido:
-    // En celular vertical: 0.85 (para que Franz y el pedestal cubran el marcador y resalten con presencia)
-    // En celular horizontal: 0.95
-    // En laptop/PC: 1.10
-    var scaleValue;
-    if (dev.isMobile) {
-      scaleValue = dev.isPortrait ? 0.85 : 0.95;
-    } else {
-      scaleValue = 1.10;
-    }
-
-    rig.setAttribute('scale', scaleValue + ' ' + scaleValue + ' ' + scaleValue);
-    console.log('[Historia Viva] Escala adaptada (' + (dev.isMobile ? 'Móvil' : 'PC') + ', ' + dev.width + 'x' + dev.height + '): ' + scaleValue);
-    updateTamayoPose();
-    fixCameraAspect();
-  }
-
-  function fixCameraAspect() {
-    if (arScene && arScene.camera) {
-      arScene.camera.aspect = window.innerWidth / window.innerHeight;
-      arScene.camera.updateProjectionMatrix();
-    }
-  }
-
-  window.addEventListener('resize', function () {
-    attachArVideo();
-    adjustSceneForDevice();
-    fixCameraAspect();
-  });
-  window.addEventListener('orientationchange', function () {
-    setTimeout(function () {
-      attachArVideo();
-      adjustSceneForDevice();
-      fixCameraAspect();
-    }, 250);
-  });
-
-  // ─── Configurar cámara según laptop o móvil ───
-  function configureCameraForDevice(scene) {
-    var dev = getDeviceProfile();
-
-    var arjsAttr;
-    if (dev.isMobile) {
-      if (dev.isPortrait) {
-        // En celular vertical usamos dimensiones verticales (480x640) para sincronizar
-        // la relación de aspecto y evitar que el modelo se vea achatado o aplanado
-        arjsAttr = 'sourceType: webcam; facingMode: environment; sourceWidth: 480; sourceHeight: 640; displayWidth: ' + dev.width + '; displayHeight: ' + dev.height + '; debugUIEnabled: false; trackingMethod: best;';
-      } else {
-        arjsAttr = 'sourceType: webcam; facingMode: environment; sourceWidth: 640; sourceHeight: 480; displayWidth: ' + dev.width + '; displayHeight: ' + dev.height + '; debugUIEnabled: false; trackingMethod: best;';
-      }
-    } else {
-      arjsAttr = 'sourceType: webcam; sourceWidth: 640; sourceHeight: 480; debugUIEnabled: false; trackingMethod: best;';
-    }
-
-    scene.setAttribute('arjs', arjsAttr);
-  }
-
-  // ─── Asegurar que el video de la cámara se visualice y no distorsione el viewport ───
-  function attachArVideo() {
-    var video = document.getElementById('arjs-video') ||
-                document.querySelector('body > video') ||
-                (arView ? arView.querySelector('video:not(#narration-audio)') : null);
-    if (!video || !arView) return;
-
-    if (video.parentElement !== arView) {
-      arView.insertBefore(video, arView.firstChild);
-    }
-
-    // Neutralizar márgenes negativos y anchos gigantescos inyectados por AR.js en móviles
-    video.style.setProperty('position', 'fixed', 'important');
-    video.style.setProperty('top', '0px', 'important');
-    video.style.setProperty('left', '0px', 'important');
-    video.style.setProperty('width', '100vw', 'important');
-    video.style.setProperty('height', '100vh', 'important');
-    video.style.setProperty('max-width', '100vw', 'important');
-    video.style.setProperty('max-height', '100vh', 'important');
-    video.style.setProperty('margin', '0px', 'important');
-    video.style.setProperty('margin-left', '0px', 'important');
-    video.style.setProperty('margin-top', '0px', 'important');
-    video.style.setProperty('object-fit', 'cover', 'important');
-    video.style.setProperty('object-position', 'center center', 'important');
-    video.style.setProperty('z-index', '1', 'important');
-    video.style.setProperty('display', 'block', 'important');
-    video.style.setProperty('opacity', '1', 'important');
-    video.style.setProperty('transform', 'none', 'important');
-
-    var canvas = arView.querySelector('.a-canvas');
-    if (canvas) {
-      canvas.style.setProperty('position', 'fixed', 'important');
-      canvas.style.setProperty('top', '0px', 'important');
-      canvas.style.setProperty('left', '0px', 'important');
-      canvas.style.setProperty('width', '100vw', 'important');
-      canvas.style.setProperty('height', '100vh', 'important');
-      canvas.style.setProperty('max-width', '100vw', 'important');
-      canvas.style.setProperty('max-height', '100vh', 'important');
-      canvas.style.setProperty('margin', '0px', 'important');
-      canvas.style.setProperty('margin-left', '0px', 'important');
-      canvas.style.setProperty('margin-top', '0px', 'important');
-    }
-
-    if (video.paused && video.srcObject) {
-      video.play().catch(function () {});
-    }
-
-    if (video.videoWidth > 0 && loading) {
-      loading.classList.add('is-hidden');
-    }
-
-    adjustSceneForDevice();
-  }
-
-  window.addEventListener('arjs-video-loaded', function () {
-    attachArVideo();
-  });
-
-  // ─── Control de visualización del diálogo (visible / mini / hidden) ───
-  function setDialogState(state) {
-    if (state === 'visible') {
-      if (dialog) {
-        dialog.hidden = false;
-        dialog.style.display = '';
-      }
-      if (bottomBar) {
-        bottomBar.hidden = true;
-        bottomBar.style.display = 'none';
-      }
-      dialogMinimized = false;
-    } else if (state === 'mini') {
-      if (dialog) {
-        dialog.hidden = true;
-        dialog.style.display = 'none';
-      }
-      if (bottomBar) {
-        bottomBar.hidden = false;
-        bottomBar.style.display = 'flex';
-      }
-      dialogMinimized = true;
-    } else { // 'hidden' (marcador no detectado o experiencia recién iniciada)
-      if (dialog) {
-        dialog.hidden = true;
-        dialog.style.display = 'none';
-      }
-      if (bottomBar) {
-        bottomBar.hidden = true;
-        bottomBar.style.display = 'none';
+      videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+      pokearVideo.srcObject = videoStream;
+      await pokearVideo.play();
+    } catch (err) {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        pokearVideo.srcObject = videoStream;
+        await pokearVideo.play();
+      } catch (fallbackErr) {
+        console.warn('[Historia Viva] Cámara no disponible, continuando con entorno 3D:', fallbackErr);
       }
     }
   }
 
-  // ─── UI de audio ───
-  function updateAudioUI(playing) {
-    isAudioPlaying = playing;
-    var lbl = playing ? 'Pausar narración' : 'Escuchar narración';
-    var ico = playing ? '⏸' : '▶';
-
-    if (audioToggle) {
-      audioToggle.setAttribute('aria-pressed', String(playing));
-      audioToggle.classList.toggle('is-playing', playing);
+  function stopCamera() {
+    if (videoStream) {
+      videoStream.getTracks().forEach((track) => track.stop());
+      videoStream = null;
     }
-    if (dialogAudioToggle) {
-      dialogAudioToggle.setAttribute('aria-pressed', String(playing));
-      dialogAudioToggle.classList.toggle('is-playing', playing);
-    }
-    if (audioLabel) audioLabel.textContent = lbl;
-    if (audioIcon) audioIcon.textContent = ico;
-    if (dialogAudioLabel) dialogAudioLabel.textContent = lbl;
-    if (dialogAudioIcon) dialogAudioIcon.textContent = ico;
-    if (miniAudioToggle) miniAudioToggle.classList.toggle('is-playing', playing);
-    if (miniAudioIcon) miniAudioIcon.textContent = ico;
-    if (miniAudioText) miniAudioText.textContent = playing ? 'Pausar' : 'Audio';
-
-    // Pulso del pedestal ceremonial en AR
-    if (arScene) {
-      var ring = arScene.querySelector('#tamayo-glow-ring');
-      if (ring) {
-        ring.setAttribute('color', playing ? '#ffe07a' : '#ffc453');
-        ring.setAttribute('opacity', playing ? '0.85' : '0.5');
-      }
-    }
-
-    // Sincronizar articulación oral del modelo 3D con tamayo-animator
-    var animator = getArAnimator();
-    if (animator) {
-      animator.setTalking(playing);
+    if (pokearVideo) {
+      pokearVideo.srcObject = null;
     }
   }
 
-  // ─── Escena seleccionada con Efecto Máquina del Tiempo ───
-  function setScene(index, autoPlay) {
-    if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
-    var previousIndex = selectedScene;
-    var isSceneChange = (index !== previousIndex);
-    var travelDir = (index >= previousIndex) ? 'forward' : 'backward';
-
-    selectedScene = index;
-    var s = scenes[index];
-
-    if (sceneKicker) sceneKicker.textContent = 'ESCENA ' + (index + 1) + ' DE ' + scenes.length;
-    if (scenePeriod) scenePeriod.textContent = s.period || '';
-    if (sceneTitle) sceneTitle.textContent = s.title || '';
-    if (sceneSubtitle) sceneSubtitle.textContent = s.narration || '';
-    if (miniSceneStatus) miniSceneStatus.textContent = 'Escena ' + (index + 1) + ' de ' + scenes.length + ' · Guion';
-    var navigationStatus = document.getElementById('scene-navigation-status');
-    if (navigationStatus) navigationStatus.textContent = 'Escena ' + (index + 1) + ' de ' + scenes.length;
-
-    // Actualizar estados de botones de navegación (HUD y diálogo)
-    document.querySelectorAll('#ar-nav-previous-scene, #previous-scene, #mini-prev-scene').forEach(function (btn) {
-      btn.disabled = index === 0;
-    });
-    document.querySelectorAll('#ar-nav-next-scene, #next-scene, #mini-next-scene').forEach(function (btn) {
-      btn.disabled = index === scenes.length - 1;
-    });
-
-    if (audioProgressBar) audioProgressBar.style.width = '0%';
-
-    // ⚡ Efectos de Viaje en la Máquina del Tiempo
-    if (isSceneChange) {
-      if (arWarpOverlay) {
-        arWarpOverlay.trigger({
-          year: s.period || '1879',
-          label: s.title || 'Salto Temporal',
-          duration: 1600
-        });
-      }
-      if (window.HistoriaFX && window.HistoriaFX.whoosh) {
-        window.HistoriaFX.whoosh(travelDir, 1.8);
-      }
-      if (arScene) {
-        var timeDialEl = arScene.querySelector('#ar-time-dial') || arScene.querySelector('[time-dial]');
-        if (timeDialEl && timeDialEl.components && timeDialEl.components['time-dial']) {
-          timeDialEl.components['time-dial'].spin(travelDir, 1600);
-        }
-      }
-
-      // Gestos expresivos de Franz Tamayo según la época
-      var animator = getArAnimator();
-      if (animator) {
-        var gestures = ['wave', 'think', 'nod', 'walk', 'celebrate'];
-        animator.play(gestures[index % gestures.length]);
-      }
-    }
-
-    var wasPlaying = isAudioPlaying;
-    audio.pause();
-    audio.src = s.audio;
-    audio.currentTime = 0;
-
-    if (autoPlay || wasPlaying) {
-      playAudio();
-    } else {
-      updateAudioUI(false);
-    }
-  }
-
-  // ─── Reproducción de audio ───
-  function playAudio() {
-    if (!audio.src || audio.src === window.location.href) {
-      audio.src = scenes[selectedScene].audio;
-    }
-    audio.play().then(function () {
-      updateAudioUI(true);
-      hint.textContent = '🔊 Reproduciendo · ' + scenes[selectedScene].title;
-    }).catch(function (e) {
-      updateAudioUI(false);
-      hint.textContent = 'Toca "Escuchar narración" para iniciar el audio';
-    });
-  }
-
-  function pauseAudio() {
-    audio.pause();
-    updateAudioUI(false);
-    hint.textContent = 'Audio en pausa';
-  }
-
-  function toggleAudio() {
-    if (audio.paused) playAudio();
-    else pauseAudio();
-  }
-
-  audio.addEventListener('play', function () { updateAudioUI(true); });
-  audio.addEventListener('pause', function () { updateAudioUI(false); });
-  audio.addEventListener('ended', function () {
-    updateAudioUI(false);
-    if (audioProgressBar) audioProgressBar.style.width = '100%';
-    hint.textContent = selectedScene < scenes.length - 1
-      ? 'Escena finalizada · Pulsa "Siguiente →"'
-      : '¡Recorrido completo! Puedes volver a escuchar las escenas';
-  });
-  audio.addEventListener('timeupdate', function () {
-    if (audio.duration && audioProgressBar) {
-      audioProgressBar.style.width = ((audio.currentTime / audio.duration) * 100) + '%';
-    }
-  });
-  audio.addEventListener('error', function () {
-    updateAudioUI(false);
-    hint.textContent = 'Error al cargar audio. Verifica los archivos MP3 en assets/audio/';
-  });
-
-  // ─── Listeners de botones unificados (HUD superior, diálogo y barra inferior) ───
-  function handlePrevScene() {
-    setScene(selectedScene - 1, isAudioPlaying);
-  }
-  function handleNextScene() {
-    setScene(selectedScene + 1, isAudioPlaying);
-  }
-
-  // Botones de anterior
-  document.querySelectorAll('#ar-nav-previous-scene, #previous-scene, #mini-prev-scene').forEach(function (btn) {
-    btn.addEventListener('click', handlePrevScene);
-  });
-
-  // Botones de siguiente
-  document.querySelectorAll('#ar-nav-next-scene, #next-scene, #mini-next-scene').forEach(function (btn) {
-    btn.addEventListener('click', handleNextScene);
-  });
-
-  // Botones de audio
-  document.querySelectorAll('#audio-toggle, #dialog-audio-toggle, #mini-audio-toggle').forEach(function (btn) {
-    btn.addEventListener('click', toggleAudio);
-  });
-
-  // Botón de comandos de voz en AR
-  var arVoiceBtn = document.getElementById('ar-voice-trigger');
-  if (arVoiceBtn) {
-    arVoiceBtn.addEventListener('click', function () {
-      if (window.historiaVoz && window.historiaVoz.listenOnce) {
-        window.historiaVoz.listenOnce();
-      }
-    });
-  }
-
-  // Toggles de cuadro de diálogo y modo mini
-  if (dialogCloseBtn) dialogCloseBtn.addEventListener('click', function () { setDialogState('mini'); });
-  if (detailsToggle) detailsToggle.addEventListener('click', function () { setDialogState('visible'); });
-  if (miniDetailsToggle) miniDetailsToggle.addEventListener('click', function () { setDialogState('visible'); });
-
-  var surfaceScreenBtn = document.getElementById('surface-screen-btn');
-  var surfaceTableBtn = document.getElementById('surface-table-btn');
-  var resetPoseBtn = document.getElementById('reset-pose-btn');
-
-  if (surfaceScreenBtn) surfaceScreenBtn.addEventListener('click', function () { setSurfaceMode('screen'); });
-  if (surfaceTableBtn) surfaceTableBtn.addEventListener('click', function () { setSurfaceMode('table'); });
-  if (resetPoseBtn) resetPoseBtn.addEventListener('click', resetPose);
-
-  // ─── Controles táctiles: arrastra para rotar en 360° a Franz Tamayo ───
-  if (arView) {
-    arView.addEventListener('touchstart', function (e) {
-      if (e.target.closest('.ar-dialog') ||
-          e.target.closest('.ar-topbar') ||
-          e.target.closest('.ar-surface-selector') ||
-          e.target.closest('.ar-bottom-bar') ||
-          e.target.closest('.scene-navigation') ||
-          e.target.closest('.ar-bottom-controls') ||
-          e.target.closest('.ar-control') ||
-          e.target.closest('button')) {
-        isTouchingScene = false;
-        return;
-      }
-      if (e.touches.length === 1) {
-        isTouchingScene = true;
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    arView.addEventListener('touchmove', function (e) {
-      if (!isTouchingScene || e.touches.length !== 1) return;
-      var curX = e.touches[0].clientX;
-      var curY = e.touches[0].clientY;
-      var dx = curX - touchStartX;
-      var dy = curY - touchStartY;
-
-      userRotationY += dx * 0.45;
-      userTiltX = Math.max(-30, Math.min(30, userTiltX + (dy * 0.25)));
-
-      touchStartX = curX;
-      touchStartY = curY;
-      updateTamayoPose();
-    }, { passive: true });
-
-    arView.addEventListener('touchend', function () {
-      isTouchingScene = false;
-    });
-  }
-
-  document.addEventListener('historia:select-scene', function (e) { setScene(e.detail.index, false); });
-
-  // ─── Eventos del Marcador HIRO ───
-  function onMarkerDetected() {
-    markerFound = true;
-    if (arPreviewModel) arPreviewModel.setAttribute('visible', 'false');
-
-    // 1. Mostrar confirmación visual inmediata
-    showDetectionBadge('¡Marcador HIRO Detectado!', 'Franz Tamayo presente · Iniciando experiencia', 3500);
-
-    // Feedback háptico en móviles y sintetizador
-    if (navigator.vibrate) {
-      try { navigator.vibrate([40, 50, 40]); } catch (e) {}
-    }
-    if (window.HistoriaFX && window.HistoriaFX.beep) {
-      window.HistoriaFX.beep('success');
-    }
-
-    hint.textContent = '✅ Marcador activo · Desliza tu dedo para rotar a Franz';
-    adjustSceneForDevice();
-
-    // Materialización holográfica y saludo animado de Franz
-    var animator = getArAnimator();
-    if (animator) {
-      animator.revealTo(1, 1400);
-      animator.play('wave');
-    }
-
-    // Alinear a Franz de frente a la cámara solo la primera vez
-    if (!hasLockedInitialPose) {
-      alignTamayoToCamera();
-    } else {
-      updateTamayoPose();
-    }
-
-    // 2. Mostrar cuadro de diálogo con el guion correspondiente
-    setTimeout(function () {
-      if (!markerFound) return;
-      if (!dialogMinimized) {
-        setDialogState('visible');
-      } else {
-        setDialogState('mini');
-      }
-      // 3. Iniciar audio de la escena
-      if (!isAudioPlaying && audio.paused) {
-        playAudio();
-      }
-    }, 450);
-  }
-
-  function onMarkerLost() {
-    markerFound = false;
-    if (arPreviewModel) arPreviewModel.setAttribute('visible', 'true');
-    hideDetectionBadge();
-    audio.pause();
-    updateAudioUI(false);
-    setDialogState('hidden');
-    hint.textContent = '🔍 Vista previa activa · vuelve a apuntar al marcador HIRO para fijar a Franz';
-  }
-
-  // ─── Abrir / Cerrar AR ───
-  function openAR() {
-    if (window.location.protocol === 'file:') {
-      alert('⚠️ Para usar la Realidad Aumentada (cámara y modelos 3D), debes abrir la página desde el servidor local:\n\nhttp://localhost:3000\n\nLos navegadores bloquean la cámara y los archivos 3D bajo "file://" por seguridad.');
-      window.location.href = 'http://localhost:3000';
-      return;
-    }
-
-    if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(function () {});
-    }
-    if (window.screen && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
-      window.screen.orientation.lock('landscape').catch(function () {});
-    }
-
-    var vrView = document.getElementById('vr-view');
-    if (vrView && vrView.getAttribute('aria-hidden') === 'false') {
-      document.querySelector('[data-close-vr]')?.click();
-    }
-
-    audio.pause();
-    updateAudioUI(false);
-    markerFound = false;
-
-    // Ocultar diálogo y badge hasta que se detecte el marcador
-    hideDetectionBadge();
-    setDialogState('hidden');
-
-    arView.classList.remove('is-error');
-    arView.setAttribute('aria-hidden', 'false');
-    arView.inert = false;
-    // Bloquear viewport móvil contra expansiones o zooms automáticos
-    document.documentElement.classList.add('ar-active');
-    document.body.classList.add('ar-active');
-    document.body.style.overflow = 'hidden';
-
-    loading.classList.remove('is-hidden');
-    hint.textContent = '🔍 Buscando marcador HIRO… apunta la cámara al marcador';
-
-    if (!arScene) {
-      arScene = sceneTemplate.content.firstElementChild.cloneNode(true);
-      arPreviewModel = null;
-      configureCameraForDevice(arScene);
-      configureDracoSupport(arScene);
-      arView.insertBefore(arScene, arView.querySelector('.ar-hud'));
-      arView.dispatchEvent(new CustomEvent('ar-scene-ready', { detail: { scene: arScene } }));
-    }
-
-    // Monitorear video de AR.js y estabilizar tamaño
-    var checks = 0;
-    if (videoWatcher) clearInterval(videoWatcher);
-    videoWatcher = setInterval(function () {
-      checks++;
-      attachArVideo();
-      if (checks > 50) clearInterval(videoWatcher);
-    }, 150);
-
-    arTimeout = setTimeout(function () {
-      if (!arView.classList.contains('is-error')) loading.classList.add('is-hidden');
-      attachArVideo();
-    }, 7000);
-
-    var closeBtn = arView.querySelector('[data-close-ar]');
-    if (closeBtn) closeBtn.focus({ preventScroll: true });
-
-    setScene(selectedScene, false);
-    adjustSceneForDevice();
-    setSurfaceMode('table');
-    updateTamayoPose();
-    if (arPreviewModel && !markerFound) arPreviewModel.setAttribute('visible', 'true');
-  }
-
-  function closeAR() {
-    audio.pause();
-    updateAudioUI(false);
-    clearTimeout(arTimeout);
-    if (videoWatcher) clearInterval(videoWatcher);
-
-    userRotationY = 0;
-    userTiltX = 0;
-
-    hideDetectionBadge();
-    setDialogState('hidden');
-
-    arView.setAttribute('aria-hidden', 'true');
-    arView.inert = true;
-    document.documentElement.classList.remove('ar-active');
-    document.body.classList.remove('ar-active');
-    document.body.style.overflow = '';
-    markerFound = false;
-
-    var el = document.activeElement;
-    if (el && el.blur) el.blur();
-    var opener = document.querySelector('[data-open-ar]');
-    if (opener) opener.focus({ preventScroll: true });
-
-    document.querySelectorAll('video').forEach(function (v) {
-      if (v.id === 'narration-audio') return;
-      if (v.srcObject && v.srcObject.getTracks) {
-        v.srcObject.getTracks().forEach(function (t) { t.stop(); });
-        v.srcObject = null;
-      }
-      if (v.id === 'arjs-video' || v.parentNode === arView || v.parentNode === document.body) {
-        v.remove();
-      }
-    });
-
-    if (arScene) arScene.remove();
-    arScene = null;
-    arPreviewModel = null;
-  }
-
-  document.querySelectorAll('[data-open-ar]').forEach(function (b) { b.addEventListener('click', openAR); });
-  document.querySelectorAll('[data-close-ar]').forEach(function (b) { b.addEventListener('click', closeAR); });
-  document.addEventListener('historia:voice-command', function (event) {
-    if (!arView || arView.getAttribute('aria-hidden') !== 'false' || !event.detail) return;
-    var action = event.detail.action;
-
-    if (action === 'scene' && Number.isInteger(event.detail.index)) {
-      setScene(event.detail.index, isAudioPlaying);
-    } else if (action === 'next') {
-      setScene(Math.min(selectedScene + 1, scenes.length - 1), isAudioPlaying);
-    } else if (action === 'previous') {
-      setScene(Math.max(selectedScene - 1, 0), isAudioPlaying);
-    } else if (action === 'repeat') {
-      playAudio();
-    } else if (action === 'audio') {
-      toggleAudio();
-    } else if (action === 'pause') {
-      pauseAudio();
-    } else if (action === 'details') {
-      if (dialogMinimized) setDialogState('visible');
-      else setDialogState('mini');
-    } else if (action === 'table') {
-      setSurfaceMode('table');
-    } else if (action === 'screen') {
-      setSurfaceMode('screen');
-    } else if (action === 'center') {
-      resetPose();
-    } else if (action === 'gesture' || action === 'indicate' || action === 'wave' || action === 'think' || action === 'walk' || action === 'nod' || action === 'celebrate') {
-      var animator = getArAnimator();
-      var gestureName = 'wave';
-      if (action === 'think') gestureName = 'think';
-      else if (action === 'walk') gestureName = 'walk';
-      else if (action === 'nod') gestureName = 'nod';
-      else if (action === 'celebrate') gestureName = 'celebrate';
-      else if (action === 'indicate') gestureName = 'think';
-
-      if (animator) {
-        animator.play(gestureName);
-      } else {
-        var figure = arScene && arScene.querySelector('#franz-tamayo-figure');
-        if (figure) {
-          figure.setAttribute('animation__voice-gesture', 'property: rotation; from: -3 -8 0; to: 3 8 0; dir: alternate; dur: 420; loop: 4; easing: easeInOutSine');
-        }
-      }
-
-      if (hint) {
-        var gestureLabels = {
-          wave: 'Franz Tamayo saluda con la mano 👋',
-          think: 'Franz Tamayo reflexiona profundamente 💭',
-          walk: 'Franz Tamayo camina en el tiempo 🚶',
-          nod: 'Franz Tamayo asiente con sabiduría ✔️',
-          celebrate: 'Franz Tamayo celebra el futuro 🎓'
-        };
-        hint.textContent = gestureLabels[gestureName] || 'Franz Tamayo responde a tu voz';
-      }
-    }
-  });
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && arView.getAttribute('aria-hidden') === 'false') closeAR();
-  });
-
-  // ─── A-Frame scene ready ───
-  arView.addEventListener('ar-scene-ready', function (event) {
-    var scene = event.detail.scene;
-    var cameraTimer;
-
-    configureDracoSupport(scene);
-
-    scene.addEventListener('loaded', function () {
-      configureDracoSupport(scene);
-      adjustSceneForDevice();
-
-      var marker = scene.querySelector('a-marker');
-      var model = scene.querySelector('#franz-tamayo-figure');
-      var dracoRetryCount = 0;
-
-      if (marker) {
-        marker.addEventListener('markerFound', onMarkerDetected);
-        marker.addEventListener('markerLost', onMarkerLost);
-      }
-
-      if (model) {
-        model.addEventListener('model-loaded', function (event) {
-          console.log('[Historia Viva] Modelo franz_tamayo.glb cargado y decodificado correctamente');
-          var camera = scene.querySelector('#ar-camera');
-          var previewAnchor = scene.querySelector('#ar-preview-anchor');
-          if (camera && previewAnchor && event.detail && event.detail.model) {
-            var previewEntity = document.createElement('a-entity');
-            var previewMesh = event.detail.model.clone(true);
-            previewMesh.scale.set(0.78, 0.78, 0.78);
-            previewEntity.setObject3D('mesh', previewMesh);
-            previewEntity.setAttribute('position', '0 -0.42 0');
-            previewEntity.setAttribute('animation__presence', 'property: position; to: 0 -0.39 0; dir: alternate; dur: 2200; loop: true; easing: easeInOutSine');
-            previewAnchor.appendChild(previewEntity);
-            arPreviewModel = previewEntity;
-            previewEntity.setAttribute('visible', String(!markerFound));
-          }
-          hint.textContent = markerFound
-            ? '✅ Franz Tamayo está anclado al marcador HIRO'
-            : '👤 Vista previa 3D · apunta la cámara al marcador HIRO para anclarlo';
-          adjustSceneForDevice();
-          fixCameraAspect();
-        });
-        model.addEventListener('model-error', function (err) {
-          console.error('[Historia Viva] Error inicial cargando modelo:', err);
-          // Si por alguna razón el decoder local falló, reintentar con el CDN oficial de Draco
-          var gltfSys = scene.systems && scene.systems['gltf-model'];
-          var canRetryWithCdn = gltfSys && gltfSys.dracoLoader && dracoRetryCount === 0;
-          if (canRetryWithCdn) {
-            dracoRetryCount += 1;
-            console.warn('[Historia Viva] Intentando decodificación con CDN de respaldo...');
-            gltfSys.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
-            var currentModelSrc = model.getAttribute('gltf-model');
-            model.removeAttribute('gltf-model');
-            setTimeout(function () {
-              model.setAttribute('gltf-model', currentModelSrc);
-            }, 150);
-          } else {
-            hint.textContent = '⚠️ No se pudo cargar el modelo 3D. Revisa la conexión y vuelve a abrir AR.';
-          }
-          if (canRetryWithCdn) hint.textContent = '⚠️ Cargando decodificador 3D… un momento';
+  // ─── Montar la Escena 3D Transparente sobre la Cámara ───
+  function mountPokeArScene() {
+    if (aSceneInstance || !arSceneTemplate || !arView) return;
+
+    aSceneInstance = arSceneTemplate.content.firstElementChild.cloneNode(true);
+    configureDracoSupport(aSceneInstance);
+
+    const modelEl = aSceneInstance.querySelector('#franz-tamayo-figure');
+    if (modelEl) {
+      modelEl.addEventListener('model-loaded', function () {
+        if (arLoading) arLoading.classList.add('is-hidden');
+        syncSitePresence();
+        const animator = getAnimator();
+        if (animator) animator.playSceneChoreography(currentSceneIndex);
+      });
+        modelEl.addEventListener('model-error', function () {
+          if (arLoading) arLoading.classList.add('is-hidden');
         });
       }
 
-      scene.addEventListener('camera-init', function () {
-        clearTimeout(cameraTimer);
-        loading.classList.add('is-hidden');
-        attachArVideo();
-        adjustSceneForDevice();
-        fixCameraAspect();
+    const hud = arView.querySelector('.pokear-hud');
+      arView.insertBefore(aSceneInstance, hud);
+
+      aSceneInstance.addEventListener('loaded', function () {
+        if (arLoading) arLoading.classList.add('is-hidden');
+        syncSitePresence();
+        setupInteractiveTapAndWalk();
       });
 
-      scene.addEventListener('camera-error', function () {
-        clearTimeout(cameraTimer);
-        if (arView.getAttribute('aria-hidden') === 'false') {
-          arView.classList.add('is-error');
-          loading.classList.add('is-hidden');
-          hint.textContent = 'No se pudo iniciar la cámara. Revisa los permisos del navegador y vuelve a intentar.';
+        if (
+          typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function'
+        ) {
+          DeviceOrientationEvent.requestPermission().catch(() => { });
         }
-      });
+      }
 
-      scene.addEventListener('renderstart', function () {
-        loading.classList.add('is-hidden');
-        attachArVideo();
-      });
+      function unmountPokeArScene() {
+        if (aSceneInstance) {
+          try {
+            if (aSceneInstance.is && aSceneInstance.is('vr-mode')) {
+              aSceneInstance.exitVR();
+            }
+          } catch (e) { }
+          aSceneInstance.remove();
+          aSceneInstance = null;
+        }
+        restorePageScrollAndUnlockDOM();
+      }
 
-      cameraTimer = setTimeout(function () {
-        loading.classList.add('is-hidden');
-        attachArVideo();
-      }, 6000);
-    });
-  });
+        // ─── Tocar un objeto 3D / foto histórica para cambiar de escena, o tocar el suelo para que Franz Tamayo camine ───
+        function setupInteractiveTapAndWalk() {
+          if (!aSceneInstance) return;
 
-  // Inicializar primera escena
-  setScene(0, false);
-})();
+          const canvas = aSceneInstance.querySelector('.a-canvas');
+          if (!canvas) return;
+
+          canvas.addEventListener('click', function (e) {
+            if (!isInSite()) return;
+            if (e.target.closest('.pokear-hud') || e.target.closest('button')) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            const cameraEl = aSceneInstance.querySelector('[camera]');
+            if (!cameraEl) return;
+            const camera = cameraEl.getObject3D('camera');
+            if (!camera) return;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
+
+            // 1. Verificar primero si el usuario tocó alguna de las 5 estaciones 3D o fotos históricas
+            const dioramaComp = getDiorama();
+            if (dioramaComp && dioramaComp.group) {
+              const hits = raycaster.intersectObjects(dioramaComp.group.children, true);
+              for (let i = 0; i < hits.length; i++) {
+                let obj = hits[i].object;
+                while (obj) {
+                  if (typeof obj.userData?.sceneIndex === 'number') {
+                    const targetScene = obj.userData.sceneIndex;
+                    if (window.HistoriaFX && window.HistoriaFX.beep) {
+                      window.HistoriaFX.beep('ok');
+                    }
+                    setScene(targetScene, true);
+                    // Hacer que Franz Tamayo camine hacia la estación seleccionada
+                    const walker = getWalker();
+                    const st = dioramaComp.stations[targetScene];
+                    if (walker && st && st.group) {
+                      walker.walkTo(st.group.position.x * 0.55, st.group.position.z * 0.55);
+                    }
+                    return;
+                  }
+                  obj = obj.parent;
+                }
+              }
+            }
+
+            // 2. Si tocó el suelo, hacer que Franz Tamayo camine hacia ese punto
+            const walker = getWalker();
+            if (!walker) return;
+
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const hitPoint = new THREE.Vector3();
+            const hit = raycaster.ray.intersectPlane(groundPlane, hitPoint);
+
+            if (hit) {
+              const dist = Math.hypot(hitPoint.x, hitPoint.z);
+                if (dist > 0.3 && dist < 5.5) {
+                  showTapRipple(hitPoint.x, hitPoint.z);
+                  walker.walkTo(hitPoint.x, hitPoint.z);
+                }
+              }
+            });
+        }
+
+        function showTapRipple(x, z) {
+          if (!aSceneInstance) return;
+          const ripple = document.createElement('a-ring');
+          ripple.setAttribute('position', `${x} 0.03 ${z}`);
+          ripple.setAttribute('rotation', '-90 0 0');
+          ripple.setAttribute('radius-inner', '0.05');
+          ripple.setAttribute('radius-outer', '0.12');
+          ripple.setAttribute('color', '#ffd166');
+          ripple.setAttribute('material', 'emissive: #ffd166; emissiveIntensity: 0.8; opacity: 0.9; transparent: true');
+          ripple.setAttribute('animation__expand', 'property: scale; from: 1 1 1; to: 3.5 3.5 3.5; dur: 650; easing: easeOutQuad');
+          ripple.setAttribute('animation__fade', 'property: material.opacity; from: 0.9; to: 0; dur: 650; easing: easeOutQuad');
+
+          aSceneInstance.appendChild(ripple);
+          setTimeout(() => {
+            if (ripple.parentNode) ripple.parentNode.removeChild(ripple);
+          }, 700);
+
+          if (window.HistoriaFX && window.HistoriaFX.beep) {
+            window.HistoriaFX.beep('listen');
+          }
+        }
+
+        // ─── Navegación de Escenas Históricas ───
+        function setScene(index, autoPlay) {
+          if (!Number.isInteger(index) || index < 0 || index >= scenes.length) return;
+          currentSceneIndex = index;
+          const s = scenes[index];
+
+          if (hudSceneNumber) hudSceneNumber.textContent = `ESCENA ${index + 1} DE ${scenes.length}`;
+          if (hudSceneTitle) hudSceneTitle.textContent = s.title || '';
+          if (hudScenePeriod) hudScenePeriod.textContent = s.period || '';
+          if (hudSceneText) hudSceneText.textContent = s.narration || '';
+          if (hudProgressBar) hudProgressBar.style.width = '0%';
+
+          if (btnPrev) btnPrev.disabled = index === 0;
+          if (btnNext) btnNext.disabled = index === scenes.length - 1;
+
+          audio.pause();
+          audio.src = s.audio;
+          audio.currentTime = 0;
+
+          const animator = getAnimator();
+              if (animator) {
+                animator.setSceneIndex(index);
+                if (isInSite()) {
+                  animator.playSceneChoreography(index);
+                }
+              }
+
+              const diorama = getDiorama();
+              if (diorama) {
+                diorama.setActiveScene(index);
+              }
+
+              if (aSceneInstance) {
+                for (let i = 1; i <= scenes.length; i++) {
+                  const visualEntity = aSceneInstance.querySelector(`#ar-visuals-scene-${i}`);
+                  if (visualEntity) {
+                    visualEntity.setAttribute('visible', String(i === index + 1));
+                  }
+                }
+              }
+
+              window.dispatchEvent(new CustomEvent('historia:scene-changed', { detail: { index } }));
+
+              if (autoPlay && isInSite()) {
+                playAudio();
+              } else {
+                updateAudioUI(false);
+              }
+            }
+
+            // ─── Reproducción de Audio y Movimiento de Boca ───
+            function playAudio() {
+              if (!isInSite()) {
+                pauseAudio();
+                return;
+              }
+
+              if (!audio.src || audio.src === window.location.href) {
+                audio.src = scenes[currentSceneIndex].audio;
+              }
+
+              audio
+                .play()
+                .then(() => {
+                  updateAudioUI(true);
+                })
+                .catch(() => {
+                  updateAudioUI(false);
+                });
+            }
+
+            function pauseAudio() {
+              audio.pause();
+              updateAudioUI(false);
+            }
+
+            function toggleAudio() {
+              if (audio.paused) playAudio();
+              else pauseAudio();
+            }
+
+            function updateAudioUI(playing) {
+              isAudioPlaying = playing;
+              if (btnAudio) {
+                btnAudio.classList.toggle('is-playing', playing);
+                btnAudio.setAttribute('aria-pressed', String(playing));
+              }
+              if (btnAudioIcon) btnAudioIcon.textContent = playing ? '⏸' : '▶';
+              if (btnAudioLabel) btnAudioLabel.textContent = playing ? 'Pausar' : 'Narrar';
+
+              const animator = getAnimator();
+              if (animator) {
+                animator.setTalking(playing);
+              }
+            }
+
+            audio.addEventListener('play', () => updateAudioUI(true));
+            audio.addEventListener('pause', () => updateAudioUI(false));
+            audio.addEventListener('ended', () => {
+              updateAudioUI(false);
+              if (hudProgressBar) hudProgressBar.style.width = '100%';
+            });
+            audio.addEventListener('timeupdate', () => {
+              if (audio.duration && hudProgressBar) {
+                hudProgressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+              }
+            });
+
+            // ─── Alternar Modo Pasear / Caminar ───
+            function toggleWalkMode() {
+              const walker = getWalker();
+              if (!walker) return;
+
+              isWalkingMode = walker.toggleRoaming();
+              updateWalkUI(isWalkingMode);
+            }
+
+            function updateWalkUI(walking) {
+              if (btnWalk) {
+                btnWalk.classList.toggle('is-active', walking);
+              }
+              if (btnWalkIcon) btnWalkIcon.textContent = walking ? '🧍' : '🚶';
+              if (btnWalkLabel) btnWalkLabel.textContent = walking ? 'Detener' : 'Pasear';
+            }
+
+            function toggleMiniMapDrawer(forceState) {
+              if (!minimapDrawer) return;
+              const willOpen = typeof forceState === 'boolean' ? forceState : minimapDrawer.hidden;
+              minimapDrawer.hidden = !willOpen;
+              if (willOpen && window.HistoriaGeo && typeof window.HistoriaGeo.initARMiniMap === 'function') {
+                window.HistoriaGeo.initARMiniMap();
+              }
+            }
+
+            // ─── Abrir y Cerrar la Experiencia Pokémon GO AR ───
+            async function openAR() {
+              if (window.location.protocol === 'file:') {
+                alert('⚠️ Abre la aplicación desde el servidor local (http://localhost:3000) para permitir el uso de la cámara.');
+                window.location.href = 'http://localhost:3000';
+                return;
+              }
+
+              const vrView = document.getElementById('vr-view');
+              if (vrView && vrView.getAttribute('aria-hidden') === 'false') {
+                if (typeof window.closeVR === 'function') window.closeVR();
+              }
+
+              arView.setAttribute('aria-hidden', 'false');
+              arView.inert = false;
+              document.documentElement.classList.add('ar-active');
+              document.body.classList.add('ar-active');
+              document.body.style.overflow = 'hidden';
+
+              if (arLoading) arLoading.classList.remove('is-hidden');
+
+              await startCamera();
+              mountPokeArScene();
+              setScene(currentSceneIndex, false);
+              updateWalkUI(true);
+              syncSitePresence();
+
+              const closeBtn = arView.querySelector('[data-close-ar]');
+              if (closeBtn) closeBtn.focus({ preventScroll: true });
+            }
+
+            function closeAR() {
+              pauseAudio();
+              stopCamera();
+              unmountPokeArScene();
+
+              if (minimapDrawer) minimapDrawer.hidden = true;
+              if (radarOverlay) {
+                radarOverlay.classList.remove('is-active');
+                radarOverlay.hidden = true;
+              }
+
+              arView.setAttribute('aria-hidden', 'true');
+              arView.inert = true;
+
+              restorePageScrollAndUnlockDOM();
+
+              // Regresar suavemente al inicio de la página principal
+              requestAnimationFrame(() => {
+                restorePageScrollAndUnlockDOM();
+                const inicioEl = document.getElementById('inicio');
+                if (inicioEl) {
+                  inicioEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              });
+            }
+
+            window.closeAR = closeAR;
+            window.openAR = openAR;
+            window.TamayoAR = { open: openAR, close: closeAR, setScene };
+
+            // ─── Listeners de Botones y Eventos ───
+            function setupListeners() {
+              document.querySelectorAll('[data-open-ar]').forEach((b) => b.addEventListener('click', openAR));
+              document.querySelectorAll('[data-close-ar]').forEach((b) =>
+                b.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  closeAR();
+                })
+              );
+
+              document.addEventListener('click', (e) => {
+                const closeTarget = e.target.closest('[data-close-ar]');
+                if (closeTarget) {
+                  e.preventDefault();
+                  closeAR();
+                }
+              });
+
+              document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && arView && arView.getAttribute('aria-hidden') === 'false') {
+                  closeAR();
+                }
+              });
+
+              if (btnPrev) btnPrev.addEventListener('click', () => setScene(currentSceneIndex - 1, isAudioPlaying));
+              if (btnNext) btnNext.addEventListener('click', () => setScene(currentSceneIndex + 1, isAudioPlaying));
+              if (btnAudio) btnAudio.addEventListener('click', toggleAudio);
+              if (btnWalk) btnWalk.addEventListener('click', toggleWalkMode);
+
+              if (btnToggleMinimap) {
+                btnToggleMinimap.addEventListener('click', () => toggleMiniMapDrawer());
+              }
+              if (minimapClose) {
+                minimapClose.addEventListener('click', () => toggleMiniMapDrawer(false));
+              }
+
+              const triggerSimulate = () => {
+                if (window.HistoriaGeo && window.HistoriaGeo.simulateInRange) {
+                  window.HistoriaGeo.simulateInRange();
+                }
+              };
+              if (btnSimulate) btnSimulate.addEventListener('click', triggerSimulate);
+              if (radarSimulateBtn) radarSimulateBtn.addEventListener('click', triggerSimulate);
+              if (radarWalkRouteBtn) {
+                radarWalkRouteBtn.addEventListener('click', () => {
+                  if (window.HistoriaGeo && window.HistoriaGeo.walkShortestPath) {
+                    window.HistoriaGeo.walkShortestPath();
+                  }
+                });
+              }
+
+              window.addEventListener('historia:geo-update', syncSitePresence);
+              window.addEventListener('historia:geo-range-changed', syncSitePresence);
+
+              // Selección interactiva de escena al tocar objetos 3D o estaciones del mapa
+              window.addEventListener('historia:select-scene', (e) => {
+                if (e.detail && Number.isInteger(e.detail.index)) {
+                  const arOpen = arView && arView.getAttribute('aria-hidden') === 'false';
+                  setScene(e.detail.index, arOpen);
+                }
+              });
+
+              document.addEventListener('historia:voice-command', (event) => {
+                if (!arView || arView.getAttribute('aria-hidden') !== 'false' || !event.detail) return;
+                const action = event.detail.action;
+
+                if (action === 'scene' && Number.isInteger(event.detail.index)) {
+                  setScene(event.detail.index, isAudioPlaying);
+                } else if (action === 'next') {
+                  setScene(Math.min(currentSceneIndex + 1, scenes.length - 1), isAudioPlaying);
+                } else if (action === 'previous') {
+                  setScene(Math.max(currentSceneIndex - 1, 0), isAudioPlaying);
+                } else if (action === 'audio') {
+                  toggleAudio();
+                } else if (action === 'walk') {
+                  toggleWalkMode();
+                }
+              });
+            }
+
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', setupListeners);
+            } else {
+              setupListeners();
+            }
+          }) ();

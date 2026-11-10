@@ -83,6 +83,12 @@ class TamayoVRExperience {
     this.lastGyroPitch = 0;
     this.gyroHandler = this.handleGyroscope.bind(this);
     this.ensureAudioElement();
+    window.addEventListener('historia:select-scene', (e) => {
+      const vrView = document.getElementById('vr-view');
+      if (vrView && vrView.getAttribute('aria-hidden') === 'false' && e.detail && typeof e.detail.index === 'number') {
+        this.setSceneIndex(e.detail.index, true);
+      }
+    });
   }
 
   configureDraco(sceneEl) {
@@ -218,12 +224,12 @@ class TamayoVRExperience {
     this.updateHUD(scene);
     this.update3DScene(scene);
 
-    // ⚡ Efectos de Salto en la Máquina del Tiempo
+    // ⚡ Efectos de Salto en la Máquina del Tiempo y Movimientos Grabados por Escena
+    const aScene = document.querySelector('#vr-scene') || document.querySelector('.vr-view a-scene') || document.querySelector('a-scene');
     if (isSceneChange) {
       if (window.HistoriaFX && window.HistoriaFX.whoosh) {
         window.HistoriaFX.whoosh(travelDir, 2.0);
       }
-      const aScene = document.querySelector('#vr-scene') || document.querySelector('.vr-view a-scene') || document.querySelector('a-scene');
       if (aScene) {
         // Túnel de hipervelocidad espacio-temporal en la cámara
         const camera = aScene.querySelector('#vr-camera');
@@ -240,11 +246,28 @@ class TamayoVRExperience {
         if (ambience && ambience.components && ambience.components['time-ambience']) {
           ambience.components['time-ambience'].setTheme(scene.themeColor, scene.skyColor);
         }
+        // Entorno 360 reactivo (faroles, linternas celestes y cielo)
+        const world = aScene.querySelector('#vr-surrounding-world') || aScene.querySelector('[vr-world]');
+        if (world && world.components && world.components['vr-world']) {
+          world.components['vr-world'].setTheme(scene.themeColor);
+        }
       }
-
-      const gestures = ['wave', 'think', 'nod', 'walk', 'celebrate'];
-      this.animateCharacterGesture(gestures[index % gestures.length]);
     }
+
+    const aSceneModel = aScene && aScene.querySelector('#vr-character-model');
+    const animator = aSceneModel && aSceneModel.components && aSceneModel.components['tamayo-animator'];
+    if (animator && typeof animator.playSceneChoreography === 'function') {
+      animator.playSceneChoreography(index);
+    } else if (isSceneChange) {
+      const gestures = ['scene1_despertar', 'scene2_pedagogia', 'scene3_fundacion', 'scene4_crecimiento', 'scene5_legado'];
+      this.animateCharacterGesture(gestures[index] || 'wave');
+    }
+
+    const diorama = aScene && aScene.querySelector('#vr-interactive-diorama');
+    if (diorama && diorama.components && diorama.components['scene-diorama']) {
+      diorama.components['scene-diorama'].setActiveScene(index);
+    }
+    window.dispatchEvent(new CustomEvent('historia:scene-changed', { detail: { index } }));
 
     this.ensureAudioElement();
     if (this.audioEl) {
@@ -347,6 +370,12 @@ class TamayoVRExperience {
       if (visualEntity) {
         visualEntity.setAttribute('visible', String(i === scene.id));
       }
+    }
+
+    // Actualizar tonalidad ambiental del mundo 360
+    const world = aScene.querySelector('#vr-surrounding-world') || aScene.querySelector('[vr-world]');
+    if (world && world.components && world.components['vr-world']) {
+      world.components['vr-world'].setTheme(scene.themeColor);
     }
   }
 
@@ -509,7 +538,8 @@ class TamayoVRExperience {
         nod: 'nod',
         celebrate: 'celebrate'
       };
-      animator.play(gestureMap[kind] || kind);
+      const gestureToPlay = gestureMap[kind] || kind;
+      animator.play(gestureToPlay);
     }
 
     const character = aScene && aScene.querySelector('#vr-character-pose');
