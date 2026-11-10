@@ -1801,7 +1801,15 @@
               const willOpen = typeof forceState === 'boolean' ? forceState : minimapDrawer.hidden;
               minimapDrawer.hidden = !willOpen;
               arView.classList.toggle('has-map-open', willOpen);
-              if (btnToggleMinimap) btnToggleMinimap.setAttribute('aria-expanded', String(willOpen));
+              if (btnToggleMinimap) {
+                btnToggleMinimap.setAttribute('aria-expanded', String(willOpen));
+                btnToggleMinimap.setAttribute('aria-label', willOpen ? 'Minimizar mapa' : 'Mostrar mapa');
+                btnToggleMinimap.title = willOpen ? 'Minimizar mapa y ver la escena AR' : 'Mostrar el mapa y la ruta de la escena';
+                const label = btnToggleMinimap.querySelector('[data-map-toggle-label]');
+                const icon = btnToggleMinimap.querySelector('.map-toggle-icon');
+                if (label) label.textContent = willOpen ? 'Minimizar mapa' : 'Mostrar mapa';
+                if (icon) icon.textContent = willOpen ? '⌄' : '🗺️';
+              }
               if (willOpen && window.HistoriaGeo && typeof window.HistoriaGeo.initARMiniMap === 'function') {
                 window.HistoriaGeo.initARMiniMap();
               }
@@ -1828,6 +1836,7 @@
 
               if (arLoading) arLoading.classList.remove('is-hidden');
               if (statusPill) statusPill.textContent = '🔐 Solicitando permisos de cámara, ubicación y orientación…';
+              toggleMiniMapDrawer(true);
 
               if (!navigator.geolocation && statusPill) {
                 statusPill.textContent = '📍 Este navegador no permite acceso a la ubicación';
@@ -1853,7 +1862,6 @@
               } else {
                 setScene(currentSceneIndex, false);
               }
-              toggleMiniMapDrawer(false);
               syncSitePresence();
 
               const closeBtn = arView.querySelector('[data-close-ar]');

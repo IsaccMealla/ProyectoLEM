@@ -4640,9 +4640,20 @@ canvas.a-canvas {
   }
 
   .pokear-top-actions #ar-btn-toggle-minimap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 118px;
     min-height: 40px;
     padding: 0 11px;
     font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .map-toggle-icon {
+    font-size: 16px;
+    line-height: 1;
   }
 
   .pokear-top-actions .ar-icon-button {
@@ -4741,8 +4752,8 @@ canvas.a-canvas {
     bottom: max(8px, env(safe-area-inset-bottom, 0px));
     left: 8px;
     width: auto;
-    max-height: min(72dvh, 620px);
-    padding: 10px;
+    max-height: min(74dvh, 680px);
+    padding: 12px;
     overflow-y: auto;
     border-radius: 18px;
     z-index: 120;
@@ -4754,7 +4765,7 @@ canvas.a-canvas {
   }
 
   .ar-minimap-header > span {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.3;
   }
 
@@ -4766,7 +4777,7 @@ canvas.a-canvas {
   }
 
   .ar-mini-map {
-    height: clamp(190px, 36dvh, 320px);
+    height: clamp(240px, 42dvh, 420px);
   }
 
   .ar-mini-route-bar {
