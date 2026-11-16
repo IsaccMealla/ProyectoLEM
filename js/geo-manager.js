@@ -74,15 +74,15 @@
     }
   };
 
-  // ─── Definición de las 5 Estaciones de Escenas en el Mapa ───
+  // ─── Definición de las 5 Etapas en el Mapa (UNIFRANZ La Paz) ───
   const SCENE_WAYPOINTS = [
     {
       index: 0,
       code: '01',
-      year: '1879',
-      title: 'Escena 1 · El Despertar de un Genio',
-      place: 'Portal de la Poesía y los Andes',
-      photoNote: 'Incluye foto histórica de la casona de 1879 e Illimani',
+      year: '1879 — 1993',
+      title: 'Etapa 1 · La Fachada e Historia',
+      place: 'Pórtico Principal UNIFRANZ La Paz',
+      photoNote: 'Fachada achaflanada de 6 pisos, 10 banderas y retrato histórico',
       color: '#ffd166',
       dLat: 0.00014,
       dLng: -0.00016
@@ -90,10 +90,10 @@
     {
       index: 1,
       code: '02',
-      year: '1910',
-      title: 'Escena 2 · Creación de la Pedagogía Nacional',
-      place: 'Estación de «El Diario» y Cátedra 1910',
-      photoNote: 'Incluye facsímil histórico de 1910 y primeras aulas',
+      year: 'Modelo',
+      title: 'Etapa 2 · Modelo Aprender Haciendo',
+      place: 'Atrio y Nodos Holográficos',
+      photoNote: 'Nodos holográficos giratorios y paneles de cristal',
       color: '#ff8c42',
       dLat: 0.00011,
       dLng: 0.00015
@@ -101,22 +101,22 @@
     {
       index: 2,
       code: '03',
-      year: '1993',
-      title: 'Escena 3 · Fundación de UNIFRANZ',
-      place: 'Casona Fundacional UNIFRANZ 1993',
-      photoNote: 'Incluye foto real de archivo de cómo era antes UNIFRANZ en 1993',
-      color: '#ff5d8f',
+      year: 'Sistemas & IA',
+      title: 'Etapa 3 · Ingeniería de Sistemas, IA y Robótica',
+      place: 'Laboratorio de Visión Artificial & ROV',
+      photoNote: 'Holograma de dron submarino (ROV) y red neuronal 3D',
+      color: '#38bdf8',
       dLat: 0.00000,
       dLng: 0.00000
     },
     {
       index: 3,
       code: '04',
-      year: 'Expansión',
-      title: 'Escena 4 · Cuatro Sedes en Bolivia',
-      place: 'Plaza de la Integración Nacional (LP, EA, CBBA, SCZ)',
-      photoNote: 'Incluye galería histórica de las 4 sedes en Bolivia',
-      color: '#38bdf8',
+      year: 'Salud',
+      title: 'Etapa 4 · Ciencias de la Salud y Simulación',
+      place: 'Clínica Odontológica y Simulación Médica',
+      photoNote: 'Estructura odontológica/médica 3D con partículas clínicas',
+      color: '#10b981',
       dLat: -0.00013,
       dLng: -0.00014
     },
@@ -124,28 +124,21 @@
       index: 4,
       code: '05',
       year: 'Hoy',
-      title: 'Escena 5 · Más de 30 Años de Legado Vivo',
-      place: 'Atrio de Innovación · Antes (1993) y Ahora',
-      photoNote: 'Comparativa fotográfica del edificio de 1993 vs. campus moderno',
-      color: '#a855f7',
+      title: 'Etapa 5 · Cierre y Apertura de Puertas',
+      place: 'Ingreso al Vestíbulo UNIFRANZ La Paz',
+      photoNote: 'Apertura de puertas y portal luminoso al interior de UNIFRANZ',
+      color: '#fbbf24',
       dLat: -0.00014,
       dLng: 0.00014
     }
   ];
 
-  const SCENE_LOCATION_STORAGE_KEY = 'historia-viva-scene-locations-v1';
+  const SCENE_LOCATION_STORAGE_KEY = 'historia-viva-scene-locations-v2';
   const SCENE_DEFAULTS = {
     franz: SCENE_WAYPOINTS.map((waypoint) => [
       LANDMARKS.unifranz_lp.coords[0] + waypoint.dLat,
       LANDMARKS.unifranz_lp.coords[1] + waypoint.dLng
-    ]),
-    abaroa: [
-      [-22.4567, -68.9237],
-      [-22.4565, -68.9234],
-      [-22.4563, -68.9238],
-      [-22.4569, -68.9235],
-      [-22.4566, -68.9240]
-    ]
+    ])
   };
 
   function isValidCoordinates(coords) {
@@ -338,24 +331,25 @@
   }
 
   function setActiveScene(storyId, sceneIdx) {
-    if (!state.sceneLocations[storyId] || !Number.isInteger(sceneIdx) ||
-      sceneIdx < 0 || sceneIdx >= state.sceneLocations[storyId].length) return false;
-    state.activeStory = storyId;
+    const resolvedStory = 'franz';
+    if (!state.sceneLocations[resolvedStory] || !Number.isInteger(sceneIdx) ||
+      sceneIdx < 0 || sceneIdx >= state.sceneLocations[resolvedStory].length) return false;
+    state.activeStory = resolvedStory;
     state.selectedSceneIndex = sceneIdx;
     state.target = {
-      id: `scene-${storyId}-${sceneIdx}`,
-      name: `${storyId === 'abaroa' ? 'Eduardo Abaroa' : 'Franz Tamayo'} · ${getSceneTitle(storyId, sceneIdx)}`,
+      id: `scene-${resolvedStory}-${sceneIdx}`,
+      name: `UNIFRANZ La Paz · ${getSceneTitle(resolvedStory, sceneIdx)}`,
       subtitle: 'Punto AR editable en el mapa',
-      city: storyId === 'abaroa' ? 'Calama · ubicación inicial por confirmar' : 'La Paz',
-      coords: getSceneCoordinates(storyId, sceneIdx),
+      city: 'La Paz',
+      coords: getSceneCoordinates(resolvedStory, sceneIdx),
       zoom: 17,
-      description: 'Punto geográfico donde se habilita esta escena de Realidad Aumentada.',
+      description: 'Punto geográfico donde se habilita esta etapa de Realidad Aumentada.',
       streets: []
     };
     const targetSelect = document.getElementById('geo-landmark-select');
     if (targetSelect) targetSelect.value = 'active-scene';
     const storySelect = document.getElementById('geo-editor-story');
-    if (storySelect) storySelect.value = storyId;
+    if (storySelect) storySelect.value = resolvedStory;
     const sceneSelect = document.getElementById('geo-editor-scene');
     if (sceneSelect) sceneSelect.value = String(sceneIdx);
     if (state.isSimulated && state.inRange) {
@@ -951,7 +945,7 @@ function createSceneMarkersOnMap(mapInstance, holderArray, isMini) {
 
     marker.bindPopup(`
         <div class="map-popup-card">
-          <span class="map-popup-badge" style="background:${wp.color};color:#0b0f19;">${state.activeStory === 'abaroa' ? 'EDUARDO ABAROA' : 'FRANZ TAMAYO'} · ESCENA ${wp.code}</span>
+          <span class="map-popup-badge" style="background:${wp.color};color:#0b0f19;">UNIFRANZ LA PAZ · ETAPA ${wp.code}</span>
           <h4 class="map-popup-title">${title}</h4>
           <p class="map-popup-desc">📍 <strong>Punto de activación AR</strong><br>${scene && scene.visual ? scene.visual : wp.photoNote}<br><small>${coords[0].toFixed(5)}, ${coords[1].toFixed(5)} · radio ${state.radius} m</small></p>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">

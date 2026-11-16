@@ -1,103 +1,68 @@
 (function () {
   /**
-   * Escenas históricas oficiales de Franz Tamayo y UNIFRANZ
-   * Compartidas tanto por la experiencia de Realidad Aumentada (AR)
-   * como por la experiencia de Realidad Virtual 360° (VR).
+   * 5 Etapas oficiales de "Bienvenida Histórica Unifranz La Paz"
+   * Modelo único: assets/models/FranzTamayoReal.glb
+   * Audio único: assets/audio/DIscursoPrincipal.mp3
    */
   const scenes = [
     {
-      title: 'El Despertar de Franz Tamayo',
-      period: '1879 — 1956',
-      visual: 'Franz Tamayo se presenta con vestimenta de época e invita al espectador a viajar en el tiempo para descubrir una historia que une pensamiento, educación y futuro.',
-      audio: 'assets/audio/escena1.mp3',
-      video: 'assets/videos/franz-tamayo/escena-1.mp4',
-      narration: '¡Saludos! Soy Franz Tamayo, poeta, escritor y pensador boliviano. Quizás se pregunten por qué mi nombre forma parte de una universidad. Hoy quiero invitarlos a viajar en el tiempo para descubrir una historia que une el pensamiento, la educación y el futuro de Bolivia. ¿Me acompañan?'
+      title: 'La Fachada e Historia',
+      period: '1879 — 1993',
+      visual: 'Fachada en esquina achaflanada de UNIFRANZ La Paz con 10 banderas y retrato histórico «1879 — 1993».',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
+      audioTrack: 'EP1_FranzTamayo_Bienvenida.mp3',
+      nominalStart: 0,
+      nominalEnd: 30,
+      narration: 'Bienvenidos a mi casa del saber... Soy Franz Tamayo. En 1993 mi nombre dio vida a Unifranz aquí en La Paz para transformar la educación superior de Bolivia.'
     },
     {
-      title: 'El Pensamiento y la Educación',
-      period: '1910',
-      visual: 'Aparecen libros antiguos, manuscritos y una representación de La Paz de principios del siglo XX.',
-      audio: 'assets/audio/escena2.mp3',
-      video: 'assets/videos/franz-tamayo/escena-2.mp4',
-      narration: 'A lo largo de mi vida, reflexioné sobre la importancia de la educación para el desarrollo de nuestro país. En 1910 publiqué Creación de la pedagogía nacional, una obra en la que planteé reflexiones sobre cómo debía pensarse la educación boliviana. Décadas después, mi nombre sería elegido para representar una institución comprometida con la formación de nuevas generaciones.'
+      title: 'Modelo Aprender Haciendo',
+      period: 'DESDE EL 1ER SEMESTRE',
+      visual: 'Tres nodos holográficos giratorios y paneles de cristal alrededor del pórtico.',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
+      audioTrack: 'EP2_FranzTamayo_ModeloEducativo.mp3',
+      nominalStart: 30,
+      nominalEnd: 60,
+      narration: 'En Unifranz rompimos las aulas tradicionales para instaurar un modelo centrado en el estudiante: aprender haciendo desde el primer semestre.'
     },
     {
-      title: 'El Nacimiento de UNIFRANZ',
-      period: '1990 — 1993',
-      visual: 'Las páginas del libro se transforman en una línea de tiempo. Aparece el año 1990 y luego imágenes históricas de La Paz y los primeros espacios universitarios.',
-      audio: 'assets/audio/escena3.mp3',
-      video: 'assets/videos/franz-tamayo/escena-3.mp4',
-      narration: 'Viajemos ahora al año 1990. El 4 de noviembre de ese año se fundó la Universidad Privada Franz Tamayo, conocida como UNIFRANZ, gracias a la iniciativa de Abel Ágreda y Celsa Nogales de Ágreda. En 1993, después de obtener las autorizaciones legales correspondientes, la universidad comenzó a hacer realidad su proyecto educativo en la ciudad de La Paz. Sus primeros espacios eran modestos, pero detrás de ellos existía una gran visión: abrir nuevas oportunidades de formación profesional.'
+      title: 'Ingeniería de Sistemas, IA y Robótica',
+      period: 'TECNOLOGÍA E IA',
+      visual: 'Holograma wireframe azul y naranja de un dron submarino (ROV) y una red neuronal 3D con enlaces pulsantes.',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
+      audioTrack: 'EP3_FranzTamayo_Tecnologia.mp3',
+      nominalStart: 60,
+      nominalEnd: 95,
+      narration: 'En Ingeniería de Sistemas e Inteligencia Artificial, nuestros estudiantes crean visión artificial, robótica subacuática autónoma y entornos de realidad virtual.'
     },
     {
-      title: 'Una Universidad en Crecimiento',
-      period: 'EXPANSIÓN NACIONAL',
-      visual: 'Las primeras aulas se transforman en espacios universitarios modernos. Aparecen estudiantes, libros, computadoras y un mapa de Bolivia donde se iluminan La Paz, El Alto, Cochabamba y Santa Cruz.',
-      audio: 'assets/audio/escena4.mp3',
-      video: 'assets/videos/franz-tamayo/escena-4.mp4',
-      narration: 'Con el paso de los años, UNIFRANZ fue creciendo y extendiendo su presencia a otras ciudades de Bolivia. La universidad evolucionó junto con las nuevas necesidades de la sociedad, incorporando propuestas de innovación, investigación y aprendizaje práctico. Así, lo que comenzó como un proyecto educativo en La Paz se convirtió en una institución con presencia en distintas regiones del país.'
+      title: 'Ciencias de la Salud y Simulación',
+      period: 'SALUD Y CLÍNICA',
+      visual: 'Estructura médica y odontológica interactiva en 3D con partículas verdes y blancas de precisión clínica.',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
+      audioTrack: 'EP4_FranzTamayo_Salud.mp3',
+      nominalStart: 95,
+      nominalEnd: 125,
+      narration: 'En Ciencias de la Salud y nuestra Clínica Odontológica, combinamos simulación de alta fidelidad con gestión digital avanzada al servicio de La Paz.'
     },
     {
-      title: 'El Legado Continúa',
-      period: 'EL FUTURO ES HOY',
-      visual: 'Franz Tamayo aparece en un campus actual rodeado de estudiantes de diferentes carreras. Mira directamente al espectador y el logotipo de UNIFRANZ aparece al fondo.',
-      audio: 'assets/audio/escena5.mp3',
-      video: 'assets/videos/franz-tamayo/escena-5.mp4',
-      narration: 'Y hoy, jóvenes universitarios, ustedes son parte de esta historia. Cada idea que desarrollan, cada conocimiento que adquieren y cada desafío que superan contribuye a construir el futuro de nuestra sociedad. Mi nombre representa un legado intelectual, pero son ustedes quienes pueden darle un nuevo significado a través de sus acciones. La historia de UNIFRANZ continúa escribiéndose con cada generación de estudiantes. Bienvenidos a UNIFRANZ, Universidad Privada Franz Tamayo. ¡El futuro está en sus manos!'
+      title: 'Cierre y Apertura de Puertas',
+      period: 'EL FUTURO SE CONSTRUYE',
+      visual: 'Franz Tamayo ejecuta la invitación lateral, las puertas de vidrio de UNIFRANZ se abren y la cámara avanza al vestíbulo luminoso.',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
+      audioTrack: 'EP5_FranzTamayo_Cierre.mp3',
+      nominalStart: 125,
+      nominalEnd: 155,
+      narration: 'El futuro no se espera: se construye. Bienvenidos a la innovación, bienvenidos a Unifranz.'
     }
   ];
   window.HistoriaVivaScenes = scenes;
   window.HistoriaVivaStories = {
     franz: {
-      title: 'Franz Tamayo',
-      model: 'assets/models/franz_tamayo.glb',
+      title: 'Bienvenida Histórica Unifranz La Paz',
+      model: 'assets/models/FranzTamayoReal.glb',
+      audio: 'assets/audio/DIscursoPrincipal.mp3',
       scenes
-    },
-    abaroa: {
-      title: 'Eduardo Abaroa',
-      model: 'assets/models/EduardoAbaroa.glb',
-      scenes: [
-        {
-          title: 'Introducción y mesa táctica holográfica',
-          period: '1879',
-          visual: 'Presentación del litoral y la ruta histórica hacia Calama.',
-          narration: 'Conoce el contexto de la defensa de Calama y la ruta hacia el puente de Topáter.',
-          audio: 'assets/audio/2.1Escena.mp3',
-          video: 'assets/videos/eduardo-abaroa/Escena2.1.mp4'
-        },
-        {
-          title: 'El consejo y preparativos en el vado',
-          period: 'Marzo de 1879',
-          visual: 'El consejo de los defensores y los preparativos junto al río Loa.',
-          narration: 'Los defensores se reúnen y organizan la defensa del paso del río.',
-          audio: 'assets/audio/2.2escena.mp3',
-          video: 'assets/videos/eduardo-abaroa/Escena2.2.mp4'
-        },
-        {
-          title: 'El combate del Topáter',
-          period: '23 de marzo de 1879',
-          visual: 'La defensa del puente de Topáter durante el combate de Calama.',
-          narration: 'La escena recuerda el combate y la resistencia de Eduardo Abaroa en Topáter.',
-          audio: 'assets/audio/2.3escena.mp3',
-          video: 'assets/videos/eduardo-abaroa/Escena2.3.mp4'
-        },
-        {
-          title: 'La última resistencia en el puente',
-          period: '23 de marzo de 1879',
-          visual: 'El episodio final de la resistencia de Abaroa en el puente.',
-          narration: 'Una evocación del episodio final y la respuesta histórica atribuida a Abaroa.',
-          audio: 'assets/audio/2.4escena.mp3',
-          video: 'assets/videos/eduardo-abaroa/Escena2.4.mp4'
-        },
-        {
-          title: 'Galería histórica y memorial',
-          period: '1879 · 1952 · Actualidad',
-          visual: 'Un memorial interactivo reúne hitos y objetos representativos.',
-          narration: 'Explora la memoria histórica y el legado de Eduardo Abaroa.',
-          audio: 'assets/audio/2.5Escena.mp3',
-          video: 'assets/videos/eduardo-abaroa/Escena2.5.mp4'
-        }
-      ]
     }
   };
 
@@ -149,67 +114,12 @@
     if (aSceneInstance || !vrSceneTemplate || !vrView) return;
     aSceneInstance = vrSceneTemplate.content.firstElementChild.cloneNode(true);
     const sceneForLoad = aSceneInstance;
-    const vrModel = sceneForLoad.querySelector('#vr-character-model');
-    const abaroaModel = sceneForLoad.querySelector('#vr-abaroa-model');
-    const modelHint = sceneForLoad.querySelector('#vr-model-error-label');
-    let dracoRetryCount = 0;
 
-    const configureAndRetryModel = function () {
-      if (!vrModel) return;
-      if (dracoRetryCount > 0) {
-        if (modelHint) {
-          modelHint.setAttribute('visible', 'true');
-          modelHint.querySelector('a-text')?.setAttribute('value', 'NO SE PUDO CARGAR EL MODELO 3D');
-        }
-        console.error('[Historia Viva] No se pudo cargar el GLB incluso con Draco.');
-        return;
-      }
-      if (!window.tamayoVR || !window.tamayoVR.configureDraco(sceneForLoad)) return;
-      dracoRetryCount += 1;
-      const modelSource = vrModel.getAttribute('gltf-model');
-      if (modelHint) modelHint.setAttribute('visible', 'true');
-      vrModel.removeAttribute('gltf-model');
-      window.setTimeout(function () {
-        vrModel.setAttribute('gltf-model', modelSource);
-      }, 100);
+    const onAvatarReady = function () {
+      if (vrLoading) vrLoading.classList.add('is-hidden');
+      if (loadingTimeout) window.clearTimeout(loadingTimeout);
     };
-
-    if (vrModel) {
-      vrModel.addEventListener('model-loaded', function () {
-        if (modelHint) modelHint.setAttribute('visible', 'false');
-        sceneForLoad.querySelector('#vr-tamayo-figure')?.setAttribute('visible', 'true');
-        const loadedModel = vrModel.getObject3D('mesh');
-        if (loadedModel) {
-          loadedModel.traverse(function (node) {
-            if (!node.isMesh) return;
-            const materials = Array.isArray(node.material) ? node.material : [node.material];
-            materials.forEach(function (material) {
-              if (!material) return;
-              if (!material.emissive) material.emissive = new THREE.Color('#262626');
-              else material.emissive.set('#262626');
-              material.emissiveIntensity = 0.32;
-              material.needsUpdate = true;
-            });
-          });
-        }
-        console.info('[Historia Viva] Modelo 3D VR cargado');
-      });
-      vrModel.addEventListener('model-error', configureAndRetryModel);
-    }
-    if (abaroaModel) {
-      abaroaModel.addEventListener('model-loaded', function () {
-        if (window.tamayoVR) window.tamayoVR.applyAbaroaModelAppearance();
-        console.info('[Historia Viva] Modelo 3D de Eduardo Abaroa cargado');
-      });
-      abaroaModel.addEventListener('model-error', function (event) {
-        const hint = sceneForLoad.querySelector('#vr-abaroa-timeline-prompt');
-        if (hint) {
-          hint.setAttribute('visible', 'true');
-          hint.querySelector('a-text')?.setAttribute('value', 'NO SE PUDO CARGAR EL MODELO DE EDUARDO ABAROA');
-        }
-        console.error('[Historia Viva] No se pudo cargar el modelo de Eduardo Abaroa en VR:', event.detail);
-      });
-    }
+    window.addEventListener('unifranz:avatar-loaded', onAvatarReady, { once: true });
 
     vrView.insertBefore(aSceneInstance, vrView.querySelector('.vr-hud'));
 
@@ -217,29 +127,9 @@
       if (vrLoading) vrLoading.classList.add('is-hidden');
       if (loadingTimeout) window.clearTimeout(loadingTimeout);
 
-      if (vrModel && !vrModel.getObject3D('mesh')) {
-        configureAndRetryModel();
-      }
-
       if (window.tamayoVR) {
+        window.tamayoVR.configureDraco(sceneForLoad);
         window.tamayoVR.setSceneIndex(currentVRSceneIndex, false);
-      }
-      sceneForLoad.querySelectorAll('[data-vr-landmark]').forEach(function (marker) {
-        marker.addEventListener('click', function () {
-          if (window.tamayoVR) window.tamayoVR.showAbaroaLandmark(marker);
-        });
-      });
-      const restartAbaroa = sceneForLoad.querySelector('#vr-abaroa-restart');
-      if (restartAbaroa) {
-        restartAbaroa.addEventListener('click', function () {
-          if (window.tamayoVR) window.tamayoVR.setStory('abaroa');
-        });
-      }
-      const enemyModel = sceneForLoad.querySelector('#vr-abaroa-enemy-model');
-      if (enemyModel) {
-        enemyModel.addEventListener('model-error', function (event) {
-          console.error('[Historia Viva] No se pudo cargar el modelo del soldado en la escena de combate:', event.detail);
-        });
       }
 
       // Conectar interactividad de los botones 3D con cursor de mirada (gaze manos libres)
@@ -269,7 +159,6 @@
         btn3DExit.addEventListener('click', closeVR);
       }
 
-      // Conectar botón 3D de comando de voz con cursor de mirada (gaze hands-free para Cardboard/gafas)
       const btn3DVoice = aSceneInstance.querySelector('#vr-3d-voice-btn');
       if (btn3DVoice) {
         btn3DVoice.addEventListener('click', function () {
@@ -279,7 +168,7 @@
         });
       }
 
-      // Permitir también clic / toque directo con mouse o pantalla táctil sobre las 5 estaciones 3D y fotos históricas en VR
+      // Conectar clic / toque directo sobre el botón flotante 3D "Siguiente Etapa" de Unifranz
       const vrCanvas = aSceneInstance.querySelector('.a-canvas');
       if (vrCanvas) {
         let downX = 0;
@@ -289,30 +178,14 @@
           downY = ev.clientY;
         });
         vrCanvas.addEventListener('click', function (ev) {
-          if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > 14) return; // Fue arrastre de cámara
-          const dioramaEl = aSceneInstance && aSceneInstance.querySelector('#vr-interactive-diorama');
-          const dioramaComp = dioramaEl && dioramaEl.components && dioramaEl.components['scene-diorama'];
-          const camEl = aSceneInstance && aSceneInstance.querySelector('#vr-camera');
-          const cam = camEl && camEl.getObject3D('camera');
-          if (!dioramaComp || !dioramaComp.group || !cam || !window.THREE) return;
-
+          if (Math.hypot(ev.clientX - downX, ev.clientY - downY) > 14) return;
+          const manager = window.UnifranzActiveManager;
+          if (!manager) return;
           const rect = vrCanvas.getBoundingClientRect();
           const mx = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
           const my = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
-          const ray = new THREE.Raycaster();
-          ray.setFromCamera(new THREE.Vector2(mx, my), cam);
-          const hits = ray.intersectObjects(dioramaComp.group.children, true);
-          for (let i = 0; i < hits.length; i++) {
-            let obj = hits[i].object;
-            while (obj) {
-              if (typeof obj.userData?.sceneIndex === 'number') {
-                const idx = obj.userData.sceneIndex;
-                if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
-                if (window.tamayoVR) window.tamayoVR.setSceneIndex(idx, true);
-                return;
-              }
-              obj = obj.parent;
-            }
+          if (manager.handlePointerClick(mx, my)) {
+            if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
           }
         });
       }
