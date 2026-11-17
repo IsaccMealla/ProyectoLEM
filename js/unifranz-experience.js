@@ -1923,51 +1923,62 @@
   // 4. WebXRButton (Soporte WebXR inmersivo AR / VR)
   // ───────────────────────────────────────────────────────────────────────────
 
-  function createWebXRButton(renderer, options = {}) {
+  function createWebXRButton(sceneEl, options = {}) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'pokear-chip-btn webxr-launch-btn';
-    button.textContent = '🌐 WebXR';
-    button.title = 'Iniciar sesión WebXR nativa si el navegador es compatible';
-    let currentSession = null;
+    button.disabled = true;
+    button.textContent = '📍 AR 6DoF';
+    button.title = 'Fijar la escena al espacio real mediante AR 6DoF';
 
     const mode = options.mode || 'immersive-ar';
-    if (!navigator.xr) {
+    if (!navigator.xr || !sceneEl || typeof sceneEl.enterAR !== 'function') {
       button.disabled = true;
       button.style.opacity = '0.55';
-      button.title = 'WebXR no disponible en este navegador (usando cámara AR directa)';
+      button.textContent = 'AR 6DoF no disponible';
+      button.title = 'Este navegador o dispositivo no admite WebXR AR; se usará la vista de cámara con sensores';
       return button;
     }
 
     navigator.xr.isSessionSupported(mode).then((supported) => {
       if (!supported) {
-        button.title = 'Usando visor AR con cámara WebRTC y giroscopio';
+        button.disabled = true;
+        button.style.opacity = '0.55';
+        button.textContent = 'AR 6DoF no disponible';
+        button.title = 'Se requiere un navegador y dispositivo compatibles con WebXR AR';
         return;
       }
-      button.addEventListener('click', async () => {
-        if (currentSession) {
-          await currentSession.end();
-          return;
-        }
-        try {
-          const session = await navigator.xr.requestSession(mode, {
-            optionalFeatures: ['local-floor', 'bounded-floor', 'hit-test']
-          });
-          currentSession = session;
-          button.textContent = '⏹ Salir WebXR';
-          if (renderer && renderer.xr) {
-            renderer.xr.enabled = true;
-            await renderer.xr.setSession(session);
-          }
-          session.addEventListener('end', () => {
-            currentSession = null;
-            button.textContent = '🌐 WebXR';
-          });
-        } catch (err) {
-          console.warn('[Unifranz WebXR] No se pudo iniciar WebXR nativo:', err);
-        }
-      });
-    }).catch(() => { /* fallback sin error */ });
+      button.disabled = false;
+      button.title = 'Iniciar AR 6DoF y fijar los modelos sobre una superficie real';
+    }).catch((error) => {
+      console.error('[Unifranz WebXR] No se pudo comprobar el soporte AR:', error);
+      button.disabled = true;
+      button.style.opacity = '0.55';
+      button.textContent = 'AR 6DoF no disponible';
+      button.title = 'No se pudo comprobar el soporte WebXR AR';
+    });
+
+    sceneEl.addEventListener('enter-vr', () => {
+      if (!sceneEl.is('ar-mode')) return;
+      button.textContent = '⏹ Salir de AR 6DoF';
+    });
+    sceneEl.addEventListener('exit-vr', () => {
+      button.textContent = '📍 AR 6DoF';
+    });
+
+    button.addEventListener('click', async () => {
+      if (sceneEl.is('ar-mode')) {
+        await sceneEl.exitVR();
+        return;
+      }
+      try {
+        if (typeof options.beforeEnter === 'function') options.beforeEnter();
+        await sceneEl.enterAR();
+      } catch (error) {
+        console.error('[Unifranz WebXR] No se pudo iniciar AR 6DoF:', error);
+        if (typeof options.onError === 'function') options.onError(error);
+      }
+    });
 
     return button;
   }

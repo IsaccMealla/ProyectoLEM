@@ -1,9 +1,8 @@
 /**
  * Historia Viva · Bienvenida Histórica Unifranz La Paz (Modo AR / WebXR / Pokémon GO)
  * -----------------------------------------------------------------------------------
- * - Visualización inmersiva en el mundo real mediante la cámara del móvil y giroscopio.
- * - Anclaje estático en espacio mundial 3D frente al usuario: Franz Tamayo a 2.5 m frente al pórtico
- *   de UNIFRANZ La Paz con 10 banderas animadas, luces de cielo paceño y sombras reales.
+ * - WebXR AR usa seguimiento espacial y hit-test; los sensores son una alternativa aproximada.
+ * - Escenario fijado en el espacio rastreado frente al usuario, con Franz Tamayo y el pórtico de UNIFRANZ.
  * - Bloqueo geográfico con Radar y Algoritmo de Ruta Más Corta (Dijkstra + OSRM API).
  * - Sincronizado con ExperienceManager y audio único assets/audio/DIscursoPrincipal.mp3.
  */
@@ -58,6 +57,11 @@
   let arFilteredCoordinates = null;
   let arInitialHeading = null;
   let arAnchorLocked = false;
+  let isWorldTracked = false;
+  let xrPlacementLocked = false;
+  let xrSession = null;
+  let xrHitTestSource = null;
+  let xrReferenceSpace = null;
   let lastStepTimestamp = 0;
   let accelMagnitudeAvg = 9.81;
 
@@ -118,7 +122,7 @@
   // Ancla el escenario de UNIFRANZ La Paz con el visitante en el origen relativo,
   // colocando a Franz Tamayo en (0, 0, -2.5) mirando directamente hacia la cámara.
   function placeSceneInFrontOfCamera() {
-    if (!aSceneInstance || !window.THREE) return;
+    if (!aSceneInstance || !window.THREE || isWorldTracked) return;
     const anchor = getWorldAnchor();
     if (!anchor || !anchor.object3D) return;
 
@@ -136,7 +140,7 @@
   }
 
   function moveCameraRigAlongView(stepMeters) {
-    if (!aSceneInstance || !arAnchorLocked || !window.THREE) return;
+    if (!aSceneInstance || !arAnchorLocked || isWorldTracked || !window.THREE) return;
     const cameraRig = aSceneInstance.querySelector('#pokear-camera-rig');
     const avatarWorld = getAvatarWorldPosition();
     if (!cameraRig || !cameraRig.object3D || !avatarWorld) return;
@@ -164,6 +168,7 @@
 
   function updateGeographicAnchor(coords = getARUserCoordinates()) {
     if (!aSceneInstance) return;
+    if (isWorldTracked) return;
     if (!arAnchorLocked && isARLocationAvailable()) {
       placeSceneInFrontOfCamera();
       return;
@@ -221,7 +226,7 @@
   }
 
   function handleARDeviceMotion(event) {
-    if (!aSceneInstance || !arAnchorLocked || !isARLocationAvailable()) return;
+    if (!aSceneInstance || !arAnchorLocked || isWorldTracked || !isARLocationAvailable()) return;
     const acc = event.accelerationIncludingGravity;
     if (!acc || !Number.isFinite(acc.x) || !Number.isFinite(acc.y) || !Number.isFinite(acc.z)) return;
     const mag = Math.hypot(acc.x, acc.y, acc.z);
@@ -348,7 +353,7 @@
       } else {
         const geoState = window.HistoriaGeo && window.HistoriaGeo.getState ? window.HistoriaGeo.getState() : null;
         statusPill.innerHTML = inRange
-          ? `<span class="ar-status-dot"></span> 🟢 ${geoState && geoState.isSimulated ? 'Simulación activa' : 'Escena fija en sitio'} · ${stageDist} m`
+          ? `<span class="ar-status-dot"></span> 🟢 ${geoState && geoState.isSimulated ? 'Simulación activa' : isWorldTracked ? (xrPlacementLocked ? 'Anclaje espacial 6DoF' : 'Escaneando superficie para anclar') : 'Vista por sensores, sin anclaje 6DoF'} · ${stageDist} m`
           : `<span class="ar-status-dot"></span> 🧭 Etapa a ${gpsDist !== null ? gpsDist + ' m' : 'esperando GPS'}`;
       }
     }
@@ -360,13 +365,14 @@
       }
 
       if (anchor) {
-        const wasHidden = anchor.getAttribute('visible') === 'false';
-        anchor.setAttribute('visible', 'true');
+        const wasHidden = anchor.object3D.visible === false;
+        const shouldShowAnchor = !isWorldTracked || xrPlacementLocked;
+        anchor.setAttribute('visible', shouldShowAnchor);
         if (unifranzRoot) {
           unifranzRoot.setAttribute('unifranz-welcome-experience', 'active', true);
         }
 
-        if (wasHidden) {
+        if (shouldShowAnchor && wasHidden) {
           if (!arAnchorLocked) placeSceneInFrontOfCamera();
           const manager = getUnifranzManager();
           if (manager) manager.playStageChoreography(currentSceneIndex);
@@ -445,12 +451,119 @@
     if (pokearVideo) pokearVideo.srcObject = null;
   }
 
+  function stopXRHitTesting() {
+    if (xrHitTestSource) xrHitTestSource.cancel();
+    xrHitTestSource = null;
+    xrReferenceSpace = null;
+    xrSession = null;
+  }
+
+  function resumeCameraFallback() {
+    if (!arView || arView.getAttribute('aria-hidden') !== 'false' || !aSceneInstance) return;
+    startCamera().then((cameraReady) => {
+      if (!cameraReady || !aSceneInstance || isWorldTracked) return;
+      arAnchorLocked = false;
+      if (isARLocationAvailable()) placeSceneInFrontOfCamera();
+      syncSitePresence();
+    });
+  }
+
+  function placeWorldAnchorFromHit(hitPose, viewerPose) {
+    if (!window.THREE || !aSceneInstance) return;
+    const anchor = getWorldAnchor();
+    if (!anchor || !anchor.object3D) return;
+
+    const position = hitPose.transform.position;
+    const orientation = viewerPose.transform.orientation;
+    const cameraRotation = new THREE.Quaternion(
+      orientation.x,
+      orientation.y,
+      orientation.z,
+      orientation.w
+    );
+    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraRotation);
+    cameraForward.y = 0;
+    if (cameraForward.lengthSq() < 0.0001) cameraForward.set(0, 0, -1);
+    else cameraForward.normalize();
+
+    anchor.object3D.position.set(position.x, position.y, position.z);
+    anchor.object3D.rotation.set(0, Math.atan2(-cameraForward.x, -cameraForward.z), 0);
+    anchor.object3D.updateMatrixWorld(true);
+    xrPlacementLocked = true;
+    arAnchorLocked = true;
+
+    const coords = getARUserCoordinates();
+    if (coords) arFilteredCoordinates = { lat: coords.lat, lng: coords.lng };
+    syncSitePresence();
+  }
+
+  async function beginXRHitTesting(sceneEl) {
+    const session = sceneEl.xrSession || (sceneEl.renderer && sceneEl.renderer.xr.getSession());
+    if (!session) throw new Error('La sesión WebXR no está disponible después de entrar en AR.');
+
+    const referenceSpace = await session.requestReferenceSpace('local-floor');
+    const viewerSpace = await session.requestReferenceSpace('viewer');
+    const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+    if (xrSession !== session || !sceneEl.is('ar-mode')) {
+      hitTestSource.cancel();
+      return;
+    }
+
+    xrReferenceSpace = referenceSpace;
+    xrHitTestSource = hitTestSource;
+
+    const onXRFrame = (_time, frame) => {
+      if (xrSession !== session || !xrHitTestSource) return;
+      const viewerPose = frame.getViewerPose(xrReferenceSpace);
+      if (!xrPlacementLocked && viewerPose) {
+        const hit = frame.getHitTestResults(xrHitTestSource)[0];
+        const hitPose = hit && hit.getPose(xrReferenceSpace);
+        if (hitPose) placeWorldAnchorFromHit(hitPose, viewerPose);
+      }
+      session.requestAnimationFrame(onXRFrame);
+    };
+
+    session.requestAnimationFrame(onXRFrame);
+  }
+
+  function handleARWebXREnter() {
+    if (!aSceneInstance || !aSceneInstance.is('ar-mode')) return;
+    isWorldTracked = true;
+    xrPlacementLocked = false;
+    arAnchorLocked = false;
+    arView.classList.add('is-world-tracked');
+    stopCamera();
+
+    const anchor = getWorldAnchor();
+    if (anchor) anchor.setAttribute('visible', false);
+    if (statusPill) statusPill.textContent = '📍 Apunta a una superficie y mueve el teléfono para fijar la escena';
+
+    xrSession = aSceneInstance.xrSession || null;
+    beginXRHitTesting(aSceneInstance).catch((error) => {
+      console.error('[Historia Viva] No se pudo iniciar el seguimiento de superficies WebXR:', error);
+      if (statusPill) statusPill.textContent = '⚠️ No se pudo detectar superficies; sal de AR e inténtalo de nuevo';
+    });
+  }
+
+  function handleARWebXRExit() {
+    stopXRHitTesting();
+    if (!isWorldTracked) return;
+    isWorldTracked = false;
+    xrPlacementLocked = false;
+    arAnchorLocked = false;
+    if (arView) arView.classList.remove('is-world-tracked');
+
+    if (aSceneInstance && !aSceneInstance.dataset.unmounting) resumeCameraFallback();
+  }
+
   // ─── Montar la Escena 3D sobre la Cámara ───
   function mountPokeArScene() {
     if (aSceneInstance || !arSceneTemplate || !arView) return;
 
     aSceneInstance = arSceneTemplate.content.firstElementChild.cloneNode(true);
     configureDracoSupport(aSceneInstance);
+    aSceneInstance.addEventListener('enter-vr', handleARWebXREnter);
+    aSceneInstance.addEventListener('exit-vr', handleARWebXRExit);
 
     const onAvatarReady = () => {
       if (arLoading) arLoading.classList.add('is-hidden');
@@ -466,7 +579,11 @@
       if (webxrBtnSlot && window.UnifranzSystem && window.UnifranzSystem.createWebXRButton) {
         webxrBtnSlot.innerHTML = '';
         webxrBtnSlot.appendChild(
-          window.UnifranzSystem.createWebXRButton(aSceneInstance.renderer, { mode: 'immersive-ar' })
+          window.UnifranzSystem.createWebXRButton(aSceneInstance, {
+            mode: 'immersive-ar',
+            beforeEnter: stopCamera,
+            onError: resumeCameraFallback
+          })
         );
       }
       updateGeographicAnchor();
@@ -477,8 +594,10 @@
 
   function unmountPokeArScene() {
     if (aSceneInstance) {
+      aSceneInstance.dataset.unmounting = 'true';
+      stopXRHitTesting();
       try {
-        if (aSceneInstance.is && aSceneInstance.is('vr-mode')) {
+        if (aSceneInstance.is && (aSceneInstance.is('vr-mode') || aSceneInstance.is('ar-mode'))) {
           aSceneInstance.exitVR();
         }
       } catch (e) { /* noop */ }
@@ -559,7 +678,7 @@
 
     updateHudForStage(index);
 
-    if (!arAnchorLocked && isARLocationAvailable()) {
+    if (!arAnchorLocked && !isWorldTracked && isARLocationAvailable()) {
       placeSceneInFrontOfCamera();
     }
     if (btnAudio) btnAudio.disabled = !isARLocationAvailable();
@@ -724,6 +843,9 @@
     arFilteredCoordinates = null;
     arInitialHeading = null;
     arAnchorLocked = false;
+    isWorldTracked = false;
+    xrPlacementLocked = false;
+    if (arView) arView.classList.remove('is-world-tracked');
     if (startedGPSForAR && window.HistoriaGeo && typeof window.HistoriaGeo.stopGPSTracking === 'function') {
       window.HistoriaGeo.stopGPSTracking();
       startedGPSForAR = false;
@@ -797,7 +919,15 @@
 
     if (btnReanchor) {
       btnReanchor.addEventListener('click', () => {
-        placeSceneInFrontOfCamera();
+        if (isWorldTracked) {
+          xrPlacementLocked = false;
+          arAnchorLocked = false;
+          const anchor = getWorldAnchor();
+          if (anchor) anchor.setAttribute('visible', false);
+          if (statusPill) statusPill.textContent = '📍 Apunta a una superficie para volver a fijar la escena';
+        } else {
+          placeSceneInFrontOfCamera();
+        }
         syncSitePresence();
         if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
       });

@@ -523,19 +523,20 @@
     <div class="ar-loading" id="ar-loading" role="status">
       <span class="loader-mark">HV</span>
       <p>Preparando tu experiencia AR…</p>
-      <small>El navegador solicitará permiso para cámara y ubicación. Gira el teléfono para orientar las escenas.</small>
+      <small>Permite la cámara y la ubicación. Para fijar los modelos al espacio real, inicia AR 6DoF en un dispositivo compatible.</small>
     </div>
 
-    <!-- Plantilla de la escena A-Frame (transparente sobre la cámara con giroscopio y WebXR) -->
+    <!-- Escena A-Frame: WebXR AR con seguimiento espacial y vista de cámara con sensores como alternativa -->
     <template id="ar-scene-template">
       <a-scene id="pokear-scene" embedded
         renderer="alpha: true; antialias: true; colorManagement: true; precision: highp; powerPreference: high-power"
-        shadow="type: pcfsoft" vr-mode-ui="enabled: false" loading-screen="enabled: false">
+        shadow="type: pcfsoft" vr-mode-ui="enabled: false" loading-screen="enabled: false"
+        webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor, hit-test; optionalFeatures: bounded-floor, dom-overlay; overlayElement: #ar-view">
         <a-assets timeout="12000">
           <video id="ar-scene-video" muted loop playsinline preload="none"></video>
         </a-assets>
 
-        <!-- Cámara del usuario con sensores de orientación / giroscopio 360° -->
+        <!-- Cámara del modo alternativo con sensores; WebXR usa el seguimiento nativo del visor -->
         <a-entity id="pokear-camera-rig" position="0 0 0">
           <a-camera id="pokear-camera" position="0 1.6 0"
             look-controls="touchEnabled: true; magicWindowTrackingEnabled: true">
