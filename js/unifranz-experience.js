@@ -32,6 +32,16 @@
       initialAnim: 'saludar_01',
       initialAnimDuration: 4.0,
       loopAnim: 'hablar',
+      arInitialAnim: 'saludar_01',
+      arCues: [
+        { at: 0.8, clip: 'caminar' },
+        { at: 5.5, clip: 'presentarse' },
+        { at: 10, clip: 'mano_al_pecho' },
+        { at: 14.2, clip: 'dialogo_ambas_manos' },
+        { at: 18, clip: 'enfatizar' },
+        { at: 22, clip: 'senalar', lookYaw: 0.12 },
+        { at: 27, clip: 'brazos_abiertos' }
+      ],
       themeColor: '#d5aa46',
       skyColor: '#8ecae6',
       fogColor: '#cfe8f3',
@@ -50,6 +60,16 @@
       initialAnim: 'acuerdo',
       initialAnimDuration: 3.0,
       loopAnim: 'hablar',
+      arInitialAnim: 'explicar',
+      arCues: [
+        { at: 1, clip: 'paso_confiado' },
+        { at: 4, clip: 'brazos_abiertos' },
+        { at: 9, clip: 'senalar', lookYaw: 0.12 },
+        { at: 14, clip: 'explicar' },
+        { at: 20, clip: 'mano_al_pecho' },
+        { at: 25, clip: 'acuerdo' },
+        { at: 29.5, clip: 'cambio_peso' }
+      ],
       themeColor: '#f59e0b',
       skyColor: '#7ebce0',
       fogColor: '#c7e2f0',
@@ -68,6 +88,17 @@
       initialAnim: 'hablar',
       initialAnimDuration: 2.5,
       loopAnim: 'hablar',
+      arInitialAnim: 'presentarTecnologia',
+      arCues: [
+        { at: 1, clip: 'paso_firme' },
+        { at: 4, clip: 'vision' },
+        { at: 10, clip: 'senalar' },
+        { at: 13, clip: 'robotica', lookYaw: 0.09 },
+        { at: 18, clip: 'paso_lateral' },
+        { at: 22, clip: 'explicar' },
+        { at: 27, clip: 'acuerdo' },
+        { at: 30.5, clip: 'paso_firme' }
+      ],
       themeColor: '#00d2ff',
       skyColor: '#1d4e78',
       fogColor: '#255c8a',
@@ -86,6 +117,17 @@
       initialAnim: 'acuerdo',
       initialAnimDuration: 2.8,
       loopAnim: 'hablar',
+      arInitialAnim: 'ofrecer',
+      arCues: [
+        { at: 1, clip: 'caminar' },
+        { at: 4, clip: 'salud', lookYaw: 0.08 },
+        { at: 7.5, clip: 'asentir' },
+        { at: 10, clip: 'brazos_abiertos' },
+        { at: 14, clip: 'explicar' },
+        { at: 18, clip: 'paso_lateral' },
+        { at: 21.5, clip: 'acuerdo' },
+        { at: 25.5, clip: 'ofrecer' }
+      ],
       themeColor: '#10b981',
       skyColor: '#4da6b8',
       fogColor: '#8ad0d8',
@@ -104,6 +146,16 @@
       initialAnim: 'invitar',
       initialAnimDuration: 8.0,
       loopAnim: 'invitar',
+      arInitialAnim: 'paso_lateral',
+      arCues: [
+        { at: 0.4, clip: 'paso_lateral' },
+        { at: 4, clip: 'mano_al_pecho' },
+        { at: 9, clip: 'senalar', lookYaw: 0.12 },
+        { at: 15, clip: 'reflexionar' },
+        { at: 18.5, clip: 'asentir' },
+        { at: 21.5, clip: 'enfatizar' },
+        { at: 25, clip: 'invitar', hold: true, lookYaw: -0.1 }
+      ],
       themeColor: '#fbbf24',
       skyColor: '#8ecae6',
       fogColor: '#dcecf5',
@@ -374,7 +426,7 @@
   // 2. Reconstrucción 3D Procedural de la Puerta de Unifranz La Paz
   // ───────────────────────────────────────────────────────────────────────────
 
-  function buildUnifranzFacade(scene) {
+  function buildUnifranzFacade(scene, isAR = false) {
     const facade = new THREE.Group();
     facade.name = 'unifranz-facade-la-paz';
     scene.add(facade);
@@ -412,12 +464,14 @@
       metalness: 0.88
     });
     const doorGlassMat = new THREE.MeshPhysicalMaterial({
-      color: 0x0f1c2e,
-      metalness: 0.12,
-      roughness: 0.08,
-      transmission: 0.7,
+      color: isAR ? 0xffffff : 0x0f1c2e,
+      metalness: isAR ? 0 : 0.12,
+      roughness: isAR ? 0.18 : 0.08,
+      transmission: isAR ? 0.12 : 0.7,
       transparent: true,
-      opacity: 0.84,
+      opacity: isAR ? 0 : 0.84,
+      depthWrite: !isAR,
+      visible: !isAR,
       ior: 1.45,
       thickness: 0.08
     });
@@ -678,6 +732,7 @@
 
     // Interior del vestíbulo y portal luminoso para la Etapa 5
     const lobbyGroup = new THREE.Group();
+    lobbyGroup.name = 'unifranz-lobby-interior';
     lobbyGroup.position.set(0, 0, -5.6);
     const lobbyFloor = new THREE.Mesh(
       new THREE.PlaneGeometry(4.4, 3.2),
@@ -714,6 +769,7 @@
     const lobbyLight = new THREE.PointLight(0xffe082, 0, 8, 1.5);
     lobbyLight.position.set(0, 2.4, -0.4);
     lobbyGroup.add(lobbyLight);
+    lobbyGroup.visible = !isAR;
     facade.add(lobbyGroup);
 
     // ─── Fila de 10 Banderas Internacionales con ShaderMaterial sobre la Marquesina ───
@@ -827,15 +883,16 @@
     const bones = {};
     const restQuats = {};
     root.traverse((obj) => {
-      if (obj.isBone || obj.name?.startsWith('mixamorig:')) {
+      if (obj.isBone || obj.name?.startsWith('mixamorig')) {
         bones[obj.name] = obj;
         restQuats[obj.name] = obj.quaternion.clone();
       }
     });
 
     function buildDeltaTrack(boneName, keyframes) {
-      const bone = bones[boneName];
-      const base = restQuats[boneName];
+      const actualName = boneName.replace(':', '');
+      const bone = bones[boneName] || bones[actualName];
+      const base = bone && restQuats[bone.name];
       if (!bone || !base) return null;
       const times = [];
       const values = [];
@@ -934,6 +991,48 @@
         [3.0, 0.48, 0.12, 0.32],
         [4.0, 0.15, 0, 0.15]
       ],
+      'mixamorig:RightHand': [
+        [0, 0, 0, 0],
+        [1.0, 0.08, 0, 0.08],
+        [2.0, -0.06, 0, -0.05],
+        [3.0, 0.08, 0, 0.08],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:RightHandIndex1': [
+        [0, 0, 0, 0],
+        [1.0, -0.12, 0, 0],
+        [2.0, -0.22, 0, 0],
+        [3.0, -0.12, 0, 0],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:RightHandMiddle1': [
+        [0, 0, 0, 0],
+        [1.0, -0.1, 0, 0],
+        [2.0, -0.18, 0, 0],
+        [3.0, -0.1, 0, 0],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [1.0, 0.015, 0.025, 0],
+        [2.0, 0, -0.025, 0],
+        [3.0, -0.015, 0.025, 0],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:Spine2': [
+        [0, 0, 0, 0],
+        [1.0, 0.025, 0.035, 0],
+        [2.0, 0.015, -0.03, 0],
+        [3.0, 0.03, 0.025, 0],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:Neck': [
+        [0, 0, 0, 0],
+        [0.9, 0.025, 0.04, 0],
+        [1.9, -0.02, -0.04, 0],
+        [2.9, 0.025, 0.03, 0],
+        [4.0, 0, 0, 0]
+      ],
       'mixamorig:LeftArm': [
         [0, -0.06, 0, 0.05],
         [1.3, -0.28, -0.12, 0.22],
@@ -945,6 +1044,18 @@
         [1.3, 0.38, -0.1, -0.28],
         [2.6, 0.18, 0, -0.16],
         [4.0, 0.12, 0, -0.12]
+      ],
+      'mixamorig:LeftHand': [
+        [0, 0, 0, 0],
+        [1.3, -0.05, 0, 0.06],
+        [2.6, 0.06, 0, -0.04],
+        [4.0, 0, 0, 0]
+      ],
+      'mixamorig:LeftHandIndex1': [
+        [0, 0, 0, 0],
+        [1.3, -0.1, 0, 0],
+        [2.6, -0.16, 0, 0],
+        [4.0, 0, 0, 0]
       ],
       'mixamorig:Head': [
         [0, 0, 0, 0],
@@ -961,25 +1072,822 @@
         [0, 0, 0, 0],
         [0.9, -0.45, -0.35, -0.55],
         [2.6, -0.45, -0.35, -0.55],
-        [3.5, 0, 0, 0]
+        [3.5, -0.45, -0.35, -0.55]
       ],
       'mixamorig:RightForeArm': [
         [0, 0, 0, 0],
         [0.9, 0.18, -0.2, 0.25],
         [2.6, 0.18, -0.2, 0.25],
-        [3.5, 0, 0, 0]
+        [3.5, 0.18, -0.2, 0.25]
       ],
       'mixamorig:Spine1': [
         [0, 0, 0, 0],
         [0.9, 0.05, -0.22, 0],
         [2.6, 0.05, -0.22, 0],
-        [3.5, 0, 0, 0]
+        [3.5, 0.05, -0.22, 0]
       ],
       'mixamorig:Head': [
         [0, 0, 0, 0],
         [0.9, 0.04, 0.22, 0],
         [2.6, 0.04, 0.22, 0],
+        [3.5, 0.04, 0.22, 0]
+      ]
+    });
+
+    const presentarse = compileClip('presentarse', 2.8, {
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.2, 0.05, -0.32],
+        [2.1, 0.2, 0.05, -0.32],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.12, -0.18, 0.78],
+        [2.1, 0.12, -0.18, 0.78],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, 0.06, 0, 0.04],
+        [1.4, 0, 0, 0],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const explicar = compileClip('explicar', 3.8, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.9, 0.04, 0.04, 0],
+        [2.1, 0, -0.04, 0],
+        [3.1, 0.03, 0.03, 0],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, -0.08, 0, -0.05],
+        [0.8, -0.38, 0.12, -0.32],
+        [1.8, -0.2, -0.12, -0.12],
+        [2.8, -0.4, 0.14, -0.34],
+        [3.8, -0.08, 0, -0.05]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0.12, 0, 0.1],
+        [0.8, 0.42, 0.1, 0.36],
+        [1.8, 0.24, 0, 0.18],
+        [2.8, 0.48, 0.12, 0.36],
+        [3.8, 0.12, 0, 0.1]
+      ],
+      'mixamorig:LeftArm': [
+        [0, -0.06, 0, 0.05],
+        [1.1, -0.3, -0.1, 0.25],
+        [2.3, -0.16, 0.06, 0.12],
+        [3.8, -0.06, 0, 0.05]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0.1, 0, -0.1],
+        [1.1, 0.36, -0.08, -0.3],
+        [2.3, 0.2, 0, -0.16],
+        [3.8, 0.1, 0, -0.1]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [1.1, 0.05, 0.08, 0],
+        [2.1, -0.04, -0.07, 0],
+        [3.1, 0.05, 0.06, 0],
+        [3.8, 0, 0, 0]
+      ]
+    });
+
+    const enfatizar = compileClip('enfatizar', 2.8, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.55, -0.06, 0, 0],
+        [1.3, -0.03, 0, 0],
+        [2.1, 0, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.55, -0.42, 0.18, -0.38],
+        [1.15, -0.5, 0.2, -0.42],
+        [1.65, -0.42, 0.18, -0.38],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.55, 0.34, 0.08, 0.22],
+        [1.15, 0.28, 0.08, 0.18],
+        [1.65, 0.34, 0.08, 0.22],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, 0.14, 0, 0],
+        [1.25, -0.03, 0, 0],
+        [1.8, 0.12, 0, 0],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const presentarTecnologia = compileClip('presentarTecnologia', 3.6, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.8, 0.02, -0.08, 0],
+        [2.4, 0.02, -0.08, 0],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.48, -0.2, 0.45],
+        [2.4, -0.48, -0.2, 0.45],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.12, -0.08, -0.3],
+        [2.4, 0.12, -0.08, -0.3],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.8, 0.02, -0.16, 0],
+        [2.4, 0.02, -0.16, 0],
+        [3.6, 0, 0, 0]
+      ]
+    });
+
+    const vision = compileClip('vision', 2.8, {
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.65, -0.3, 0.5, -0.58],
+        [1.9, -0.3, 0.5, -0.58],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.12, -0.04, 0.1],
+        [1.5, -0.06, 0.03, 0.05],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, -0.04, 0, 0],
+        [1.5, 0.02, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.65, 0.16, 0.12, 0.12],
+        [1.9, 0.16, 0.12, 0.12],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightHandIndex1': [
+        [0, 0, 0, 0],
+        [0.65, -0.2, 0, 0],
+        [1.9, -0.2, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.65, 0.02, 0.12, 0],
+        [1.9, 0.02, 0.12, 0],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const robotica = compileClip('robotica', 3.4, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, 0, 0.1, 0],
+        [1.8, 0.02, -0.1, 0],
+        [2.7, 0, 0.08, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.42, 0.32, -0.45],
+        [1.8, -0.28, 0.48, -0.3],
+        [2.7, -0.44, 0.25, -0.42],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.26, 0.1, 0.25],
+        [1.8, 0.44, -0.08, 0.32],
+        [2.7, 0.22, 0.1, 0.2],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [1, -0.24, -0.25, 0.28],
+        [2.1, -0.42, -0.12, 0.4],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [1, 0.04, 0.12, 0],
+        [2.1, -0.03, -0.12, 0],
+        [3.4, 0, 0, 0]
+      ]
+    });
+
+    const salud = compileClip('salud', 3.0, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, 0.04, 0, 0],
+        [2.1, 0.04, 0, 0],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.36, -0.24, 0.32],
+        [2.1, -0.36, -0.24, 0.32],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.24, -0.1, -0.25],
+        [2.1, 0.24, -0.1, -0.25],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [1.1, -0.22, 0.1, -0.18],
+        [2.1, -0.3, 0.12, -0.26],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, 0.04, -0.08, 0],
+        [2.1, 0.04, -0.08, 0],
+        [3, 0, 0, 0]
+      ]
+    });
+
+    const ofrecer = compileClip('ofrecer', 3.5, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.8, 0.05, 0, 0],
+        [2.5, 0.05, 0, 0],
         [3.5, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.42, 0.2, -0.4],
+        [2.5, -0.42, 0.2, -0.4],
+        [3.5, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.35, 0.05, 0.28],
+        [2.5, 0.35, 0.05, 0.28],
+        [3.5, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.42, -0.2, 0.4],
+        [2.5, -0.42, -0.2, 0.4],
+        [3.5, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.35, -0.05, -0.28],
+        [2.5, 0.35, -0.05, -0.28],
+        [3.5, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.8, 0.05, 0, 0],
+        [1.7, 0.12, 0, 0],
+        [2.5, 0.04, 0, 0],
+        [3.5, 0, 0, 0]
+      ]
+    });
+
+    const reflexionar = compileClip('reflexionar', 3.0, {
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, 0.04, -0.12, -0.08],
+        [2.2, 0.04, -0.12, -0.08],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.18, 0.05, -0.24],
+        [2.2, 0.18, 0.05, -0.24],
+        [3, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.18, -0.08, 0.72],
+        [2.2, 0.18, -0.08, 0.72],
+        [3, 0, 0, 0]
+      ]
+    });
+
+    const pasoLateral = compileClip('paso_lateral', 2.8, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.45, 0.02, 0.04, 0],
+        [1.15, -0.02, -0.04, 0],
+        [1.9, 0.02, 0.03, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [0.55, -0.22, 0, 0.08],
+        [1.25, 0.08, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftLeg': [
+        [0, 0, 0, 0],
+        [0.7, 0.28, 0, 0],
+        [1.4, 0.04, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [1.05, 0.12, 0, -0.06],
+        [1.75, -0.08, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightLeg': [
+        [0, 0, 0, 0],
+        [1.15, -0.12, 0, 0],
+        [1.85, 0.02, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.65, -0.03, 0, 0],
+        [1.45, 0.02, 0, 0],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const caminar = compileClip('caminar', 1.8, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.45, 0.02, 0.04, 0],
+        [0.9, 0, 0, 0],
+        [1.35, -0.02, -0.04, 0],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [0.45, -0.32, 0, 0],
+        [0.9, 0, 0, 0],
+        [1.35, 0.32, 0, 0],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftLeg': [
+        [0, 0, 0, 0],
+        [0.45, 0.18, 0, 0],
+        [0.9, 0, 0, 0],
+        [1.35, 0, 0, 0],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [0.45, 0.32, 0, 0],
+        [0.9, 0, 0, 0],
+        [1.35, -0.32, 0, 0],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:RightLeg': [
+        [0, 0, 0, 0],
+        [0.45, 0, 0, 0],
+        [0.9, 0.18, 0, 0],
+        [1.35, 0, 0, 0],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.45, 0.08, 0, 0.12],
+        [0.9, 0, 0, 0],
+        [1.35, -0.08, 0, -0.12],
+        [1.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.45, -0.08, 0, -0.12],
+        [0.9, 0, 0, 0],
+        [1.35, 0.08, 0, 0.12],
+        [1.8, 0, 0, 0]
+      ]
+    });
+
+    const manoAlPecho = compileClip('mano_al_pecho', 2.8, {
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.18, 0.08, -0.3],
+        [1.9, 0.18, 0.08, -0.3],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.08, -0.12, 0.62],
+        [1.9, 0.08, -0.12, 0.62],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightHand': [
+        [0, 0, 0, 0],
+        [0.7, 0.02, 0, 0.08],
+        [1.9, 0.02, 0, 0.08],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.12, -0.04, 0.14],
+        [1.9, -0.12, -0.04, 0.14],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, 0.025, 0.015, 0],
+        [1.9, 0.025, 0.015, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, 0.04, 0, 0.025],
+        [1.9, 0.04, 0, 0.025],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const brazosAbiertos = compileClip('brazos_abiertos', 3.2, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.8, -0.035, 0, 0],
+        [2.4, -0.035, 0, 0],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.34, -0.12, 0.5],
+        [2.4, -0.34, -0.12, 0.5],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.22, -0.08, -0.18],
+        [2.4, 0.22, -0.08, -0.18],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:LeftHand': [
+        [0, 0, 0, 0],
+        [0.8, -0.06, 0, 0.08],
+        [2.4, -0.06, 0, 0.08],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.34, 0.12, -0.5],
+        [2.4, -0.34, 0.12, -0.5],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.22, 0.08, 0.18],
+        [2.4, 0.22, 0.08, 0.18],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:RightHand': [
+        [0, 0, 0, 0],
+        [0.8, 0.06, 0, -0.08],
+        [2.4, 0.06, 0, -0.08],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.8, 0, 0.04, 0],
+        [2.4, 0, 0.04, 0],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.8, 0.035, 0, 0],
+        [2.4, 0.035, 0, 0],
+        [3.2, 0, 0, 0]
+      ]
+    });
+
+    const senalar = compileClip('senalar', 2.8, {
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.58, 0.12, -0.48],
+        [2.0, -0.58, 0.12, -0.48],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.06, 0.02, 0.16],
+        [2.0, 0.06, 0.02, 0.16],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightHand': [
+        [0, 0, 0, 0],
+        [0.7, 0, 0, -0.08],
+        [2.0, 0, 0, -0.08],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:RightHandIndex1': [
+        [0, 0, 0, 0],
+        [0.7, -0.2, 0, 0],
+        [2.0, -0.2, 0, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.1, -0.04, 0.12],
+        [2.0, -0.1, -0.04, 0.12],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, 0.02, 0.04, 0],
+        [2.0, 0.02, 0.04, 0],
+        [2.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.7, -0.02, 0.1, 0],
+        [2.0, -0.02, 0.1, 0],
+        [2.8, 0, 0, 0]
+      ]
+    });
+
+    const pasoConfiado = compileClip('paso_confiado', 2.4, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.6, 0.02, 0.035, 0],
+        [1.2, 0, 0, 0],
+        [1.8, -0.02, -0.035, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [0.6, -0.28, 0, 0.02],
+        [1.2, 0, 0, 0],
+        [1.8, 0.08, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftLeg': [
+        [0, 0, 0, 0],
+        [0.6, 0.14, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [0.6, 0.08, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0.28, 0, -0.02],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightLeg': [
+        [0, 0, 0, 0],
+        [0.6, 0, 0, 0],
+        [1.2, 0.14, 0, 0],
+        [1.8, 0.14, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.6, -0.12, 0, -0.12],
+        [1.2, 0, 0, 0],
+        [1.8, 0.12, 0, 0.12],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.6, 0.12, 0, 0.12],
+        [1.2, 0, 0, 0],
+        [1.8, -0.12, 0, -0.12],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.6, 0.015, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0.015, 0, 0],
+        [2.4, 0, 0, 0]
+      ]
+    });
+
+    const dialogoAmbasManos = compileClip('dialogo_ambas_manos', 3.6, {
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.8, 0.035, 0.025, 0],
+        [1.8, 0.015, -0.035, 0],
+        [2.8, 0.035, 0.025, 0],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:Spine2': [
+        [0, 0, 0, 0],
+        [0.8, 0.025, 0.025, 0],
+        [1.8, 0.015, -0.025, 0],
+        [2.8, 0.025, 0.025, 0],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.36, 0.1, -0.38],
+        [1.8, -0.22, 0.08, -0.22],
+        [2.8, -0.38, 0.12, -0.4],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.28, 0.04, 0.25],
+        [1.8, 0.18, 0, 0.15],
+        [2.8, 0.3, 0.05, 0.27],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:RightHand': [
+        [0, 0, 0, 0],
+        [0.8, 0.04, 0, 0.06],
+        [1.8, -0.03, 0, -0.04],
+        [2.8, 0.04, 0, 0.06],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:RightHandIndex1': [
+        [0, 0, 0, 0],
+        [0.8, -0.1, 0, 0],
+        [1.8, -0.05, 0, 0],
+        [2.8, -0.1, 0, 0],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.8, -0.38, -0.1, 0.4],
+        [1.8, -0.22, -0.08, 0.22],
+        [2.8, -0.36, -0.12, 0.38],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.8, 0.3, -0.05, -0.27],
+        [1.8, 0.18, 0, -0.15],
+        [2.8, 0.28, -0.04, -0.24],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftHand': [
+        [0, 0, 0, 0],
+        [0.8, -0.04, 0, -0.06],
+        [1.8, 0.03, 0, 0.04],
+        [2.8, -0.04, 0, -0.06],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:LeftHandIndex1': [
+        [0, 0, 0, 0],
+        [0.8, -0.1, 0, 0],
+        [1.8, -0.05, 0, 0],
+        [2.8, -0.1, 0, 0],
+        [3.6, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.8, 0.045, 0.035, 0],
+        [1.8, 0, -0.04, 0],
+        [2.8, 0.04, 0.025, 0],
+        [3.6, 0, 0, 0]
+      ]
+    });
+
+    const cambioPeso = compileClip('cambio_peso', 3.2, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.7, 0.015, 0.055, 0],
+        [1.6, -0.02, -0.05, 0],
+        [2.5, 0.012, 0.035, 0],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [0.7, -0.08, 0, 0.035],
+        [1.6, 0.07, 0, -0.025],
+        [2.5, -0.035, 0, 0.015],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [0.7, 0.07, 0, -0.025],
+        [1.6, -0.08, 0, 0.035],
+        [2.5, 0.04, 0, -0.015],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.7, 0.025, -0.035, 0],
+        [1.6, -0.02, 0.04, 0],
+        [2.5, 0.018, -0.025, 0],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.7, -0.12, 0.035, 0.1],
+        [1.6, 0.08, -0.025, -0.08],
+        [2.5, -0.06, 0.02, 0.05],
+        [3.2, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.7, 0.08, -0.025, -0.08],
+        [1.6, -0.12, 0.035, 0.1],
+        [2.5, 0.06, -0.02, -0.05],
+        [3.2, 0, 0, 0]
+      ]
+    });
+
+    const asentir = compileClip('asentir', 2.4, {
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.45, 0.12, 0.015, 0],
+        [0.9, -0.045, 0, 0],
+        [1.35, 0.1, -0.01, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:Neck': [
+        [0, 0, 0, 0],
+        [0.45, 0.035, 0, 0],
+        [0.9, -0.015, 0, 0],
+        [1.35, 0.03, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.45, 0.015, 0, 0],
+        [0.9, -0.01, 0, 0],
+        [1.35, 0.012, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.45, -0.08, 0.025, -0.08],
+        [1.35, -0.08, 0.025, -0.08],
+        [2.4, 0, 0, 0]
+      ]
+    });
+
+    const pasoFirme = compileClip('paso_firme', 2.4, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.55, 0.025, 0.035, 0],
+        [1.2, 0, 0, 0],
+        [1.8, -0.02, -0.035, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [0.55, -0.36, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0.1, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftLeg': [
+        [0, 0, 0, 0],
+        [0.55, 0.18, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [0.55, 0.1, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, -0.36, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightLeg': [
+        [0, 0, 0, 0],
+        [0.55, 0, 0, 0],
+        [1.2, 0.18, 0, 0],
+        [1.8, 0.18, 0, 0],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.55, 0.16, 0, 0.12],
+        [1.2, 0, 0, 0],
+        [1.8, -0.16, 0, -0.12],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.55, -0.16, 0, -0.12],
+        [1.2, 0, 0, 0],
+        [1.8, 0.16, 0, 0.12],
+        [2.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.55, 0.02, 0, 0],
+        [1.2, 0, 0, 0],
+        [1.8, 0.02, 0, 0],
+        [2.4, 0, 0, 0]
       ]
     });
 
@@ -988,7 +1896,26 @@
       acuerdo,
       hablar,
       invitar,
-      headBone: bones['mixamorig:Head'] || null
+      presentarse,
+      explicar,
+      enfatizar,
+      presentarTecnologia,
+      vision,
+      robotica,
+      salud,
+      ofrecer,
+      reflexionar,
+      paso_lateral: pasoLateral,
+      caminar,
+      mano_al_pecho: manoAlPecho,
+      brazos_abiertos: brazosAbiertos,
+      senalar,
+      paso_confiado: pasoConfiado,
+      dialogo_ambas_manos: dialogoAmbasManos,
+      cambio_peso: cambioPeso,
+      asentir,
+      paso_firme: pasoFirme,
+      headBone: bones['mixamorig:Head'] || bones['mixamorigHead'] || null
     };
   }
 
@@ -1459,6 +2386,7 @@
       this.scene = options.scene;
       this.camera = options.camera;
       this.cameraRig = options.cameraRig || null;
+      this.isAR = Boolean(options.isAR);
       this.renderer = options.renderer || null;
       this.audioEl = options.audioEl || document.getElementById('narration-audio');
       this.rootGroup = options.rootGroup || options.scene;
@@ -1474,6 +2402,23 @@
       this.audioListener = null;
       this.elapsed = 0;
       this.stageElapsed = 0;
+      this.nextGestureIndex = 0;
+      this.activeGestureEnd = 0;
+      this.holdGesture = false;
+      this.mouthOpen = 0;
+      this.mouthUniforms = [];
+      this.blinkUniforms = [];
+      this.blinkStartedAt = -1;
+      this.nextBlinkAt = 3.2;
+      this.arBreathBones = [];
+      this.arNeckBone = null;
+      this.arAppliedMicroOffsets = [];
+      this.arLookTargetYaw = 0;
+      this.arLookYaw = 0;
+      this.arMicroEuler = new THREE.Euler();
+      this.arMicroQuaternion = new THREE.Quaternion();
+      this.arBasePosition = new THREE.Vector3(0, 0, -2.5);
+      this.arBaseRotationY = 0;
       this.avatarLoaded = false;
       this.isDisposed = false;
       this.targetAvatarX = 0;
@@ -1484,7 +2429,7 @@
       setupLaPazLighting(this.rootGroup, this.renderer);
 
       // 2. Reconstrucción procedural de la fachada de UNIFRANZ La Paz
-      this.facade = buildUnifranzFacade(this.rootGroup);
+      this.facade = buildUnifranzFacade(this.rootGroup, this.isAR);
 
       // 3. Efectos 3D por etapa + UI 3D flotante
       this.effects = createStageEffects(this.rootGroup);
@@ -1524,6 +2469,145 @@
       } catch (err) {
         console.warn('[Unifranz] Fallback a audio estándar sin WebAudio espacial:', err);
       }
+    }
+
+    setupARMouthAnimation(model) {
+      if (!this.isAR) return;
+      this.mouthUniforms = [];
+      this.blinkUniforms = [];
+      model.traverse((child) => {
+        if (!child.isSkinnedMesh) return;
+        const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
+        const animatedMaterials = sourceMaterials.map((sourceMaterial) => {
+          const material = sourceMaterial.clone();
+          material.onBeforeCompile = (shader) => {
+            const commonChunk = '#include <common>';
+            const skinningChunk = '#include <skinning_vertex>';
+            const fragmentDitherChunk = '#include <dithering_fragment>';
+            if (
+              !shader.vertexShader.includes(commonChunk) ||
+              !shader.vertexShader.includes(skinningChunk) ||
+              !shader.fragmentShader.includes(commonChunk) ||
+              !shader.fragmentShader.includes(fragmentDitherChunk)
+            ) {
+              console.warn('[Unifranz AR] El material de Franz no expone los puntos de inserción para animar la boca.');
+              return;
+            }
+
+            const jawUniform = { value: this.mouthOpen };
+            const blinkUniform = { value: 0 };
+            this.mouthUniforms.push(jawUniform);
+            this.blinkUniforms.push(blinkUniform);
+            shader.uniforms.uARJawOpen = jawUniform;
+            shader.uniforms.uAREyeBlink = blinkUniform;
+            shader.vertexShader = shader.vertexShader.replace(
+              commonChunk,
+              `${commonChunk}\nuniform float uARJawOpen;\nuniform float uAREyeBlink;\nvarying float vARJawMask;`
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+              skinningChunk,
+              `${skinningChunk}
+float arMouthWidth = 1.0 - smoothstep(0.008, 0.026, abs(position.x));
+float arMouthFront = 1.0 - smoothstep(-0.058, -0.032, position.z);
+float arLowerJaw = smoothstep(0.842, 0.858, position.y) * (1.0 - smoothstep(0.874, 0.89, position.y));
+float arUpperLip = smoothstep(0.874, 0.884, position.y) * (1.0 - smoothstep(0.896, 0.91, position.y));
+float arMouthMask = arMouthWidth * arMouthFront;
+transformed.y -= uARJawOpen * 0.026 * arLowerJaw * arMouthMask;
+transformed.y += uARJawOpen * 0.006 * arUpperLip * arMouthMask;
+transformed.z += uARJawOpen * 0.006 * arLowerJaw * arMouthMask;
+float arLeftEye = 1.0 - smoothstep(0.009, 0.019, abs(position.x + 0.027));
+float arRightEye = 1.0 - smoothstep(0.009, 0.019, abs(position.x - 0.027));
+float arEyeHeight = 1.0 - smoothstep(0.009, 0.019, abs(position.y - 0.935));
+float arEyeFront = smoothstep(0.025, 0.055, position.z);
+float arBlinkMask = max(arLeftEye, arRightEye) * arEyeHeight * arEyeFront;
+float arUpperEyelid = smoothstep(0.931, 0.943, position.y);
+transformed.y -= uAREyeBlink * 0.012 * arBlinkMask * arUpperEyelid;
+vARJawMask = uARJawOpen * arMouthMask * smoothstep(0.858, 0.872, position.y) * (1.0 - smoothstep(0.88, 0.891, position.y));`
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+              commonChunk,
+              `${commonChunk}\nvarying float vARJawMask;`
+            );
+            shader.fragmentShader = shader.fragmentShader.replace(
+              fragmentDitherChunk,
+              `gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.055, 0.018, 0.018), clamp(vARJawMask * 0.72, 0.0, 0.72));
+${fragmentDitherChunk}`
+            );
+          };
+          material.customProgramCacheKey = () => 'unifranz-ar-talking-mouth-blink-v2';
+          material.needsUpdate = true;
+          return material;
+        });
+        child.material = Array.isArray(child.material) ? animatedMaterials : animatedMaterials[0];
+      });
+    }
+
+    updateARMouthAnimation(dt) {
+      if (!this.isAR) return;
+      const speaking = this.audioEl && !this.audioEl.paused;
+      const syllable = Math.max(
+        0,
+        Math.sin(this.elapsed * 10.8) * 0.72 + Math.sin(this.elapsed * 6.4 + 1.1) * 0.28
+      );
+      const targetOpen = speaking ? 0.12 + syllable * 0.72 : 0;
+      this.mouthOpen += (targetOpen - this.mouthOpen) * Math.min(1, dt * 13);
+      this.mouthUniforms.forEach((uniform) => {
+        uniform.value = this.mouthOpen;
+      });
+    }
+
+    clearARMicroAnimationOffsets() {
+      this.arAppliedMicroOffsets.forEach(({ bone, inverse }) => {
+        bone.quaternion.multiply(inverse).normalize();
+      });
+      this.arAppliedMicroOffsets.length = 0;
+    }
+
+    applyARMicroOffset(bone, pitch, yaw, roll) {
+      if (!bone) return;
+      this.arMicroEuler.set(pitch, yaw, roll, 'XYZ');
+      this.arMicroQuaternion.setFromEuler(this.arMicroEuler);
+      bone.quaternion.multiply(this.arMicroQuaternion).normalize();
+      this.arAppliedMicroOffsets.push({
+        bone,
+        inverse: this.arMicroQuaternion.clone().invert()
+      });
+    }
+
+    updateARMicroAnimations(dt) {
+      if (!this.isAR || !this.avatarRoot) return;
+
+      if (this.blinkStartedAt < 0 && this.elapsed >= this.nextBlinkAt) {
+        this.blinkStartedAt = this.elapsed;
+        this.nextBlinkAt = this.elapsed + 2.8 + Math.random() * 2.2;
+      }
+
+      let blink = 0;
+      if (this.blinkStartedAt >= 0) {
+        const progress = (this.elapsed - this.blinkStartedAt) / 0.18;
+        if (progress >= 1) {
+          this.blinkStartedAt = -1;
+        } else {
+          const pulse = Math.sin(Math.PI * Math.max(0, progress));
+          blink = pulse * pulse;
+        }
+      }
+      this.blinkUniforms.forEach((uniform) => {
+        uniform.value = blink;
+      });
+
+      const breathing = Math.sin(this.elapsed * 1.65) * 0.006;
+      this.arBreathBones.forEach(({ bone, influence }) => {
+        this.applyARMicroOffset(bone, breathing * influence, 0, 0);
+      });
+
+      const speaking = this.audioEl && !this.audioEl.paused;
+      this.arLookYaw += (this.arLookTargetYaw - this.arLookYaw) * Math.min(1, dt * 2.2);
+      const headPitch = Math.sin(this.elapsed * 0.42) * 0.018
+        + (speaking ? Math.sin(this.elapsed * 2.7) * 0.012 : 0);
+      const headYaw = Math.sin(this.elapsed * 0.31 + 0.7) * 0.025 + this.arLookYaw;
+      this.applyARMicroOffset(this.arNeckBone, headPitch * 0.35, headYaw * 0.3, 0);
+      this.applyARMicroOffset(this.headBone, headPitch * 0.65, headYaw * 0.7, 0);
     }
 
     loadAvatar() {
@@ -1570,6 +2654,9 @@
           });
 
           this.avatarRoot = model;
+          this.arBasePosition.copy(model.position);
+          this.arBaseRotationY = model.rotation.y;
+          this.setupARMouthAnimation(model);
           this.rootGroup.add(model);
 
           // Configurar THREE.AnimationMixer con clips embebidos y/o procedurales
@@ -1577,13 +2664,28 @@
           const clipPack = createAvatarAnimationClips(model);
           this.headBone = clipPack.headBone;
           if (this.headBone) this.headBaseQuat = this.headBone.quaternion.clone();
+          const bonesByName = {};
+          model.traverse((child) => {
+            if (child.isBone) bonesByName[child.name] = child;
+          });
+          this.arNeckBone = bonesByName.mixamorigNeck || null;
+          this.arBreathBones = [
+            { bone: bonesByName.mixamorigSpine1, influence: 0.35 },
+            { bone: bonesByName.mixamorigSpine2, influence: 0.65 }
+          ].filter(({ bone }) => bone);
 
           const embeddedByName = {};
           (gltf.animations || []).forEach((clip) => {
             embeddedByName[clip.name] = clip;
           });
 
-          ['saludar_01', 'acuerdo', 'hablar', 'invitar'].forEach((name) => {
+          [
+            'saludar_01', 'acuerdo', 'hablar', 'invitar', 'presentarse', 'explicar',
+            'enfatizar', 'presentarTecnologia', 'vision', 'robotica', 'salud',
+            'ofrecer', 'reflexionar', 'paso_lateral', 'caminar',
+            'mano_al_pecho', 'brazos_abiertos', 'senalar', 'paso_confiado',
+            'dialogo_ambas_manos', 'cambio_peso', 'asentir', 'paso_firme'
+          ].forEach((name) => {
             const clip = embeddedByName[name] || clipPack[name];
             if (clip) {
               this.actions[name] = this.mixer.clipAction(clip);
@@ -1619,21 +2721,33 @@
       const stage = UNIFRANZ_STAGES[index];
       if (!stage) return;
       this.stageElapsed = 0;
+      this.nextGestureIndex = 0;
+      this.activeGestureEnd = 0;
+      this.holdGesture = false;
 
       // Posición lateral en Etapa 5 al ejecutar "invitar" y apertura de puertas
-      this.targetAvatarX = index === 4 ? -0.78 : 0;
-      this.facade.setDoorsOpen(index === 4);
-      if (index === 4 && !this.cameraEnterLobby && this.cameraRig) {
-        this.enterLobbyStartPos = this.cameraRig.position.clone();
-      } else if (index !== 4 && this.cameraEnterLobby && this.cameraRig && this.enterLobbyStartPos) {
-        this.cameraRig.position.copy(this.enterLobbyStartPos);
-        this.enterLobbyStartPos = null;
+      this.targetAvatarX = !this.isAR && index === 4 ? -0.78 : 0;
+      this.arLookTargetYaw = 0;
+      this.arLookYaw = 0;
+      if (this.isAR && this.avatarRoot) {
+        this.avatarRoot.position.copy(this.arBasePosition);
+        this.avatarRoot.rotation.y = this.arBaseRotationY;
       }
-      this.cameraEnterLobby = index === 4;
+      this.facade.setDoorsOpen(index === 4);
+      if (!this.isAR) {
+        if (index === 4 && !this.cameraEnterLobby && this.cameraRig) {
+          this.enterLobbyStartPos = this.cameraRig.position.clone();
+        } else if (index !== 4 && this.cameraEnterLobby && this.cameraRig && this.enterLobbyStartPos) {
+          this.cameraRig.position.copy(this.enterLobbyStartPos);
+          this.enterLobbyStartPos = null;
+        }
+      }
+      this.cameraEnterLobby = !this.isAR && index === 4;
 
       if (this.avatarLoaded) {
-        const shouldLoopInitial = stage.initialAnim === stage.loopAnim;
-        this.playClip(stage.initialAnim, shouldLoopInitial);
+        const initialAnim = this.isAR ? stage.arInitialAnim : stage.initialAnim;
+        const shouldLoopInitial = initialAnim === stage.loopAnim;
+        this.playClip(initialAnim, shouldLoopInitial);
       }
     }
 
@@ -1710,6 +2824,66 @@
       }
     }
 
+    getStageElapsed(stage) {
+      if (this.audioEl && !this.audioEl.paused && Number.isFinite(this.audioEl.duration) && this.audioEl.duration > 0) {
+        const nominalTime = (this.audioEl.currentTime / this.audioEl.duration) * DEFAULT_REF_DURATION;
+        return Math.max(0, nominalTime - stage.nominalStart);
+      }
+      return this.stageElapsed;
+    }
+
+    updateStageChoreography(stage, elapsed) {
+      if (!this.avatarLoaded) return;
+      const narrationPlaying = this.audioEl && !this.audioEl.paused;
+      if (!this.isAR) {
+        if (
+          !this.activeGestureEnd &&
+          stage.initialAnim !== stage.loopAnim &&
+          this.stageElapsed >= stage.initialAnimDuration
+        ) {
+          this.playClip(stage.loopAnim, true);
+        }
+        return;
+      }
+      if (!narrationPlaying) {
+        if (
+          !this.activeGestureEnd &&
+          !this.holdGesture &&
+          stage.initialAnim !== stage.loopAnim &&
+          this.stageElapsed >= stage.initialAnimDuration
+        ) {
+          this.playClip(stage.loopAnim, true);
+        }
+        return;
+      }
+
+      const cues = stage.arCues || [];
+      while (this.nextGestureIndex < cues.length && elapsed >= cues[this.nextGestureIndex].at) {
+        const cue = cues[this.nextGestureIndex++];
+        const action = this.actions[cue.clip];
+        const duration = action ? action.getClip().duration : 0;
+        if (elapsed >= cue.at + duration && !cue.hold) continue;
+
+        this.arLookTargetYaw = cue.lookYaw || 0;
+        this.holdGesture = Boolean(cue.hold);
+        this.activeGestureEnd = cue.hold ? Infinity : cue.at + duration;
+        this.playClip(cue.clip, false);
+      }
+
+      if (this.holdGesture) return;
+      if (this.activeGestureEnd && elapsed >= this.activeGestureEnd) {
+        this.activeGestureEnd = 0;
+        this.arLookTargetYaw = 0;
+        this.playClip(stage.loopAnim, true);
+      } else if (
+        !this.activeGestureEnd &&
+        stage.initialAnim !== stage.loopAnim &&
+        elapsed >= stage.initialAnimDuration
+      ) {
+        this.playClip(stage.loopAnim, true);
+      }
+    }
+
     handlePointerClick(ndcX, ndcY) {
       if (!this.camera || !window.THREE) return false;
       const raycaster = new THREE.Raycaster();
@@ -1731,18 +2905,21 @@
       // Sincronizar cambio automático de etapa con el progreso de DIscursoPrincipal.mp3
       this.syncStageWithAudioTime();
 
-      // Transición de animación inicial (ej: saludar_01 0-4s -> hablar en bucle)
       const stage = UNIFRANZ_STAGES[this.currentStageIndex];
-      if (this.avatarLoaded && stage && stage.initialAnim !== stage.loopAnim && this.stageElapsed >= stage.initialAnimDuration) {
-        this.playClip(stage.loopAnim, true);
-      }
-
+      if (stage) this.updateStageChoreography(stage, this.getStageElapsed(stage));
+      this.clearARMicroAnimationOffsets();
       if (this.mixer) {
         this.mixer.update(safeDt);
       }
+      if (this.isAR && this.avatarRoot) {
+        this.avatarRoot.position.copy(this.arBasePosition);
+        this.avatarRoot.rotation.y = this.arBaseRotationY;
+      }
+      this.updateARMouthAnimation(safeDt);
+      this.updateARMicroAnimations(safeDt);
 
       // Paso lateral suave en Etapa 5 (invitar) + ligera modulación facial/cabeza al hablar
-      if (this.avatarRoot) {
+      if (this.avatarRoot && !this.isAR) {
         this.avatarRoot.position.x += (this.targetAvatarX - this.avatarRoot.position.x) * Math.min(1, safeDt * 2.5);
         if (this.audioEl && !this.audioEl.paused && this.headBone && this.headBaseQuat) {
           this.headBone.rotation.x += Math.sin(this.elapsed * 11.5) * 0.014;
@@ -1806,6 +2983,7 @@
           camera,
           cameraRig: rigObj,
           rootGroup: this.el.object3D,
+          isAR: this.data.rigSelector === '#pokear-camera-rig',
           audioEl: document.getElementById('narration-audio') || document.getElementById('vr-scene-audio')
         });
 

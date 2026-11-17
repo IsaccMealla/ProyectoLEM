@@ -330,9 +330,6 @@
   function syncSitePresence() {
     const userCoordinates = getARUserCoordinates();
     const inRange = Boolean(userCoordinates) && isInSite();
-    if (!inRange) {
-      arAnchorLocked = false;
-    }
     updateGeographicAnchor(userCoordinates);
 
     const anchor = getWorldAnchor();
@@ -370,7 +367,7 @@
         }
 
         if (wasHidden) {
-          placeSceneInFrontOfCamera();
+          if (!arAnchorLocked) placeSceneInFrontOfCamera();
           const manager = getUnifranzManager();
           if (manager) manager.playStageChoreography(currentSceneIndex);
           if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('success');

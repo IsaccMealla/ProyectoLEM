@@ -10,12 +10,6 @@ assets/videos/
 │   ├── escena-3.mp4
 │   ├── escena-4.mp4
 │   └── escena-5.mp4
-└── eduardo-abaroa/
-    ├── Escena2.1.mp4
-    ├── Escena2.2.mp4
-    ├── Escena2.3.mp4
-    ├── Escena2.4.mp4
-    └── Escena2.5.mp4
 ```
 
-Los videos se cargan al seleccionar su escena desde el recorrido correspondiente. Si todavía no existe un archivo, esa escena simplemente no mostrará el panel de video.
+Los videos se cargan al seleccionar su escena. Si todavía no existe un archivo, esa escena simplemente no mostrará el panel de video.
