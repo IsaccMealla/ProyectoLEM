@@ -2159,8 +2159,62 @@
       celebrar,
       caminar_elegante: caminarElegante,
       giro_escenico: giroEscenico,
+      caminar_natural: createNaturalWalkClip(),
       headBone: bones['mixamorig:Head'] || bones['mixamorigHead'] || null
     };
+
+    // Clip 29: caminar_natural — ciclo biomecánico completo (2 pasos) con contacto de talón, apoyo,
+    // despegue y balanceo con flexión de rodilla, tobillos, contra-rotación de cadera/torso y braceo.
+    function createNaturalWalkClip() {
+      const D = 1.1;
+      const samples = 12;
+      // Curvas por fase normalizada [0..1] de la pierna izquierda (la derecha va desfasada 0.5)
+      const thigh = [[0, -0.36], [0.12, -0.22], [0.3, 0.02], [0.5, 0.3], [0.62, 0.12], [0.78, -0.3], [0.9, -0.4], [1, -0.36]];
+      const knee = [[0, 0.06], [0.12, 0.22], [0.3, 0.1], [0.5, 0.2], [0.62, 0.72], [0.74, 0.88], [0.88, 0.32], [1, 0.06]];
+      const ankle = [[0, -0.16], [0.12, 0.04], [0.3, 0.08], [0.5, 0.28], [0.62, 0.12], [0.8, -0.08], [1, -0.16]];
+      const sample = (curve, p) => {
+        const t = ((p % 1) + 1) % 1;
+        for (let i = 0; i < curve.length - 1; i++) {
+          const [t0, v0] = curve[i];
+          const [t1, v1] = curve[i + 1];
+          if (t >= t0 && t <= t1) {
+            const k = (t - t0) / Math.max(1e-5, t1 - t0);
+            const s = k * k * (3 - 2 * k);
+            return v0 + (v1 - v0) * s;
+          }
+        }
+        return curve[0][1];
+      };
+      const defs = {
+        'mixamorig:LeftUpLeg': [], 'mixamorig:LeftLeg': [], 'mixamorig:LeftFoot': [],
+        'mixamorig:RightUpLeg': [], 'mixamorig:RightLeg': [], 'mixamorig:RightFoot': [],
+        'mixamorig:Hips': [], 'mixamorig:Spine': [], 'mixamorig:Spine1': [], 'mixamorig:Head': [],
+        'mixamorig:LeftArm': [], 'mixamorig:RightArm': [],
+        'mixamorig:LeftForeArm': [], 'mixamorig:RightForeArm': []
+      };
+      for (let i = 0; i <= samples; i++) {
+        const p = i / samples;
+        const t = p * D;
+        const w = Math.sin(p * Math.PI * 2);
+        defs['mixamorig:LeftUpLeg'].push([t, sample(thigh, p), 0, 0]);
+        defs['mixamorig:LeftLeg'].push([t, sample(knee, p), 0, 0]);
+        defs['mixamorig:LeftFoot'].push([t, sample(ankle, p), 0, 0]);
+        defs['mixamorig:RightUpLeg'].push([t, sample(thigh, p + 0.5), 0, 0]);
+        defs['mixamorig:RightLeg'].push([t, sample(knee, p + 0.5), 0, 0]);
+        defs['mixamorig:RightFoot'].push([t, sample(ankle, p + 0.5), 0, 0]);
+        // Pelvis: giro y balanceo lateral; torso contra-rota; cabeza estabilizada
+        defs['mixamorig:Hips'].push([t, 0.02, w * 0.07, Math.sin(p * Math.PI * 4) * 0.025]);
+        defs['mixamorig:Spine'].push([t, 0.03, -w * 0.04, 0]);
+        defs['mixamorig:Spine1'].push([t, 0.02, -w * 0.04, 0]);
+        defs['mixamorig:Head'].push([t, -0.02, w * 0.03, 0]);
+        // Braceo opuesto a la pierna con codo ligeramente flexionado
+        defs['mixamorig:LeftArm'].push([t, -w * 0.2, 0, 0.1]);
+        defs['mixamorig:RightArm'].push([t, -w * 0.2, 0, -0.1]);
+        defs['mixamorig:LeftForeArm'].push([t, 0.12 + Math.max(0, -w) * 0.16, 0, 0]);
+        defs['mixamorig:RightForeArm'].push([t, 0.12 + Math.max(0, w) * 0.16, 0, 0]);
+      }
+      return compileClip('caminar_natural', D, defs);
+    }
   }
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -2781,6 +2835,155 @@
   }
 
   // ───────────────────────────────────────────────────────────────────────────
+  // 6b. Efectos visuales que siguen a Franz Tamayo (halo, foco, huellas, ondas de voz, aura)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const LOCOMOTION_CLIPS = new Set(['caminar', 'caminar_elegante', 'paso_confiado', 'paso_firme', 'paso_lateral']);
+
+  function createAvatarFX(parentGroup) {
+    const group = new THREE.Group();
+    group.name = 'unifranz-avatar-fx';
+    parentGroup.add(group);
+    const additive = (color, opacity) => new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    // Halo dorado en el suelo bajo sus pies
+    const haloMat = additive(0xffd166, 0.5);
+    const halo = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 48), haloMat);
+    halo.rotation.x = -Math.PI / 2;
+    const haloFillMat = additive(0xffd166, 0.16);
+    const haloFill = new THREE.Mesh(new THREE.CircleGeometry(0.42, 40), haloFillMat);
+    haloFill.rotation.x = -Math.PI / 2;
+    const haloGroup = new THREE.Group();
+    haloGroup.position.y = 0.02;
+    haloGroup.add(halo, haloFill);
+    group.add(haloGroup);
+
+    // Foco volumétrico cenital (cono de luz)
+    const spotMat = additive(0xfff1c1, 0.07);
+    const spot = new THREE.Mesh(new THREE.ConeGeometry(0.95, 4.6, 32, 1, true), spotMat);
+    spot.position.y = 2.3;
+    group.add(spot);
+
+    // Huellas luminosas (pool reutilizable)
+    const steps = [];
+    for (let i = 0; i < 10; i++) {
+      const mat = additive(0xffd166, 0);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.06, 0.11, 24), mat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.visible = false;
+      group.add(ring);
+      steps.push({ mesh: ring, mat, age: 99 });
+    }
+    let stepCursor = 0;
+
+    // Ondas de voz que salen de su boca al hablar
+    const waves = [];
+    for (let i = 0; i < 3; i++) {
+      const mat = additive(0xffe7a3, 0);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.007, 8, 40), mat);
+      group.add(ring);
+      waves.push({ mesh: ring, mat, offset: i / 3 });
+    }
+
+    // Aura de partículas en espiral ascendente alrededor de Franz
+    const auraCount = 70;
+    const auraPos = new Float32Array(auraCount * 3);
+    const auraSeeds = [];
+    for (let i = 0; i < auraCount; i++) {
+      auraSeeds.push({ a: Math.random() * Math.PI * 2, r: 0.45 + Math.random() * 0.35, h: Math.random(), s: 0.25 + Math.random() * 0.4 });
+    }
+    const auraGeo = new THREE.BufferGeometry();
+    auraGeo.setAttribute('position', new THREE.BufferAttribute(auraPos, 3));
+    const auraMat = new THREE.PointsMaterial({
+      color: 0xffd166,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.5,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const aura = new THREE.Points(auraGeo, auraMat);
+    group.add(aura);
+
+    const themeColor = new THREE.Color(0xffd166);
+    const white = new THREE.Color(0xffffff);
+
+    return {
+      group,
+      setTheme(hex) {
+        themeColor.set(hex || '#ffd166');
+        haloMat.color.copy(themeColor);
+        haloFillMat.color.copy(themeColor);
+        auraMat.color.copy(themeColor).lerp(white, 0.3);
+        spotMat.color.copy(themeColor).lerp(white, 0.75);
+        steps.forEach((s) => s.mat.color.copy(themeColor).lerp(white, 0.2));
+      },
+      spawnStep(x, z) {
+        const s = steps[stepCursor];
+        stepCursor = (stepCursor + 1) % steps.length;
+        s.mesh.position.set(x, 0.025, z);
+        s.mesh.visible = true;
+        s.age = 0;
+      },
+      update(dt, elapsed, st) {
+        const scale = st.height / 2.35;
+        haloGroup.position.x = st.x;
+        haloGroup.position.z = st.z;
+        haloGroup.scale.setScalar(scale * (1 + Math.sin(elapsed * 2.4) * 0.05 + st.voice * 0.12));
+        haloMat.opacity = 0.32 + 0.16 * Math.sin(elapsed * 2.4) + st.voice * 0.25;
+        halo.rotation.z = elapsed * 0.6;
+
+        spot.position.set(st.x, 2.3 * scale, st.z);
+        spot.scale.setScalar(scale);
+        spotMat.opacity = 0.05 + 0.03 * Math.sin(elapsed * 1.3) + st.voice * 0.05;
+
+        steps.forEach((s) => {
+          if (s.age > 1.4) {
+            s.mesh.visible = false;
+            return;
+          }
+          s.age += dt;
+          const k = s.age / 1.4;
+          s.mesh.scale.setScalar(scale * (1 + k * 3.2));
+          s.mat.opacity = (1 - k) * 0.85;
+        });
+
+        // Ondas frente a la boca, orientadas según el giro del cuerpo
+        const fx = Math.sin(st.rotY);
+        const fz = Math.cos(st.rotY);
+        const mouthY = st.height * 0.885;
+        waves.forEach((w) => {
+          const k = ((elapsed * 1.4 + w.offset) % 1);
+          w.mesh.position.set(st.x + fx * (0.22 + k * 0.55) * scale, mouthY, st.z + fz * (0.22 + k * 0.55) * scale);
+          w.mesh.rotation.set(0, st.rotY, 0);
+          w.mesh.scale.setScalar(scale * (0.6 + k * 1.9));
+          w.mat.opacity = st.voice * (1 - k) * 0.55;
+          w.mat.color.copy(themeColor).lerp(white, 0.55);
+        });
+
+        const arr = auraGeo.attributes.position.array;
+        for (let i = 0; i < auraCount; i++) {
+          const sd = auraSeeds[i];
+          const h = (sd.h + elapsed * sd.s * 0.18) % 1;
+          const a = sd.a + elapsed * sd.s * 1.4;
+          arr[i * 3] = st.x + Math.cos(a) * sd.r * scale;
+          arr[i * 3 + 1] = h * st.height * 1.05;
+          arr[i * 3 + 2] = st.z + Math.sin(a) * sd.r * scale;
+        }
+        auraGeo.attributes.position.needsUpdate = true;
+        auraMat.opacity = 0.28 + st.voice * 0.45 + (st.walking ? 0.1 : 0);
+      }
+    };
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
   // 7. ExperienceManager: Orquestador de las 5 Etapas, Avatar, Audio y Cámara
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -2827,6 +3030,18 @@
       this.stageTargetYaw = 0;
       this.stageMoveSpeed = 1.0;
       this.lastChoreoElapsed = 0;
+      this.isWalking = false;
+      this.walkAction = null;
+      this.lastStepIdx = -1;
+      this.pendingGesture = null;
+      this.avatarHeight = this.isAR ? 2.35 : 2.05;
+      this.mouthWide = 0;
+      this.mouthWideUniforms = [];
+      this.voiceLevel = 0;
+      this.audioAnalyser = null;
+      this.freqData = null;
+      this.analyserRate = 44100;
+      this.analyserSilentFor = 0;
       this.avatarLoaded = false;
       this.isDisposed = false;
       this.targetAvatarX = 0;
@@ -2849,6 +3064,7 @@
       this.ui3D = create3DExperiencePanel(this.rootGroup);
       this.ui3D.panelGroup.position.set(0, 0.86, -3.55);
       this.ui3D.panelGroup.scale.setScalar(1.55);
+      this.avatarFX = createAvatarFX(this.rootGroup);
 
       // 4. Audio Posicional de Three.js originado en Franz Tamayo
       this.setupPositionalAudio();
@@ -2884,12 +3100,33 @@
       } catch (err) {
         console.warn('[Unifranz] Fallback a audio estándar sin WebAudio espacial:', err);
       }
+
+      // Analizador de frecuencias de la voz real para sincronizar la boca (lip-sync)
+      try {
+        const srcNode = this.audioEl.__unifranzSourceNode;
+        if (srcNode && srcNode.context && typeof srcNode.context.createAnalyser === 'function') {
+          let analyser = this.audioEl.__unifranzAnalyser;
+          if (!analyser || analyser.context !== srcNode.context) {
+            analyser = srcNode.context.createAnalyser();
+            analyser.fftSize = 1024;
+            analyser.smoothingTimeConstant = 0.5;
+            srcNode.connect(analyser);
+            this.audioEl.__unifranzAnalyser = analyser;
+          }
+          this.audioAnalyser = analyser;
+          this.freqData = new Uint8Array(analyser.frequencyBinCount);
+          this.analyserRate = srcNode.context.sampleRate || 44100;
+        }
+      } catch (err) {
+        console.warn('[Unifranz] Lip-sync por análisis de audio no disponible; se usará el patrón sintético:', err);
+        this.audioAnalyser = null;
+      }
     }
 
     setupARMouthAnimation(model) {
-      if (!this.isAR) return;
       this.mouthUniforms = [];
       this.blinkUniforms = [];
+      this.mouthWideUniforms = [];
       model.traverse((child) => {
         if (!child.isSkinnedMesh) return;
         const sourceMaterials = Array.isArray(child.material) ? child.material : [child.material];
@@ -2911,13 +3148,16 @@
 
             const jawUniform = { value: this.mouthOpen };
             const blinkUniform = { value: 0 };
+            const wideUniform = { value: 0 };
             this.mouthUniforms.push(jawUniform);
             this.blinkUniforms.push(blinkUniform);
+            this.mouthWideUniforms.push(wideUniform);
             shader.uniforms.uARJawOpen = jawUniform;
             shader.uniforms.uAREyeBlink = blinkUniform;
+            shader.uniforms.uARMouthWide = wideUniform;
             shader.vertexShader = shader.vertexShader.replace(
               commonChunk,
-              `${commonChunk}\nuniform float uARJawOpen;\nuniform float uAREyeBlink;\nvarying float vARJawMask;`
+              `${commonChunk}\nuniform float uARJawOpen;\nuniform float uAREyeBlink;\nuniform float uARMouthWide;\nvarying float vARJawMask;`
             );
             shader.vertexShader = shader.vertexShader.replace(
               skinningChunk,
@@ -2927,9 +3167,12 @@ float arMouthFront = 1.0 - smoothstep(-0.058, -0.032, position.z);
 float arLowerJaw = smoothstep(0.842, 0.858, position.y) * (1.0 - smoothstep(0.874, 0.89, position.y));
 float arUpperLip = smoothstep(0.874, 0.884, position.y) * (1.0 - smoothstep(0.896, 0.91, position.y));
 float arMouthMask = arMouthWidth * arMouthFront;
+float arLipBand = (arLowerJaw + arUpperLip) * arMouthFront * (1.0 - smoothstep(0.02, 0.034, abs(position.x)));
 transformed.y -= uARJawOpen * 0.026 * arLowerJaw * arMouthMask;
 transformed.y += uARJawOpen * 0.006 * arUpperLip * arMouthMask;
 transformed.z += uARJawOpen * 0.006 * arLowerJaw * arMouthMask;
+transformed.x += uARMouthWide * 0.0045 * sign(position.x) * arLipBand;
+transformed.z += (1.0 - uARMouthWide) * uARJawOpen * 0.004 * arLipBand;
 float arLeftEye = 1.0 - smoothstep(0.009, 0.019, abs(position.x + 0.027));
 float arRightEye = 1.0 - smoothstep(0.009, 0.019, abs(position.x - 0.027));
 float arEyeHeight = 1.0 - smoothstep(0.009, 0.019, abs(position.y - 0.935));
@@ -2949,7 +3192,7 @@ vARJawMask = uARJawOpen * arMouthMask * smoothstep(0.858, 0.872, position.y) * (
 ${fragmentDitherChunk}`
             );
           };
-          material.customProgramCacheKey = () => 'unifranz-ar-talking-mouth-blink-v2';
+          material.customProgramCacheKey = () => 'unifranz-ar-talking-mouth-blink-v3';
           material.needsUpdate = true;
           return material;
         });
@@ -2958,17 +3201,69 @@ ${fragmentDitherChunk}`
     }
 
     updateARMouthAnimation(dt) {
-      if (!this.isAR) return;
       const speaking = this.audioEl && !this.audioEl.paused;
+      let targetOpen = 0;
+      let targetWide = 0.35;
+
+      if (speaking && this.audioAnalyser && this.freqData) {
+        // Bandas de voz: graves/vocales (150-900 Hz), medios (900-2500 Hz) y sibilantes (2.5-6 kHz)
+        this.audioAnalyser.getByteFrequencyData(this.freqData);
+        const binHz = this.analyserRate / (this.freqData.length * 2);
+        const band = (lo, hi) => {
+          const a = Math.max(1, Math.floor(lo / binHz));
+          const b = Math.min(this.freqData.length - 1, Math.ceil(hi / binHz));
+          let sum = 0;
+          for (let i = a; i <= b; i++) sum += this.freqData[i];
+          return sum / Math.max(1, (b - a + 1) * 255);
+        };
+        const low = band(150, 900);
+        const mid = band(900, 2500);
+        const high = band(2500, 6000);
+        const energy = low * 0.65 + mid * 0.55;
+
+        if (energy < 0.004) this.analyserSilentFor += dt;
+        else this.analyserSilentFor = 0;
+
+        if (this.analyserSilentFor < 1.5) {
+          targetOpen = Math.min(1, Math.max(0, (energy - 0.07) * 2.6));
+          // Sonidos agudos ("s", "e", "i") estiran los labios; graves ("o", "u") los redondean
+          targetWide = Math.min(1, Math.max(0, (high + mid * 0.4) / (low + 0.06) * 0.7));
+        } else {
+          targetOpen = this.getSyntheticSyllable();
+        }
+      } else if (speaking) {
+        targetOpen = this.getSyntheticSyllable();
+        targetWide = 0.35 + Math.sin(this.elapsed * 4.3) * 0.25;
+      } else {
+        const activeClipName = this.activeAction && typeof this.activeAction.getClip === 'function'
+          ? this.activeAction.getClip().name
+          : '';
+        if (['hablar', 'explicar', 'presentarse', 'dialogo_ambas_manos', 'enfatizar'].includes(activeClipName)) {
+          targetOpen = this.getSyntheticSyllable() * 0.55;
+          targetWide = 0.35 + Math.sin(this.elapsed * 4.3) * 0.18;
+        }
+      }
+
+      const attack = targetOpen > this.mouthOpen ? 24 : 12;
+      this.mouthOpen += (targetOpen - this.mouthOpen) * Math.min(1, dt * attack);
+      this.mouthWide += (targetWide - this.mouthWide) * Math.min(1, dt * 10);
+      this.voiceLevel += (this.mouthOpen - this.voiceLevel) * Math.min(1, dt * 6);
+      this.mouthUniforms.forEach((uniform) => {
+        uniform.value = this.mouthOpen;
+      });
+      this.mouthWideUniforms.forEach((uniform) => {
+        uniform.value = this.mouthWide;
+      });
+    }
+
+    getSyntheticSyllable() {
+      // Patrón de sílabas con pausas de frase cuando el análisis de audio no está disponible
       const syllable = Math.max(
         0,
         Math.sin(this.elapsed * 10.8) * 0.72 + Math.sin(this.elapsed * 6.4 + 1.1) * 0.28
       );
-      const targetOpen = speaking ? 0.12 + syllable * 0.72 : 0;
-      this.mouthOpen += (targetOpen - this.mouthOpen) * Math.min(1, dt * 13);
-      this.mouthUniforms.forEach((uniform) => {
-        uniform.value = this.mouthOpen;
-      });
+      const phrase = Math.sin(this.elapsed * 0.85) > -0.75 ? 1 : 0.08;
+      return (0.1 + syllable * 0.75) * phrase;
     }
 
     clearARMicroAnimationOffsets() {
@@ -2990,7 +3285,7 @@ ${fragmentDitherChunk}`
     }
 
     updateARMicroAnimations(dt) {
-      if (!this.isAR || !this.avatarRoot) return;
+      if (!this.avatarRoot) return;
 
       if (this.blinkStartedAt < 0 && this.elapsed >= this.nextBlinkAt) {
         this.blinkStartedAt = this.elapsed;
@@ -3019,7 +3314,7 @@ ${fragmentDitherChunk}`
       const speaking = this.audioEl && !this.audioEl.paused;
       this.arLookYaw += (this.arLookTargetYaw - this.arLookYaw) * Math.min(1, dt * 2.2);
       const headPitch = Math.sin(this.elapsed * 0.42) * 0.018
-        + (speaking ? Math.sin(this.elapsed * 2.7) * 0.012 : 0);
+        + (speaking ? Math.sin(this.elapsed * 2.7) * 0.012 + this.voiceLevel * 0.035 : 0);
       const headYaw = Math.sin(this.elapsed * 0.31 + 0.7) * 0.025 + this.arLookYaw;
       this.applyARMicroOffset(this.arNeckBone, headPitch * 0.35, headYaw * 0.3, 0);
       this.applyARMicroOffset(this.headBone, headPitch * 0.65, headYaw * 0.7, 0);
@@ -3048,7 +3343,7 @@ ${fragmentDitherChunk}`
           // Escalar a presencia monumental y real delante del pórtico en (0, 0, -5.2)
           const box = new THREE.Box3().setFromObject(model);
           const height = box.max.y - box.min.y;
-          const targetHeight = this.isAR ? 2.35 : 2.05;
+          const targetHeight = this.avatarHeight;
           const scaleFactor = height > 0.05 ? targetHeight / height : 2.35;
 
           const startStage = UNIFRANZ_STAGES[this.currentStageIndex];
@@ -3107,7 +3402,8 @@ ${fragmentDitherChunk}`
             'ofrecer', 'reflexionar', 'paso_lateral', 'caminar',
             'mano_al_pecho', 'brazos_abiertos', 'senalar', 'paso_confiado',
             'dialogo_ambas_manos', 'cambio_peso', 'asentir', 'paso_firme',
-            'reverencia', 'contemplar', 'celebrar', 'caminar_elegante', 'giro_escenico'
+            'reverencia', 'contemplar', 'celebrar', 'caminar_elegante', 'giro_escenico',
+            'caminar_natural'
           ].forEach((name) => {
             const clip = embeddedByName[name] || clipPack[name];
             if (clip) {
@@ -3126,18 +3422,42 @@ ${fragmentDitherChunk}`
       );
     }
 
-    playClip(name, loop = true) {
+    playClip(name, loop = true, fade = 0.35) {
       if (!this.mixer || !this.actions[name]) return;
       const next = this.actions[name];
       if (this.activeAction === next) return;
       next.reset();
+      if (name !== 'caminar_natural') next.timeScale = 1;
       next.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, loop ? Infinity : 1);
       next.clampWhenFinished = !loop;
-      next.fadeIn(0.35).play();
+      next.fadeIn(fade).play();
       if (this.activeAction) {
-        this.activeAction.fadeOut(0.35);
+        this.activeAction.fadeOut(fade);
       }
       this.activeAction = next;
+    }
+
+    startWalking() {
+      if (!this.actions.caminar_natural) return;
+      this.isWalking = true;
+      this.lastStepIdx = -1;
+      this.walkAction = this.actions.caminar_natural;
+      this.playClip('caminar_natural', true, 0.3);
+    }
+
+    stopWalking(stage) {
+      this.isWalking = false;
+      const pending = this.pendingGesture;
+      this.pendingGesture = null;
+      const stillActive = pending && this.actions[pending.clip];
+      if (stillActive) {
+        const dur = this.actions[pending.clip].getClip().duration;
+        this.activeGestureEnd = this.holdGesture ? Infinity : this.lastChoreoElapsed + dur;
+        this.playClip(pending.clip, pending.loop, 0.3);
+      } else if (stage) {
+        this.activeGestureEnd = 0;
+        this.playClip(stage.loopAnim, true, 0.4);
+      }
     }
 
     playStageChoreography(index) {
@@ -3148,6 +3468,8 @@ ${fragmentDitherChunk}`
       this.nextGestureIndex = 0;
       this.activeGestureEnd = 0;
       this.holdGesture = false;
+      this.isWalking = false;
+      this.pendingGesture = null;
 
       const startPos = stage.arStartPos || { x: 0, z: -5.2, yaw: 0 };
       this.stageTargetX = startPos.x;
@@ -3197,6 +3519,7 @@ ${fragmentDitherChunk}`
       const stage = UNIFRANZ_STAGES[clamped];
 
       this.effects.setStage(clamped);
+      if (this.avatarFX) this.avatarFX.setTheme(stage.themeColor);
       this.ui3D.renderStageText(stage);
       this.playStageChoreography(clamped);
 
@@ -3290,12 +3613,25 @@ ${fragmentDitherChunk}`
 
         if (effectiveElapsed >= cue.at + duration && !cue.hold) continue;
 
+        // Las caminatas las resuelve la capa de locomoción (desplazamiento real + ciclo de piernas)
+        if (LOCOMOTION_CLIPS.has(cue.clip)) {
+          this.activeGestureEnd = 0;
+          this.holdGesture = false;
+          continue;
+        }
+
         this.arLookTargetYaw = cue.lookYaw || 0;
         this.holdGesture = Boolean(cue.hold);
         this.activeGestureEnd = cue.hold ? Infinity : cue.at + duration;
-        this.playClip(cue.clip, isLoopWalk);
+        if (this.isWalking) {
+          // Ejecutar el gesto en cuanto llegue a su marca en el escenario
+          this.pendingGesture = { clip: cue.clip, loop: false };
+        } else {
+          this.playClip(cue.clip, isLoopWalk);
+        }
       }
 
+      if (this.isWalking) return;
       if (this.holdGesture) return;
       if (this.activeGestureEnd && effectiveElapsed >= this.activeGestureEnd) {
         this.activeGestureEnd = 0;
@@ -3338,21 +3674,62 @@ ${fragmentDitherChunk}`
         this.mixer.update(safeDt);
       }
 
-      // Desplazamiento cinemático real de Franz Tamayo sobre la plaza (sin congelarlo en un solo punto)
+      // Desplazamiento cinemático real de Franz Tamayo sobre la plaza con ciclo de marcha sincronizado
       if (this.avatarRoot) {
         const dx = this.stageTargetX - this.avatarRoot.position.x;
         const dz = this.stageTargetZ - this.avatarRoot.position.z;
         const distToTarget = Math.hypot(dx, dz);
+        const heightScale = this.avatarHeight / 1.75;
         let desiredRotY = this.arBaseRotationY + this.stageTargetYaw;
 
+        if (this.avatarLoaded && !this.isWalking && distToTarget > 0.12) {
+          this.startWalking();
+        } else if (this.isWalking && distToTarget <= 0.04) {
+          this.stopWalking(stage);
+        }
+
         if (distToTarget > 0.04) {
-          const step = Math.min(distToTarget, Math.max(0.55, this.stageMoveSpeed) * safeDt);
+          const speed = Math.max(0.75, this.stageMoveSpeed) * 1.1;
+          const step = Math.min(distToTarget, speed * safeDt);
           this.avatarRoot.position.x += (dx / distToTarget) * step;
           this.avatarRoot.position.z += (dz / distToTarget) * step;
-          // Orientación escénica semi-abierta al caminar hacia el objetivo
-          const travelTurn = Math.atan2(dx, Math.max(0.65, dz)) * 0.48;
-          desiredRotY = this.arBaseRotationY + travelTurn + this.stageTargetYaw * 0.45;
-          this.avatarRoot.position.y = Math.abs(Math.sin(this.elapsed * 7.5)) * 0.024;
+
+          // Mirar hacia donde camina (giro completo en trayectos largos, parcial en pasos cortos)
+          const travelYaw = Math.atan2(dx, dz);
+          const facingYaw = this.arBaseRotationY + this.stageTargetYaw;
+          let turnDiff = travelYaw - facingYaw;
+          while (turnDiff > Math.PI) turnDiff -= Math.PI * 2;
+          while (turnDiff < -Math.PI) turnDiff += Math.PI * 2;
+          const turnBlend = Math.min(1, Math.max(0, (distToTarget - 0.1) / 0.4));
+          desiredRotY = facingYaw + turnDiff * turnBlend;
+
+          // Cadencia sincronizada a la velocidad real para evitar que los pies "patinen"
+          if (this.walkAction) {
+            const strideLength = 1.45 * heightScale;
+            const cycle = this.walkAction.getClip().duration;
+            this.walkAction.timeScale = Math.max(0.55, Math.min(1.6, (speed * cycle) / strideLength));
+          }
+        }
+
+        // Rebote vertical de cadera y huellas luminosas sincronizados con cada contacto de talón
+        if (this.isWalking && this.walkAction) {
+          const cycle = this.walkAction.getClip().duration;
+          const phase = ((this.walkAction.time % cycle) + cycle) % cycle / cycle;
+          this.avatarRoot.position.y = 0.5 * (1 - Math.cos(phase * Math.PI * 4)) * 0.018 * heightScale;
+          const stepIdx = phase < 0.5 ? 0 : 1;
+          if (stepIdx !== this.lastStepIdx) {
+            this.lastStepIdx = stepIdx;
+            if (this.avatarFX) {
+              const rotY = this.avatarRoot.rotation.y;
+              const side = stepIdx === 0 ? 1 : -1;
+              const lateral = 0.12 * heightScale * side;
+              const forward = 0.18 * heightScale;
+              this.avatarFX.spawnStep(
+                this.avatarRoot.position.x + Math.cos(rotY) * lateral + Math.sin(rotY) * forward,
+                this.avatarRoot.position.z - Math.sin(rotY) * lateral + Math.cos(rotY) * forward
+              );
+            }
+          }
         } else {
           this.avatarRoot.position.y += (0 - this.avatarRoot.position.y) * Math.min(1, safeDt * 8.0);
         }
@@ -3360,7 +3737,7 @@ ${fragmentDitherChunk}`
         let angleDiff = desiredRotY - this.avatarRoot.rotation.y;
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-        this.avatarRoot.rotation.y += angleDiff * Math.min(1, safeDt * 4.2);
+        this.avatarRoot.rotation.y += angleDiff * Math.min(1, safeDt * 5.0);
 
         if (this.positionalAudio) {
           this.positionalAudio.position.set(
@@ -3391,6 +3768,16 @@ ${fragmentDitherChunk}`
 
       this.facade.update(safeDt, this.elapsed);
       this.effects.update(safeDt, this.elapsed);
+      if (this.avatarFX && this.avatarRoot) {
+        this.avatarFX.update(safeDt, this.elapsed, {
+          x: this.avatarRoot.position.x,
+          z: this.avatarRoot.position.z,
+          rotY: this.avatarRoot.rotation.y,
+          height: this.avatarHeight,
+          voice: this.voiceLevel,
+          walking: this.isWalking
+        });
+      }
     }
 
     dispose() {
@@ -3404,6 +3791,7 @@ ${fragmentDitherChunk}`
       }
       if (this.facade?.group?.parent) this.facade.group.parent.remove(this.facade.group);
       if (this.effects?.container?.parent) this.effects.container.parent.remove(this.effects.container);
+      if (this.avatarFX?.group?.parent) this.avatarFX.group.parent.remove(this.avatarFX.group);
       if (this.ui3D?.panelGroup?.parent) this.ui3D.panelGroup.parent.remove(this.ui3D.panelGroup);
       if (this.avatarRoot?.parent) this.avatarRoot.parent.remove(this.avatarRoot);
     }
