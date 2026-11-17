@@ -33,14 +33,16 @@
       initialAnimDuration: 4.0,
       loopAnim: 'hablar',
       arInitialAnim: 'saludar_01',
+      arStartPos: { x: -0.35, z: -5.65, yaw: 0.08 },
       arCues: [
-        { at: 0.8, clip: 'caminar' },
-        { at: 5.5, clip: 'presentarse' },
-        { at: 10, clip: 'mano_al_pecho' },
-        { at: 14.2, clip: 'dialogo_ambas_manos' },
-        { at: 18, clip: 'enfatizar' },
-        { at: 22, clip: 'senalar', lookYaw: 0.12 },
-        { at: 27, clip: 'brazos_abiertos' }
+        { at: 0.5, clip: 'caminar_elegante', x: 0, z: -4.95, yaw: 0, speed: 1.05 },
+        { at: 4.0, clip: 'saludar_01', x: 0, z: -4.95, yaw: 0 },
+        { at: 8.2, clip: 'mano_al_pecho', x: 0.18, z: -4.95, yaw: -0.08 },
+        { at: 12.6, clip: 'caminar', x: -0.78, z: -5.3, yaw: -0.36, speed: 0.9 },
+        { at: 16.0, clip: 'senalar', x: -0.78, z: -5.3, yaw: -0.36, lookYaw: -0.16 },
+        { at: 19.8, clip: 'dialogo_ambas_manos', x: -0.24, z: -5.0, yaw: 0.06, speed: 0.85 },
+        { at: 24.2, clip: 'celebrar', x: 0, z: -4.95, yaw: 0 },
+        { at: 27.6, clip: 'brazos_abiertos', x: 0, z: -4.95, yaw: 0 }
       ],
       themeColor: '#d5aa46',
       skyColor: '#8ecae6',
@@ -61,14 +63,16 @@
       initialAnimDuration: 3.0,
       loopAnim: 'hablar',
       arInitialAnim: 'explicar',
+      arStartPos: { x: 0, z: -5.0, yaw: 0 },
       arCues: [
-        { at: 1, clip: 'paso_confiado' },
-        { at: 4, clip: 'brazos_abiertos' },
-        { at: 9, clip: 'senalar', lookYaw: 0.12 },
-        { at: 14, clip: 'explicar' },
-        { at: 20, clip: 'mano_al_pecho' },
-        { at: 25, clip: 'acuerdo' },
-        { at: 29.5, clip: 'cambio_peso' }
+        { at: 0.6, clip: 'paso_confiado', x: -0.58, z: -5.1, yaw: -0.24, speed: 0.9 },
+        { at: 3.6, clip: 'brazos_abiertos', x: -0.58, z: -5.1, yaw: -0.1 },
+        { at: 7.8, clip: 'senalar', x: -0.45, z: -5.15, yaw: 0.22, lookYaw: 0.14 },
+        { at: 11.8, clip: 'caminar_elegante', x: 0.58, z: -5.05, yaw: 0.2, speed: 1.0 },
+        { at: 15.5, clip: 'explicar', x: 0.58, z: -5.05, yaw: -0.16 },
+        { at: 20.2, clip: 'mano_al_pecho', x: 0.1, z: -4.9, yaw: 0, speed: 0.85 },
+        { at: 24.4, clip: 'acuerdo', x: 0, z: -4.95, yaw: 0 },
+        { at: 27.6, clip: 'reverencia', x: 0, z: -4.95, yaw: 0 }
       ],
       themeColor: '#f59e0b',
       skyColor: '#7ebce0',
@@ -89,15 +93,16 @@
       initialAnimDuration: 2.5,
       loopAnim: 'hablar',
       arInitialAnim: 'presentarTecnologia',
+      arStartPos: { x: 0, z: -4.95, yaw: 0 },
       arCues: [
-        { at: 1, clip: 'paso_firme' },
-        { at: 4, clip: 'vision' },
-        { at: 10, clip: 'senalar' },
-        { at: 13, clip: 'robotica', lookYaw: 0.09 },
-        { at: 18, clip: 'paso_lateral' },
-        { at: 22, clip: 'explicar' },
-        { at: 27, clip: 'acuerdo' },
-        { at: 30.5, clip: 'paso_firme' }
+        { at: 0.6, clip: 'paso_firme', x: 0.55, z: -5.15, yaw: 0.34, speed: 0.95 },
+        { at: 3.8, clip: 'contemplar', x: 0.55, z: -5.15, yaw: 0.42 },
+        { at: 8.2, clip: 'presentarTecnologia', x: 0.45, z: -5.05, yaw: 0.15 },
+        { at: 12.6, clip: 'robotica', x: 0.42, z: -5.05, yaw: 0.12, lookYaw: 0.12 },
+        { at: 17.4, clip: 'caminar_elegante', x: -0.48, z: -4.9, yaw: -0.18, speed: 0.95 },
+        { at: 21.2, clip: 'vision', x: -0.48, z: -4.9, yaw: 0.08 },
+        { at: 25.8, clip: 'giro_escenico', x: 0, z: -5.0, yaw: 0, speed: 0.85 },
+        { at: 30.2, clip: 'enfatizar', x: 0, z: -5.0, yaw: 0 }
       ],
       themeColor: '#00d2ff',
       skyColor: '#1d4e78',
@@ -118,15 +123,15 @@
       initialAnimDuration: 2.8,
       loopAnim: 'hablar',
       arInitialAnim: 'ofrecer',
+      arStartPos: { x: 0, z: -5.0, yaw: 0 },
       arCues: [
-        { at: 1, clip: 'caminar' },
-        { at: 4, clip: 'salud', lookYaw: 0.08 },
-        { at: 7.5, clip: 'asentir' },
-        { at: 10, clip: 'brazos_abiertos' },
-        { at: 14, clip: 'explicar' },
-        { at: 18, clip: 'paso_lateral' },
-        { at: 21.5, clip: 'acuerdo' },
-        { at: 25.5, clip: 'ofrecer' }
+        { at: 0.6, clip: 'caminar', x: 0.48, z: -5.08, yaw: 0.35, speed: 0.92 },
+        { at: 3.8, clip: 'salud', x: 0.48, z: -5.08, yaw: 0.28, lookYaw: 0.1 },
+        { at: 7.8, clip: 'contemplar', x: 0.35, z: -4.95, yaw: 0.15 },
+        { at: 11.8, clip: 'paso_lateral', x: -0.15, z: -4.78, yaw: 0, speed: 0.85 },
+        { at: 15.6, clip: 'brazos_abiertos', x: -0.15, z: -4.78, yaw: 0 },
+        { at: 20.2, clip: 'explicar', x: 0, z: -4.85, yaw: -0.08 },
+        { at: 25.0, clip: 'ofrecer', x: 0, z: -4.85, yaw: 0 }
       ],
       themeColor: '#10b981',
       skyColor: '#4da6b8',
@@ -147,14 +152,15 @@
       initialAnimDuration: 8.0,
       loopAnim: 'invitar',
       arInitialAnim: 'paso_lateral',
+      arStartPos: { x: 0, z: -4.85, yaw: 0 },
       arCues: [
-        { at: 0.4, clip: 'paso_lateral' },
-        { at: 4, clip: 'mano_al_pecho' },
-        { at: 9, clip: 'senalar', lookYaw: 0.12 },
-        { at: 15, clip: 'reflexionar' },
-        { at: 18.5, clip: 'asentir' },
-        { at: 21.5, clip: 'enfatizar' },
-        { at: 25, clip: 'invitar', hold: true, lookYaw: -0.1 }
+        { at: 0.4, clip: 'paso_lateral', x: -1.18, z: -5.55, yaw: 0.44, speed: 1.05 },
+        { at: 4.0, clip: 'mano_al_pecho', x: -1.18, z: -5.55, yaw: 0.36 },
+        { at: 8.6, clip: 'senalar', x: -1.18, z: -5.55, yaw: 0.5, lookYaw: 0.22 },
+        { at: 13.0, clip: 'celebrar', x: -0.95, z: -5.35, yaw: 0.3, speed: 0.85 },
+        { at: 17.2, clip: 'reverencia', x: -0.95, z: -5.35, yaw: 0.22 },
+        { at: 21.4, clip: 'enfatizar', x: -0.88, z: -5.2, yaw: 0.2 },
+        { at: 25.0, clip: 'invitar', x: -0.95, z: -5.25, yaw: 0.28, hold: true, lookYaw: 0.16 }
       ],
       themeColor: '#fbbf24',
       skyColor: '#8ecae6',
@@ -1891,6 +1897,239 @@
       ]
     });
 
+    // Clip 24: reverencia (inclinación solemne de cortesía académica con mano al pecho y flexión sutil)
+    const reverencia = compileClip('reverencia', 3.4, {
+      'mixamorig:Spine': [
+        [0, 0, 0, 0],
+        [1.1, 0.24, 0, 0],
+        [2.2, 0.24, 0, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [1.1, 0.16, 0, 0],
+        [2.2, 0.16, 0, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [1.1, 0.22, 0, 0],
+        [2.2, 0.18, 0, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.9, -0.42, 0.48, -0.18],
+        [2.3, -0.42, 0.48, -0.18],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.9, 0.3, -0.25, 1.05],
+        [2.3, 0.3, -0.25, 1.05],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [1.1, 0.18, -0.1, 0.22],
+        [2.2, 0.18, -0.1, 0.22],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, 0, 0, 0],
+        [1.1, -0.1, 0, 0],
+        [2.2, -0.1, 0, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0, 0, 0],
+        [1.1, 0.08, 0, 0],
+        [2.2, 0.08, 0, 0],
+        [3.4, 0, 0, 0]
+      ]
+    });
+
+    // Clip 25: contemplar (admirar los hologramas y la arquitectura con giro corporal y mano pensativa)
+    const contemplar = compileClip('contemplar', 3.8, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [1.0, 0, 0.14, 0],
+        [2.6, 0, 0.18, 0],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [1.0, -0.04, 0.12, 0],
+        [2.6, -0.06, 0.16, 0],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [1.0, -0.14, 0.22, 0.04],
+        [2.6, -0.16, 0.26, 0.04],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [1.0, -0.45, 0.3, -0.22],
+        [2.6, -0.48, 0.34, -0.22],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [1.0, 0.4, -0.2, 0.92],
+        [2.6, 0.42, -0.22, 0.96],
+        [3.8, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [1.0, -0.18, -0.15, 0.28],
+        [2.6, -0.22, -0.18, 0.32],
+        [3.8, 0, 0, 0]
+      ]
+    });
+
+    // Clip 26: celebrar (gesto triunfal y entusiasta abriendo ambos brazos en alto)
+    const celebrar = compileClip('celebrar', 3.4, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.8, 0.03, -0.06, 0],
+        [1.8, -0.04, 0.08, 0],
+        [2.6, 0.02, -0.04, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [1.1, -0.08, 0, 0],
+        [2.4, -0.08, 0, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [1.0, -0.12, 0.08, 0],
+        [2.1, -0.1, -0.08, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.85, -0.78, 0.25, -0.62],
+        [2.3, -0.75, 0.28, -0.68],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightForeArm': [
+        [0, 0, 0, 0],
+        [0.85, 0.22, 0.15, 0.32],
+        [2.3, 0.2, 0.18, 0.28],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.85, -0.78, -0.25, 0.62],
+        [2.3, -0.75, -0.28, 0.68],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftForeArm': [
+        [0, 0, 0, 0],
+        [0.85, 0.22, -0.15, -0.32],
+        [2.3, 0.2, -0.18, -0.28],
+        [3.4, 0, 0, 0]
+      ]
+    });
+
+    // Clip 27: caminar_elegante (caminata fluida de cuerpo completo en bucle con piernas, pies, cadera y braceo)
+    const caminarElegante = compileClip('caminar_elegante', 1.6, {
+      'mixamorig:Hips': [
+        [0, 0, -0.05, -0.025],
+        [0.4, 0.02, 0.05, 0.025],
+        [0.8, 0, -0.05, -0.025],
+        [1.2, 0.02, 0.05, 0.025],
+        [1.6, 0, -0.05, -0.025]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0.03, 0.05, 0],
+        [0.4, 0.02, -0.05, 0],
+        [0.8, 0.03, 0.05, 0],
+        [1.2, 0.02, -0.05, 0],
+        [1.6, 0.03, 0.05, 0]
+      ],
+      'mixamorig:LeftUpLeg': [
+        [0, -0.38, 0, 0],
+        [0.4, 0.02, 0, 0],
+        [0.8, 0.34, 0, 0],
+        [1.2, -0.05, 0, 0],
+        [1.6, -0.38, 0, 0]
+      ],
+      'mixamorig:LeftLeg': [
+        [0, 0.14, 0, 0],
+        [0.4, 0.42, 0, 0],
+        [0.8, 0.08, 0, 0],
+        [1.2, 0.56, 0, 0],
+        [1.6, 0.14, 0, 0]
+      ],
+      'mixamorig:RightUpLeg': [
+        [0, 0.34, 0, 0],
+        [0.4, -0.05, 0, 0],
+        [0.8, -0.38, 0, 0],
+        [1.2, 0.02, 0, 0],
+        [1.6, 0.34, 0, 0]
+      ],
+      'mixamorig:RightLeg': [
+        [0, 0.08, 0, 0],
+        [0.4, 0.56, 0, 0],
+        [0.8, 0.14, 0, 0],
+        [1.2, 0.42, 0, 0],
+        [1.6, 0.08, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0.24, 0, 0.14],
+        [0.4, 0, 0, 0.08],
+        [0.8, -0.24, 0, 0.12],
+        [1.2, 0, 0, 0.08],
+        [1.6, 0.24, 0, 0.14]
+      ],
+      'mixamorig:RightArm': [
+        [0, -0.24, 0, -0.12],
+        [0.4, 0, 0, -0.08],
+        [0.8, 0.24, 0, -0.14],
+        [1.2, 0, 0, -0.08],
+        [1.6, -0.24, 0, -0.12]
+      ]
+    });
+
+    // Clip 28: giro_escenico (movimiento escénico abarcando el escenario de izquierda a derecha)
+    const giroEscenico = compileClip('giro_escenico', 3.4, {
+      'mixamorig:Hips': [
+        [0, 0, 0, 0],
+        [0.9, 0, -0.22, -0.03],
+        [2.2, 0, 0.22, 0.03],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Spine1': [
+        [0, 0, 0, 0],
+        [0.9, 0.03, -0.16, 0],
+        [2.2, 0.03, 0.16, 0],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:RightArm': [
+        [0, 0, 0, 0],
+        [0.9, -0.35, -0.2, -0.45],
+        [2.2, -0.45, 0.28, -0.58],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:LeftArm': [
+        [0, 0, 0, 0],
+        [0.9, -0.45, -0.28, 0.58],
+        [2.2, -0.32, 0.2, 0.42],
+        [3.4, 0, 0, 0]
+      ],
+      'mixamorig:Head': [
+        [0, 0, 0, 0],
+        [0.9, 0, -0.2, 0],
+        [2.2, 0, 0.2, 0],
+        [3.4, 0, 0, 0]
+      ]
+    });
+
     return {
       saludar_01: saludar,
       acuerdo,
@@ -1915,6 +2154,11 @@
       cambio_peso: cambioPeso,
       asentir,
       paso_firme: pasoFirme,
+      reverencia,
+      contemplar,
+      celebrar,
+      caminar_elegante: caminarElegante,
+      giro_escenico: giroEscenico,
       headBone: bones['mixamorig:Head'] || bones['mixamorigHead'] || null
     };
   }
@@ -1928,15 +2172,15 @@
     button.type = 'button';
     button.className = 'pokear-chip-btn webxr-launch-btn';
     button.disabled = true;
-    button.textContent = '📍 AR 6DoF';
-    button.title = 'Fijar la escena al espacio real mediante AR 6DoF';
+    button.textContent = '📍 AR Real 6DoF';
+    button.title = 'Fijar la escena al mundo real mediante AR 6DoF para poder caminar sin que los modelos se muevan';
 
     const mode = options.mode || 'immersive-ar';
     if (!navigator.xr || !sceneEl || typeof sceneEl.enterAR !== 'function') {
       button.disabled = true;
       button.style.opacity = '0.55';
       button.textContent = 'AR 6DoF no disponible';
-      button.title = 'Este navegador o dispositivo no admite WebXR AR; se usará la vista de cámara con sensores';
+      button.title = 'Este navegador o dispositivo no admite WebXR AR; se usará el anclaje con sensores';
       return button;
     }
 
@@ -1945,11 +2189,12 @@
         button.disabled = true;
         button.style.opacity = '0.55';
         button.textContent = 'AR 6DoF no disponible';
-        button.title = 'Se requiere un navegador y dispositivo compatibles con WebXR AR';
+        button.title = 'Se requiere Chrome Android / navegador compatible con WebXR AR';
         return;
       }
       button.disabled = false;
-      button.title = 'Iniciar AR 6DoF y fijar los modelos sobre una superficie real';
+      button.classList.add('is-supported');
+      button.title = 'Activar AR Real 6DoF sobre tu entorno físico';
     }).catch((error) => {
       console.error('[Unifranz WebXR] No se pudo comprobar el soporte AR:', error);
       button.disabled = true;
@@ -1960,10 +2205,12 @@
 
     sceneEl.addEventListener('enter-vr', () => {
       if (!sceneEl.is('ar-mode')) return;
-      button.textContent = '⏹ Salir de AR 6DoF';
+      button.textContent = '⏹ Salir AR 6DoF';
+      button.classList.add('is-active');
     });
     sceneEl.addEventListener('exit-vr', () => {
-      button.textContent = '📍 AR 6DoF';
+      button.textContent = '📍 AR Real 6DoF';
+      button.classList.remove('is-active');
     });
 
     button.addEventListener('click', async () => {
@@ -2222,15 +2469,119 @@
     stage4Group.add(medParticles);
     container.add(stage4Group);
 
-    // ─── ETAPA 5: Destellos festivos dorados de bienvenida ───
+    // ─── ETAPA 5: Destellos festivos dorados y haces luminosos del vestíbulo ───
     const stage5Group = new THREE.Group();
     const welcomeArc = new THREE.Mesh(
-      new THREE.TorusGeometry(1.45, 0.025, 12, 48, Math.PI),
-      new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.85 })
+      new THREE.TorusGeometry(1.65, 0.032, 12, 56, Math.PI),
+      new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.9 })
     );
     welcomeArc.position.set(0, 1.5, -4.1);
     stage5Group.add(welcomeArc);
+
+    const portalBeams = [];
+    [-0.95, 0, 0.95].forEach((bx, idx) => {
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: idx === 1 ? 0xffe082 : 0xf59e0b,
+        transparent: true,
+        opacity: 0.22,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const beam = new THREE.Mesh(new THREE.ConeGeometry(0.65, 4.4, 24, 1, true), beamMat);
+      beam.rotation.x = Math.PI / 2;
+      beam.position.set(bx, 1.45, -2.5);
+      stage5Group.add(beam);
+      portalBeams.push({ mesh: beam, mat: beamMat, phase: idx * 1.1 });
+    });
     container.add(stage5Group);
+
+    // ─── Efectos Cinematográficos Permanentes de la Plaza UNIFRANZ ───
+    const plazaFloorMat = new THREE.MeshBasicMaterial({
+      color: 0xd5aa46,
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide
+    });
+    const plazaFloorRing = new THREE.Mesh(new THREE.RingGeometry(1.75, 1.84, 64), plazaFloorMat);
+    plazaFloorRing.rotation.x = -Math.PI / 2;
+    plazaFloorRing.position.set(0, 0.015, -2.2);
+    container.add(plazaFloorRing);
+
+    const plazaInnerMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.38,
+      side: THREE.DoubleSide
+    });
+    const plazaInnerRing = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.09, 48), plazaInnerMat);
+    plazaInnerRing.rotation.x = -Math.PI / 2;
+    plazaInnerRing.position.set(0, 0.018, -2.2);
+    container.add(plazaInnerRing);
+
+    // Onda expansiva cinemática al cambiar de etapa
+    const waveMat = new THREE.MeshBasicMaterial({
+      color: 0xffd166,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const transitionWave = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 56), waveMat);
+    transitionWave.rotation.x = -Math.PI / 2;
+    transitionWave.position.set(0, 0.03, -2.2);
+    container.add(transitionWave);
+    let waveAge = 99;
+
+    // 4 pilares volumétricos holográficos alrededor de la plaza
+    const pillarMats = [];
+    const pillarCoords = [
+      [-2.1, 1.7, -2.35],
+      [2.1, 1.7, -2.35],
+      [-2.45, 2.0, -3.55],
+      [2.45, 2.0, -3.55]
+    ];
+    pillarCoords.forEach((p, idx) => {
+      const pMat = new THREE.MeshBasicMaterial({
+        color: 0xd5aa46,
+        transparent: true,
+        opacity: 0.11,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.22, 3.6, 16, 1, true), pMat);
+      pillar.position.set(p[0], p[1], p[2]);
+      container.add(pillar);
+      pillarMats.push({ mesh: pillar, mat: pMat, phase: idx * 1.3 });
+    });
+
+    // Nube orbital de partículas luminosas ("motas del saber") en toda la plaza
+    const moteCount = 160;
+    const motePos = new Float32Array(moteCount * 3);
+    const moteSeeds = [];
+    for (let i = 0; i < moteCount; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const rad = 0.8 + Math.random() * 2.9;
+      const y = 0.25 + Math.random() * 3.4;
+      motePos[i * 3] = Math.cos(ang) * rad;
+      motePos[i * 3 + 1] = y;
+      motePos[i * 3 + 2] = -2.3 + Math.sin(ang) * rad * 0.75;
+      moteSeeds.push({ ang, rad, y, speed: (0.14 + Math.random() * 0.24) * (i % 2 ? 1 : -1), rise: 0.25 + Math.random() * 0.45 });
+    }
+    const moteGeo = new THREE.BufferGeometry();
+    moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+    const moteMat = new THREE.PointsMaterial({
+      color: 0xffd166,
+      size: 0.055,
+      transparent: true,
+      opacity: 0.78,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const ambientMotes = new THREE.Points(moteGeo, moteMat);
+    container.add(ambientMotes);
 
     const groups = [stage1Group, stage2Group, stage3Group, stage4Group, stage5Group];
     let activeStageIdx = 0;
@@ -2242,8 +2593,46 @@
         groups.forEach((g, i) => {
           g.visible = i === idx;
         });
+        const stageCfg = UNIFRANZ_STAGES[idx] || UNIFRANZ_STAGES[0];
+        const col = new THREE.Color(stageCfg.themeColor || '#d5aa46');
+        plazaFloorMat.color.copy(col);
+        plazaInnerMat.color.copy(col).lerp(new THREE.Color(0xffffff), 0.35);
+        moteMat.color.copy(col).lerp(new THREE.Color(0xffffff), 0.25);
+        waveMat.color.copy(col);
+        pillarMats.forEach((p) => p.mat.color.copy(col));
+        waveAge = 0;
       },
       update(dt, elapsed) {
+        // Actualizar efectos cinematográficos globales de la plaza
+        plazaFloorRing.rotation.z = elapsed * 0.18;
+        plazaInnerRing.rotation.z = -elapsed * 0.32;
+        plazaFloorMat.opacity = 0.42 + 0.18 * Math.sin(elapsed * 2.2);
+
+        if (waveAge < 1.6) {
+          waveAge += dt;
+          const t = Math.min(1, waveAge / 1.6);
+          const s = 1 + t * 5.2;
+          transitionWave.scale.set(s, s, 1);
+          waveMat.opacity = (1 - t) * 0.72;
+        } else {
+          waveMat.opacity = 0;
+        }
+
+        pillarMats.forEach((p) => {
+          p.mat.opacity = 0.07 + 0.06 * (0.5 + 0.5 * Math.sin(elapsed * 1.9 + p.phase));
+          p.mesh.rotation.y = elapsed * 0.35 + p.phase;
+        });
+
+        const mArr = moteGeo.attributes.position.array;
+        for (let i = 0; i < moteCount; i++) {
+          const seed = moteSeeds[i];
+          const a = seed.ang + elapsed * seed.speed;
+          mArr[i * 3] = Math.cos(a) * seed.rad;
+          mArr[i * 3 + 1] = seed.y + Math.sin(elapsed * seed.rise + i) * 0.26;
+          mArr[i * 3 + 2] = -2.3 + Math.sin(a) * seed.rad * 0.75;
+        }
+        moteGeo.attributes.position.needsUpdate = true;
+
         if (activeStageIdx === 0) {
           portraitFrame.position.y = 1.52 + Math.sin(elapsed * 1.8) * 0.06;
           portraitFrame.rotation.y = 0.28 + Math.sin(elapsed * 0.9) * 0.08;
@@ -2277,7 +2666,10 @@
           }
           pGeo.attributes.position.needsUpdate = true;
         } else if (activeStageIdx === 4) {
-          welcomeArc.scale.setScalar(1 + Math.sin(elapsed * 2.8) * 0.03);
+          welcomeArc.scale.setScalar(1 + Math.sin(elapsed * 2.8) * 0.04);
+          portalBeams.forEach((b) => {
+            b.mat.opacity = 0.14 + 0.12 * (0.5 + 0.5 * Math.sin(elapsed * 2.5 + b.phase));
+          });
         }
       }
     };
@@ -2428,8 +2820,13 @@
       this.arLookYaw = 0;
       this.arMicroEuler = new THREE.Euler();
       this.arMicroQuaternion = new THREE.Quaternion();
-      this.arBasePosition = new THREE.Vector3(0, 0, -2.5);
+      this.arBasePosition = new THREE.Vector3(0, 0, -5.2);
       this.arBaseRotationY = 0;
+      this.stageTargetX = 0;
+      this.stageTargetZ = -5.2;
+      this.stageTargetYaw = 0;
+      this.stageMoveSpeed = 1.0;
+      this.lastChoreoElapsed = 0;
       this.avatarLoaded = false;
       this.isDisposed = false;
       this.targetAvatarX = 0;
@@ -2439,12 +2836,19 @@
       // 1. Iluminación realista de cielo paceño
       setupLaPazLighting(this.rootGroup, this.renderer);
 
-      // 2. Reconstrucción procedural de la fachada de UNIFRANZ La Paz
+      // 2. Reconstrucción procedural a gran escala de la fachada de UNIFRANZ La Paz (más alejada y monumental)
       this.facade = buildUnifranzFacade(this.rootGroup, this.isAR);
+      this.facade.group.position.set(0, 0, -3.5);
+      this.facade.group.scale.setScalar(1.22);
 
-      // 3. Efectos 3D por etapa + UI 3D flotante
+      // 3. Efectos 3D por etapa + UI 3D flotante espaciados para escenario AR real
       this.effects = createStageEffects(this.rootGroup);
+      this.effects.container.position.set(0, 0, -2.5);
+      this.effects.container.scale.setScalar(1.25);
+
       this.ui3D = create3DExperiencePanel(this.rootGroup);
+      this.ui3D.panelGroup.position.set(0, 0.86, -3.55);
+      this.ui3D.panelGroup.scale.setScalar(1.55);
 
       // 4. Audio Posicional de Three.js originado en Franz Tamayo
       this.setupPositionalAudio();
@@ -2466,9 +2870,9 @@
         this.audioListener = new THREE.AudioListener();
         if (this.camera) this.camera.add(this.audioListener);
         this.positionalAudio = new THREE.PositionalAudio(this.audioListener);
-        this.positionalAudio.setRefDistance(2.2);
-        this.positionalAudio.setRolloffFactor(0.75);
-        this.positionalAudio.position.set(0, 1.55, -2.5);
+        this.positionalAudio.setRefDistance(4.2);
+        this.positionalAudio.setRolloffFactor(0.65);
+        this.positionalAudio.position.set(0, 1.9, -5.2);
 
         if (!this.audioEl.__unifranzSourceNode) {
           this.positionalAudio.setMediaElementSource(this.audioEl);
@@ -2641,14 +3045,17 @@ ${fragmentDitherChunk}`
           const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
           if (!model) return;
 
-          // Escalar a estatura real (~1.72 m) delante de las columnas en (0, 0, -2.5)
+          // Escalar a presencia monumental y real delante del pórtico en (0, 0, -5.2)
           const box = new THREE.Box3().setFromObject(model);
           const height = box.max.y - box.min.y;
-          const targetHeight = 1.72;
-          const scaleFactor = height > 0.05 ? targetHeight / height : 1.75;
+          const targetHeight = this.isAR ? 2.35 : 2.05;
+          const scaleFactor = height > 0.05 ? targetHeight / height : 2.35;
+
+          const startStage = UNIFRANZ_STAGES[this.currentStageIndex];
+          const startPos = (startStage && startStage.arStartPos) || { x: 0, z: -5.2, yaw: 0 };
 
           model.scale.setScalar(scaleFactor);
-          model.position.set(0, 0, -2.5);
+          model.position.set(startPos.x, 0, startPos.z);
           // Mirando hacia la cámara del usuario en (0, 1.6, 0)
           model.lookAt(0, 0, 0);
 
@@ -2665,8 +3072,12 @@ ${fragmentDitherChunk}`
           });
 
           this.avatarRoot = model;
-          this.arBasePosition.copy(model.position);
+          this.arBasePosition.set(0, 0, -5.2);
           this.arBaseRotationY = model.rotation.y;
+          model.rotation.y = this.arBaseRotationY + (startPos.yaw || 0);
+          this.stageTargetX = startPos.x;
+          this.stageTargetZ = startPos.z;
+          this.stageTargetYaw = startPos.yaw || 0;
           this.setupARMouthAnimation(model);
           this.rootGroup.add(model);
 
@@ -2695,7 +3106,8 @@ ${fragmentDitherChunk}`
             'enfatizar', 'presentarTecnologia', 'vision', 'robotica', 'salud',
             'ofrecer', 'reflexionar', 'paso_lateral', 'caminar',
             'mano_al_pecho', 'brazos_abiertos', 'senalar', 'paso_confiado',
-            'dialogo_ambas_manos', 'cambio_peso', 'asentir', 'paso_firme'
+            'dialogo_ambas_manos', 'cambio_peso', 'asentir', 'paso_firme',
+            'reverencia', 'contemplar', 'celebrar', 'caminar_elegante', 'giro_escenico'
           ].forEach((name) => {
             const clip = embeddedByName[name] || clipPack[name];
             if (clip) {
@@ -2732,17 +3144,24 @@ ${fragmentDitherChunk}`
       const stage = UNIFRANZ_STAGES[index];
       if (!stage) return;
       this.stageElapsed = 0;
+      this.lastChoreoElapsed = 0;
       this.nextGestureIndex = 0;
       this.activeGestureEnd = 0;
       this.holdGesture = false;
 
+      const startPos = stage.arStartPos || { x: 0, z: -5.2, yaw: 0 };
+      this.stageTargetX = startPos.x;
+      this.stageTargetZ = startPos.z;
+      this.stageTargetYaw = startPos.yaw || 0;
+      this.stageMoveSpeed = 1.05;
+
       // Posición lateral en Etapa 5 al ejecutar "invitar" y apertura de puertas
-      this.targetAvatarX = !this.isAR && index === 4 ? -0.78 : 0;
+      this.targetAvatarX = !this.isAR && index === 4 ? -0.95 : startPos.x;
       this.arLookTargetYaw = 0;
       this.arLookYaw = 0;
-      if (this.isAR && this.avatarRoot) {
-        this.avatarRoot.position.copy(this.arBasePosition);
-        this.avatarRoot.rotation.y = this.arBaseRotationY;
+      if (this.avatarRoot && !this.avatarLoaded) {
+        this.avatarRoot.position.set(startPos.x, 0, startPos.z);
+        this.avatarRoot.rotation.y = this.arBaseRotationY + this.stageTargetYaw;
       }
       this.facade.setDoorsOpen(index === 4);
       if (!this.isAR) {
@@ -2846,50 +3265,46 @@ ${fragmentDitherChunk}`
     updateStageChoreography(stage, elapsed) {
       if (!this.avatarLoaded) return;
       const narrationPlaying = this.audioEl && !this.audioEl.paused;
-      if (!this.isAR) {
-        if (
-          !this.activeGestureEnd &&
-          stage.initialAnim !== stage.loopAnim &&
-          this.stageElapsed >= stage.initialAnimDuration
-        ) {
-          this.playClip(stage.loopAnim, true);
-        }
-        return;
+      const stageDuration = Math.max(22, (stage.nominalEnd || 30) - (stage.nominalStart || 0));
+      const effectiveElapsed = narrationPlaying ? elapsed : (this.stageElapsed % stageDuration);
+
+      if (effectiveElapsed < this.lastChoreoElapsed) {
+        this.nextGestureIndex = 0;
+        this.activeGestureEnd = 0;
+        this.holdGesture = false;
       }
-      if (!narrationPlaying) {
-        if (
-          !this.activeGestureEnd &&
-          !this.holdGesture &&
-          stage.initialAnim !== stage.loopAnim &&
-          this.stageElapsed >= stage.initialAnimDuration
-        ) {
-          this.playClip(stage.loopAnim, true);
-        }
-        return;
-      }
+      this.lastChoreoElapsed = effectiveElapsed;
 
       const cues = stage.arCues || [];
-      while (this.nextGestureIndex < cues.length && elapsed >= cues[this.nextGestureIndex].at) {
+      while (this.nextGestureIndex < cues.length && effectiveElapsed >= cues[this.nextGestureIndex].at) {
         const cue = cues[this.nextGestureIndex++];
         const action = this.actions[cue.clip];
-        const duration = action ? action.getClip().duration : 0;
-        if (elapsed >= cue.at + duration && !cue.hold) continue;
+        const isLoopWalk = cue.clip === 'caminar' || cue.clip === 'caminar_elegante';
+        const duration = action ? (isLoopWalk ? 3.2 : action.getClip().duration) : 0;
+
+        // Actualizar destino espacial cinemático aunque estemos avanzando en el timeline
+        if (Number.isFinite(cue.x)) this.stageTargetX = cue.x;
+        if (Number.isFinite(cue.z)) this.stageTargetZ = cue.z;
+        if (Number.isFinite(cue.yaw)) this.stageTargetYaw = cue.yaw;
+        if (Number.isFinite(cue.speed)) this.stageMoveSpeed = cue.speed;
+
+        if (effectiveElapsed >= cue.at + duration && !cue.hold) continue;
 
         this.arLookTargetYaw = cue.lookYaw || 0;
         this.holdGesture = Boolean(cue.hold);
         this.activeGestureEnd = cue.hold ? Infinity : cue.at + duration;
-        this.playClip(cue.clip, false);
+        this.playClip(cue.clip, isLoopWalk);
       }
 
       if (this.holdGesture) return;
-      if (this.activeGestureEnd && elapsed >= this.activeGestureEnd) {
+      if (this.activeGestureEnd && effectiveElapsed >= this.activeGestureEnd) {
         this.activeGestureEnd = 0;
         this.arLookTargetYaw = 0;
         this.playClip(stage.loopAnim, true);
       } else if (
         !this.activeGestureEnd &&
         stage.initialAnim !== stage.loopAnim &&
-        elapsed >= stage.initialAnimDuration
+        effectiveElapsed >= stage.initialAnimDuration
       ) {
         this.playClip(stage.loopAnim, true);
       }
@@ -2922,19 +3337,45 @@ ${fragmentDitherChunk}`
       if (this.mixer) {
         this.mixer.update(safeDt);
       }
-      if (this.isAR && this.avatarRoot) {
-        this.avatarRoot.position.copy(this.arBasePosition);
-        this.avatarRoot.rotation.y = this.arBaseRotationY;
+
+      // Desplazamiento cinemático real de Franz Tamayo sobre la plaza (sin congelarlo en un solo punto)
+      if (this.avatarRoot) {
+        const dx = this.stageTargetX - this.avatarRoot.position.x;
+        const dz = this.stageTargetZ - this.avatarRoot.position.z;
+        const distToTarget = Math.hypot(dx, dz);
+        let desiredRotY = this.arBaseRotationY + this.stageTargetYaw;
+
+        if (distToTarget > 0.04) {
+          const step = Math.min(distToTarget, Math.max(0.55, this.stageMoveSpeed) * safeDt);
+          this.avatarRoot.position.x += (dx / distToTarget) * step;
+          this.avatarRoot.position.z += (dz / distToTarget) * step;
+          // Orientación escénica semi-abierta al caminar hacia el objetivo
+          const travelTurn = Math.atan2(dx, Math.max(0.65, dz)) * 0.48;
+          desiredRotY = this.arBaseRotationY + travelTurn + this.stageTargetYaw * 0.45;
+          this.avatarRoot.position.y = Math.abs(Math.sin(this.elapsed * 7.5)) * 0.024;
+        } else {
+          this.avatarRoot.position.y += (0 - this.avatarRoot.position.y) * Math.min(1, safeDt * 8.0);
+        }
+
+        let angleDiff = desiredRotY - this.avatarRoot.rotation.y;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+        this.avatarRoot.rotation.y += angleDiff * Math.min(1, safeDt * 4.2);
+
+        if (this.positionalAudio) {
+          this.positionalAudio.position.set(
+            this.avatarRoot.position.x,
+            this.avatarRoot.position.y + 1.85,
+            this.avatarRoot.position.z
+          );
+        }
       }
+
       this.updateARMouthAnimation(safeDt);
       this.updateARMicroAnimations(safeDt);
 
-      // Paso lateral suave en Etapa 5 (invitar) + ligera modulación facial/cabeza al hablar
-      if (this.avatarRoot && !this.isAR) {
-        this.avatarRoot.position.x += (this.targetAvatarX - this.avatarRoot.position.x) * Math.min(1, safeDt * 2.5);
-        if (this.audioEl && !this.audioEl.paused && this.headBone && this.headBaseQuat) {
-          this.headBone.rotation.x += Math.sin(this.elapsed * 11.5) * 0.014;
-        }
+      if (this.avatarRoot && !this.isAR && this.audioEl && !this.audioEl.paused && this.headBone && this.headBaseQuat) {
+        this.headBone.rotation.x += Math.sin(this.elapsed * 11.5) * 0.014;
       }
 
       // Avance suave de la cámara hacia el interior del vestíbulo en la Etapa 5

@@ -3833,6 +3833,20 @@ canvas.a-canvas {
   transform: translateY(-1px);
 }
 
+.webxr-launch-btn.is-supported {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.55);
+  animation: badge-pulse 1.8s infinite;
+}
+
+.webxr-launch-btn.is-active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
+  animation: none;
+}
+
 /* Tarjeta inferior minimalista */
 .pokear-bottom-card {
   pointer-events: auto;

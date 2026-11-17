@@ -528,26 +528,26 @@
 
     <!-- Escena A-Frame: WebXR AR con seguimiento espacial y vista de cámara con sensores como alternativa -->
     <template id="ar-scene-template">
-      <a-scene id="pokear-scene" embedded
+        <a-scene id="pokear-scene" embedded
         renderer="alpha: true; antialias: true; colorManagement: true; precision: highp; powerPreference: high-power"
         shadow="type: pcfsoft" vr-mode-ui="enabled: false" loading-screen="enabled: false"
-        webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor, hit-test; optionalFeatures: bounded-floor, dom-overlay; overlayElement: #ar-view">
+        webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor; optionalFeatures: hit-test, bounded-floor, dom-overlay; overlayElement: #ar-view">
         <a-assets timeout="12000">
           <video id="ar-scene-video" muted loop playsinline preload="none"></video>
         </a-assets>
 
-        <!-- Cámara del modo alternativo con sensores; WebXR usa el seguimiento nativo del visor -->
+        <!-- Cámara del modo alternativo con sensores; WebXR usa el seguimiento nativo 6DoF del visor -->
         <a-entity id="pokear-camera-rig" position="0 0 0">
-          <a-camera id="pokear-camera" position="0 1.6 0"
+          <a-camera id="pokear-camera" position="0 1.6 0" camera="fov: 60; near: 0.1; far: 250"
             look-controls="touchEnabled: true; magicWindowTrackingEnabled: true">
           </a-camera>
         </a-entity>
 
-        <!-- Anclaje en el mundo real (origen en el visitante; Franz Tamayo en (0, 0, -2.5) frente al pórtico) -->
+        <!-- Anclaje estático en el mundo real (escenario amplio: Franz Tamayo en (0, 0, -5.2) frente al pórtico monumental) -->
         <a-entity id="tamayo-world-anchor" position="0 0 0" visible="false">
           <a-entity id="unifranz-ar-root"
             unifranz-welcome-experience="stage: 0; active: true; rigSelector: #pokear-camera-rig; cameraSelector: #pokear-camera"></a-entity>
-          <a-entity id="ar-video-panel" position="-1.55 1.65 -2.2" rotation="0 25 0" visible="false">
+          <a-entity id="ar-video-panel" position="-2.8 2.15 -4.9" rotation="0 25 0" visible="false">
             <a-plane position="0 0 0" width="1.35" height="0.82" color="#111111"
               material="opacity: 0.92; transparent: true"></a-plane>
             <a-video id="ar-scene-video-surface" src="#ar-scene-video" position="0 0 0.01" width="1.28"
