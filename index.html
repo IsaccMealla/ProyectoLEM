@@ -526,24 +526,35 @@
       <small>Permite la cámara y la ubicación. Para fijar los modelos al espacio real, inicia AR 6DoF en un dispositivo compatible.</small>
     </div>
 
-    <!-- Escena A-Frame: WebXR AR con seguimiento espacial y vista de cámara con sensores como alternativa -->
+    <!-- Escena A-Frame: WebXR AR real (hit-test + XRAnchor) y vista de cámara con sensores como respaldo -->
     <template id="ar-scene-template">
-        <a-scene id="pokear-scene" embedded
+      <a-scene id="pokear-scene" embedded
         renderer="alpha: true; antialias: true; colorManagement: true; precision: highp; powerPreference: high-power"
         shadow="type: pcfsoft" vr-mode-ui="enabled: false" loading-screen="enabled: false"
-        webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor; optionalFeatures: hit-test, bounded-floor, dom-overlay; overlayElement: #ar-view">
+        webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor; optionalFeatures: hit-test, anchors, bounded-floor, dom-overlay; overlayElement: #ar-view"
+        ar-hit-test-anchor="target: #tamayo-world-anchor; rootOffsetTarget: #unifranz-ar-root; reticle: #ar-reticle">
         <a-assets timeout="12000">
           <video id="ar-scene-video" muted loop playsinline preload="none"></video>
         </a-assets>
 
-        <!-- Cámara del modo alternativo con sensores; WebXR usa el seguimiento nativo 6DoF del visor -->
+        <!-- Cámara totalmente desacoplada del ancla 3D; en respaldo simula ojos a 1.6 m sobre suelo fijo y = 0 -->
         <a-entity id="pokear-camera-rig" position="0 0 0">
           <a-camera id="pokear-camera" position="0 1.6 0" camera="fov: 60; near: 0.1; far: 250"
-            look-controls="touchEnabled: true; magicWindowTrackingEnabled: true">
+            look-controls="enabled: true; touchEnabled: true; magicWindowTrackingEnabled: false">
           </a-camera>
         </a-entity>
 
-        <!-- Anclaje estático en el mundo real (escenario amplio: Franz Tamayo en (0, 0, -5.2) frente al pórtico monumental) -->
+        <!-- Retícula WebXR proyectada únicamente sobre superficies horizontales detectadas por hit-test -->
+        <a-entity id="ar-reticle" visible="false" position="0 0 -2">
+          <a-ring rotation="-90 0 0" radius-inner="0.22" radius-outer="0.30" color="#ffd166"
+            material="shader: flat; opacity: 0.92; side: double"></a-ring>
+          <a-ring rotation="-90 0 0" radius-inner="0.04" radius-outer="0.08" color="#10b981"
+            material="shader: flat; opacity: 0.95; side: double"></a-ring>
+          <a-circle rotation="-90 0 0" radius="0.36" color="#ffd166"
+            material="shader: flat; opacity: 0.14; side: double"></a-circle>
+        </a-entity>
+
+        <!-- Ancla mundial independiente de la cámara (XRAnchor en WebXR o suelo y = 0 fijo en modo sensores) -->
         <a-entity id="tamayo-world-anchor" position="0 0 0" visible="false">
           <a-entity id="unifranz-ar-root"
             unifranz-welcome-experience="stage: 0; active: true; rigSelector: #pokear-camera-rig; cameraSelector: #pokear-camera"></a-entity>

@@ -59,11 +59,23 @@
   let arAnchorLocked = false;
   let isWorldTracked = false;
   let xrPlacementLocked = false;
-  let xrSession = null;
-  let xrHitTestSource = null;
-  let xrReferenceSpace = null;
   let lastStepTimestamp = 0;
   let accelMagnitudeAvg = 9.81;
+  let fallbackGyroActive = false;
+  let fallbackGyroBaseYaw = null;
+  let lastDOMOverlayTouchAt = 0;
+
+  function isDOMOverlayTarget(target) {
+    if (!target || typeof target.closest !== 'function') return false;
+    return Boolean(target.closest(
+      '.pokear-topbar, .pokear-bottom-card, .ar-minimap-drawer, .pokear-radar-scan-box, ' +
+      '#ar-radar-overlay.is-active, #ar-loading:not(.is-hidden), button, a, input, select'
+    ));
+  }
+
+  function isRecentDOMOverlayTouch() {
+    return (performance.now() - lastDOMOverlayTouchAt) < 420;
+  }
 
   function getARUserCoordinates() {
     const geoState = window.HistoriaGeo && window.HistoriaGeo.getState
@@ -110,22 +122,29 @@
   }
 
   function getAvatarWorldPosition() {
-    const anchor = getWorldAnchor();
-    if (!anchor || !anchor.object3D || !window.THREE) return null;
-    anchor.object3D.updateMatrixWorld(true);
+    if (!window.THREE) return null;
     const manager = getUnifranzManager();
-    const localX = (manager && manager.avatarRoot) ? manager.avatarRoot.position.x : 0;
-    const localZ = (manager && manager.avatarRoot) ? manager.avatarRoot.position.z : -5.2;
-    const localPos = new THREE.Vector3(localX, 0, localZ);
-    return anchor.object3D.localToWorld(localPos);
+    if (manager && manager.avatarRoot && typeof manager.avatarRoot.getWorldPosition === 'function') {
+      manager.avatarRoot.updateMatrixWorld(true);
+      const worldPos = new THREE.Vector3();
+      manager.avatarRoot.getWorldPosition(worldPos);
+      return worldPos;
+    }
+    const anchor = getWorldAnchor();
+    if (!anchor || !anchor.object3D) return null;
+    anchor.object3D.updateMatrixWorld(true);
+    return anchor.object3D.localToWorld(new THREE.Vector3(0, 0, -5.2));
   }
 
-  // Ancla el escenario de UNIFRANZ La Paz de forma estática en coordenadas del mundo real,
-  // colocando a Franz Tamayo frente al pórtico monumental (~5.2 m) mirando hacia el visitante.
+  // Ancla el escenario de UNIFRANZ La Paz en el plano de suelo y = 0 independiente de la cámara.
   function placeSceneInFrontOfCamera() {
     if (!aSceneInstance || !window.THREE || isWorldTracked) return;
     const anchor = getWorldAnchor();
     if (!anchor || !anchor.object3D) return;
+    const unifranzRoot = aSceneInstance.querySelector('#unifranz-ar-root');
+    if (unifranzRoot && unifranzRoot.object3D) {
+      unifranzRoot.object3D.position.set(0, 0, 0);
+    }
 
     const { x: fx, z: fz, camPos } = getCameraForwardHorizontal();
     anchor.object3D.position.set(camPos.x, 0, camPos.z);
@@ -213,22 +232,65 @@
   }
 
   function handleARDeviceOrientation(event) {
-    if (arInitialHeading !== null) return;
-    const heading = getCompassHeading(event);
-    if (heading === null) return;
-    arInitialHeading = heading;
+    if (!aSceneInstance || isWorldTracked || !window.THREE) return;
+    if (!Number.isFinite(event.alpha) || !Number.isFinite(event.beta) || !Number.isFinite(event.gamma)) return;
+
+    if (arInitialHeading === null) {
+      const heading = getCompassHeading(event);
+      if (heading !== null) arInitialHeading = heading;
+    }
+
+    // Orientación 3DoF real (W3C DeviceOrientation -> Quaternion cámara) sobre plano de suelo fijo y = 0
+    const cameraEl = aSceneInstance.querySelector('#pokear-camera');
+    if (!cameraEl || !cameraEl.object3D) return;
+
+    if (!fallbackGyroActive) {
+      fallbackGyroActive = true;
+      cameraEl.setAttribute('look-controls', 'enabled', false);
+    }
+
+    const deg2rad = Math.PI / 180;
+    const screenAngle = (window.screen.orientation?.angle || window.orientation || 0) * deg2rad;
+    const euler = new THREE.Euler(
+      event.beta * deg2rad,
+      event.alpha * deg2rad,
+      -event.gamma * deg2rad,
+      'YXZ'
+    );
+    const sensorQuat = new THREE.Quaternion().setFromEuler(euler);
+    const camBackQuat = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); // -PI/2 en X
+    const screenQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -screenAngle);
+    sensorQuat.multiply(camBackQuat).multiply(screenQuat);
+
+    if (fallbackGyroBaseYaw === null) {
+      const initFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(sensorQuat);
+      initFwd.y = 0;
+      if (initFwd.lengthSq() > 0.0001) {
+        initFwd.normalize();
+        const anchor = getWorldAnchor();
+        const anchorYaw = anchor && anchor.object3D ? anchor.object3D.rotation.y : 0;
+        fallbackGyroBaseYaw = Math.atan2(-initFwd.x, -initFwd.z) - anchorYaw;
+      } else {
+        fallbackGyroBaseYaw = 0;
+      }
+    }
+
+    const yawAlign = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -fallbackGyroBaseYaw);
+    cameraEl.object3D.quaternion.copy(yawAlign).multiply(sensorQuat);
+    cameraEl.object3D.position.set(0, 1.6, 0);
+    cameraEl.object3D.updateMatrixWorld(true);
   }
 
   function handleARDeviceMotion(event) {
     if (!aSceneInstance || !arAnchorLocked || isWorldTracked || !isARLocationAvailable()) return;
     const now = performance.now();
 
-    // Desplazamiento inercial lineal multi-eje (si el sensor entrega aceleración sin gravedad)
+    // Desplazamiento inercial lineal multi-eje sobre el suelo fijo (mueve #pokear-camera-rig, nunca el modelo)
     const linAcc = event.acceleration;
     if (linAcc && Number.isFinite(linAcc.x) && Number.isFinite(linAcc.z)) {
       const forwardSignal = -linAcc.z;
       const lateralSignal = linAcc.x;
-      if (Math.hypot(forwardSignal, lateralSignal) > 0.65) {
+      if (Math.hypot(forwardSignal, lateralSignal) > 0.72) {
         const { x: fx, z: fz } = getCameraForwardHorizontal();
         const rx = -fz;
         const rz = fx;
@@ -463,15 +525,316 @@
     if (pokearVideo) pokearVideo.srcObject = null;
   }
 
-  function stopXRHitTesting() {
-    if (xrHitTestSource) xrHitTestSource.cancel();
-    xrHitTestSource = null;
-    xrReferenceSpace = null;
-    xrSession = null;
+  function setupDOMOverlayCompatibility() {
+    if (!arView || arView.dataset.domOverlayBound === 'true') return;
+    arView.dataset.domOverlayBound = 'true';
+
+    // Evitar que los toques en botones/tarjetas del dom-overlay disparen eventos XR 'select'
+    const markHudTouch = (e) => {
+      if (isDOMOverlayTarget(e.target)) {
+        lastDOMOverlayTouchAt = performance.now();
+      }
+    };
+    arView.addEventListener('touchstart', markHudTouch, { passive: true, capture: true });
+    arView.addEventListener('pointerdown', markHudTouch, { capture: true });
+    arView.addEventListener('beforexrselect', (e) => {
+      if (isDOMOverlayTarget(e.target)) {
+        lastDOMOverlayTouchAt = performance.now();
+        e.preventDefault();
+      }
+    });
+  }
+
+  function registerARHitTestComponent() {
+    if (!window.AFRAME || AFRAME.components['ar-hit-test-anchor']) return;
+
+    AFRAME.registerComponent('ar-hit-test-anchor', {
+      schema: {
+        target: { type: 'selector', default: '#tamayo-world-anchor' },
+        rootOffsetTarget: { type: 'selector', default: '#unifranz-ar-root' },
+        reticle: { type: 'selector', default: '#ar-reticle' }
+      },
+
+      init() {
+        this.xrSession = null;
+        this.xrRefSpace = null;
+        this.hitTestSource = null;
+        this.xrAnchor = null;
+        this.lastHitResult = null;
+        this.lastHitPose = null;
+        this.placed = false;
+        this.mat4 = new THREE.Matrix4();
+        this.tmpPos = new THREE.Vector3();
+        this.tmpQuat = new THREE.Quaternion();
+        this.tmpScale = new THREE.Vector3();
+        this.viewerFwd = new THREE.Vector3();
+        this.viewerQuat = new THREE.Quaternion();
+
+        this.onXRSelect = this.onXRSelect.bind(this);
+        this.onEnterAR = this.onEnterAR.bind(this);
+        this.onExitAR = this.onExitAR.bind(this);
+
+        this.el.sceneEl.addEventListener('enter-vr', this.onEnterAR);
+        this.el.sceneEl.addEventListener('exit-vr', this.onExitAR);
+      },
+
+      async onEnterAR() {
+        const sceneEl = this.el.sceneEl;
+        if (!sceneEl || !sceneEl.is('ar-mode')) return;
+        const session = sceneEl.xrSession || (sceneEl.renderer && sceneEl.renderer.xr.getSession());
+        if (!session) return;
+
+        this.cleanupXR();
+        this.xrSession = session;
+        this.placed = false;
+        this.xrAnchor = null;
+        this.lastHitResult = null;
+        this.lastHitPose = null;
+
+        if (this.data.reticle) this.data.reticle.setAttribute('visible', false);
+        if (this.data.target) this.data.target.setAttribute('visible', false);
+
+        session.addEventListener('select', this.onXRSelect);
+
+        try {
+          const refSpace = await session.requestReferenceSpace('local-floor');
+          if (this.xrSession !== session) return;
+          this.xrRefSpace = refSpace;
+
+          try {
+            const viewerSpace = await session.requestReferenceSpace('viewer');
+            const hitSource = await session.requestHitTestSource({ space: viewerSpace });
+            if (this.xrSession !== session) {
+              hitSource.cancel();
+              return;
+            }
+            this.hitTestSource = hitSource;
+            if (statusPill) {
+              statusPill.textContent = '🔍 Apunta al suelo para proyectar la retícula AR…';
+            }
+          } catch (hitErr) {
+            console.warn('[WebXR] hit-test no disponible; se usará local-floor directo:', hitErr);
+            this.hitTestSource = null;
+          }
+        } catch (err) {
+          console.error('[WebXR] Error inicializando local-floor / hit-test:', err);
+        }
+      },
+
+      onExitAR() {
+        this.cleanupXR();
+        if (this.data.rootOffsetTarget && this.data.rootOffsetTarget.object3D) {
+          this.data.rootOffsetTarget.object3D.position.set(0, 0, 0);
+        }
+      },
+
+      cleanupXR() {
+        if (this.xrSession) {
+          this.xrSession.removeEventListener('select', this.onXRSelect);
+        }
+        if (this.hitTestSource) {
+          try { this.hitTestSource.cancel(); } catch (e) { /* noop */ }
+          this.hitTestSource = null;
+        }
+        if (this.xrAnchor && typeof this.xrAnchor.delete === 'function') {
+          try { this.xrAnchor.delete(); } catch (e) { /* noop */ }
+        }
+        this.xrAnchor = null;
+        this.xrRefSpace = null;
+        this.xrSession = null;
+        this.lastHitResult = null;
+        this.lastHitPose = null;
+        this.placed = false;
+        if (this.data.reticle) this.data.reticle.setAttribute('visible', false);
+      },
+
+      resetPlacement() {
+        if (this.xrAnchor && typeof this.xrAnchor.delete === 'function') {
+          try { this.xrAnchor.delete(); } catch (e) { /* noop */ }
+        }
+        this.xrAnchor = null;
+        this.lastHitResult = null;
+        this.lastHitPose = null;
+        this.placed = false;
+        xrPlacementLocked = false;
+        arAnchorLocked = false;
+        if (this.data.target) this.data.target.setAttribute('visible', false);
+        if (this.data.reticle) this.data.reticle.setAttribute('visible', false);
+        if (statusPill) statusPill.textContent = '🎯 Apunta al suelo y toca la pantalla para fijar';
+      },
+
+      placeAnchorAtPose(transformMatrixArray, viewerPose, anchorObj = null) {
+        const targetEl = this.data.target;
+        if (!targetEl || !targetEl.object3D) return;
+
+        this.mat4.fromArray(transformMatrixArray);
+        this.mat4.decompose(this.tmpPos, this.tmpQuat, this.tmpScale);
+
+        let yaw = 0;
+        if (viewerPose && viewerPose.transform && viewerPose.transform.orientation) {
+          const o = viewerPose.transform.orientation;
+          this.viewerQuat.set(o.x, o.y, o.z, o.w);
+          this.viewerFwd.set(0, 0, -1).applyQuaternion(this.viewerQuat);
+          this.viewerFwd.y = 0;
+          if (this.viewerFwd.lengthSq() > 0.0001) {
+            this.viewerFwd.normalize();
+            yaw = Math.atan2(-this.viewerFwd.x, -this.viewerFwd.z);
+          }
+        }
+
+        targetEl.object3D.position.set(this.tmpPos.x, this.tmpPos.y, this.tmpPos.z);
+        targetEl.object3D.rotation.set(0, yaw, 0);
+        targetEl.object3D.updateMatrixWorld(true);
+
+        // Acerca el escenario al punto exacto tocado en el suelo manteniendo su escala monumental
+        if (this.data.rootOffsetTarget && this.data.rootOffsetTarget.object3D) {
+          this.data.rootOffsetTarget.object3D.position.set(0, 0, 4.4);
+          this.data.rootOffsetTarget.object3D.updateMatrixWorld(true);
+        }
+
+        if (anchorObj) this.xrAnchor = anchorObj;
+        this.placed = true;
+        xrPlacementLocked = true;
+        arAnchorLocked = true;
+
+        if (this.data.reticle) this.data.reticle.setAttribute('visible', false);
+        targetEl.setAttribute('visible', true);
+
+        const coords = getARUserCoordinates();
+        if (coords) arFilteredCoordinates = { lat: coords.lat, lng: coords.lng };
+        syncSitePresence();
+        if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('success');
+      },
+
+      async onXRSelect(event) {
+        if (!this.xrSession || !this.el.sceneEl.is('ar-mode')) return;
+        if (this.placed || isRecentDOMOverlayTouch()) return;
+        if (!isARLocationAvailable()) return;
+
+        const frame = event.frame;
+        const viewerPose = frame && this.xrRefSpace ? frame.getViewerPose(this.xrRefSpace) : null;
+
+        if (this.lastHitResult && this.lastHitPose) {
+          const hitResult = this.lastHitResult;
+          const hitPose = this.lastHitPose;
+          this.placeAnchorAtPose(hitPose.transform.matrix, viewerPose, null);
+
+          try {
+            let anchor = null;
+            if (typeof hitResult.createAnchor === 'function') {
+              anchor = await hitResult.createAnchor();
+            } else if (frame && typeof frame.createAnchor === 'function' && this.xrRefSpace) {
+              anchor = await frame.createAnchor(hitPose.transform, this.xrRefSpace);
+            }
+            if (anchor && this.placed && this.xrSession) {
+              this.xrAnchor = anchor;
+            }
+          } catch (anchorErr) {
+            console.warn('[WebXR] XRAnchor opcional no soportado; fijado en local-floor:', anchorErr);
+          }
+        } else if (viewerPose) {
+          const vp = viewerPose.transform.position;
+          const o = viewerPose.transform.orientation;
+          this.viewerQuat.set(o.x, o.y, o.z, o.w);
+          this.viewerFwd.set(0, 0, -1).applyQuaternion(this.viewerQuat);
+          this.viewerFwd.y = 0;
+          if (this.viewerFwd.lengthSq() < 0.0001) this.viewerFwd.set(0, 0, -1);
+          else this.viewerFwd.normalize();
+
+          const floorMatrix = new THREE.Matrix4().makeTranslation(
+            vp.x + this.viewerFwd.x * 2.5,
+            0,
+            vp.z + this.viewerFwd.z * 2.5
+          );
+          this.placeAnchorAtPose(floorMatrix.elements, viewerPose, null);
+        }
+      },
+
+      tick() {
+        const sceneEl = this.el.sceneEl;
+        if (!this.xrSession || !sceneEl || !sceneEl.is('ar-mode') || !this.xrRefSpace) return;
+
+        const frame = sceneEl.frame || (sceneEl.renderer && sceneEl.renderer.xr && sceneEl.renderer.xr.getFrame
+          ? sceneEl.renderer.xr.getFrame()
+          : null);
+        if (!frame) return;
+
+        // 1. Si ya existe XRAnchor en local-floor, seguir la compensación de deriva física del suelo
+        if (this.placed && this.xrAnchor && this.data.target && this.data.target.object3D) {
+          const anchorPose = frame.getPose(this.xrAnchor.anchorSpace, this.xrRefSpace);
+          if (anchorPose) {
+            this.mat4.fromArray(anchorPose.transform.matrix);
+            this.mat4.decompose(this.tmpPos, this.tmpQuat, this.tmpScale);
+            this.data.target.object3D.position.copy(this.tmpPos);
+            this.data.target.object3D.updateMatrixWorld(true);
+          }
+          return;
+        }
+
+        if (this.placed) return;
+
+        // 2. Proyectar retícula únicamente sobre superficies horizontales reales (normal Y >= 0.72)
+        if (this.hitTestSource) {
+          const results = frame.getHitTestResults(this.hitTestSource);
+          let horizontalHit = null;
+          let horizontalPose = null;
+
+          for (let i = 0; i < results.length; i++) {
+            const pose = results[i].getPose(this.xrRefSpace);
+            if (!pose) continue;
+            // Columna 1 (elementos 4, 5, 6) representa la normal de la superficie detectada
+            if (pose.transform.matrix[5] >= 0.72) {
+              horizontalHit = results[i];
+              horizontalPose = pose;
+              break;
+            }
+          }
+
+          if (horizontalHit && horizontalPose) {
+            this.lastHitResult = horizontalHit;
+            this.lastHitPose = horizontalPose;
+            if (this.data.reticle && this.data.reticle.object3D) {
+              this.mat4.fromArray(horizontalPose.transform.matrix);
+              this.mat4.decompose(this.tmpPos, this.tmpQuat, this.tmpScale);
+              this.data.reticle.object3D.position.copy(this.tmpPos);
+              this.data.reticle.object3D.quaternion.copy(this.tmpQuat);
+              const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.06;
+              this.data.reticle.object3D.scale.setScalar(pulse);
+              this.data.reticle.setAttribute('visible', true);
+            }
+            if (statusPill && !isRecentDOMOverlayTouch()) {
+              statusPill.textContent = '🎯 Superficie horizontal detectada · Toca la pantalla para fijar';
+            }
+          } else if (this.data.reticle) {
+            this.data.reticle.setAttribute('visible', false);
+          }
+        } else {
+          // Respaldo WebXR sin hit-test: fijar una sola vez en suelo físico local-floor
+          const viewerPose = frame.getViewerPose(this.xrRefSpace);
+          if (viewerPose) {
+            const vp = viewerPose.transform.position;
+            const floorMatrix = new THREE.Matrix4().makeTranslation(vp.x, 0, vp.z);
+            this.placeAnchorAtPose(floorMatrix.elements, viewerPose, null);
+            if (this.data.rootOffsetTarget && this.data.rootOffsetTarget.object3D) {
+              this.data.rootOffsetTarget.object3D.position.set(0, 0, 0);
+            }
+          }
+        }
+      },
+
+      remove() {
+        if (this.el.sceneEl) {
+          this.el.sceneEl.removeEventListener('enter-vr', this.onEnterAR);
+          this.el.sceneEl.removeEventListener('exit-vr', this.onExitAR);
+        }
+        this.cleanupXR();
+      }
+    });
   }
 
   function resumeCameraFallback() {
     if (!arView || arView.getAttribute('aria-hidden') !== 'false' || !aSceneInstance) return;
+    fallbackGyroBaseYaw = null;
     startCamera().then((cameraReady) => {
       if (!cameraReady || !aSceneInstance || isWorldTracked) return;
       arAnchorLocked = false;
@@ -480,110 +843,26 @@
     });
   }
 
-  function placeWorldAnchorFromXR(viewerPose, hitPose = null) {
-    if (!window.THREE || !aSceneInstance || !viewerPose) return;
-    const anchor = getWorldAnchor();
-    if (!anchor || !anchor.object3D) return;
-
-    const viewerPos = viewerPose.transform.position;
-    const orientation = viewerPose.transform.orientation;
-    const cameraRotation = new THREE.Quaternion(
-      orientation.x,
-      orientation.y,
-      orientation.z,
-      orientation.w
-    );
-    const cameraForward = new THREE.Vector3(0, 0, -1).applyQuaternion(cameraRotation);
-    cameraForward.y = 0;
-    if (cameraForward.lengthSq() < 0.0001) cameraForward.set(0, 0, -1);
-    else cameraForward.normalize();
-
-    let floorY = 0;
-    if (hitPose && hitPose.transform && hitPose.transform.position) {
-      const hy = hitPose.transform.position.y;
-      if (Number.isFinite(hy) && Math.abs(hy) < 1.2) {
-        floorY = hy;
-      }
-    }
-
-    anchor.object3D.position.set(viewerPos.x, floorY, viewerPos.z);
-    anchor.object3D.rotation.set(0, Math.atan2(-cameraForward.x, -cameraForward.z), 0);
-    anchor.object3D.updateMatrixWorld(true);
-    xrPlacementLocked = true;
-    arAnchorLocked = true;
-
-    const coords = getARUserCoordinates();
-    if (coords) arFilteredCoordinates = { lat: coords.lat, lng: coords.lng };
-    syncSitePresence();
-  }
-
-  async function beginXRHitTesting(sceneEl) {
-    const session = sceneEl.xrSession || (sceneEl.renderer && sceneEl.renderer.xr.getSession());
-    if (!session) throw new Error('La sesión WebXR no está disponible después de entrar en AR.');
-
-    const referenceSpace = await session.requestReferenceSpace('local-floor');
-    let hitTestSource = null;
-    try {
-      const viewerSpace = await session.requestReferenceSpace('viewer');
-      hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
-    } catch (e) {
-      console.warn('[Historia Viva] hit-test opcional no disponible; usando suelo directo local-floor:', e);
-    }
-
-    if (xrSession !== session || !sceneEl.is('ar-mode')) {
-      if (hitTestSource) hitTestSource.cancel();
-      return;
-    }
-
-    xrReferenceSpace = referenceSpace;
-    xrHitTestSource = hitTestSource;
-    const enterStartedAt = performance.now();
-
-    const onXRFrame = (_time, frame) => {
-      if (xrSession !== session || !sceneEl.is('ar-mode')) return;
-      const viewerPose = frame.getViewerPose(xrReferenceSpace);
-      if (!xrPlacementLocked && viewerPose) {
-        let hitPose = null;
-        if (xrHitTestSource) {
-          const hit = frame.getHitTestResults(xrHitTestSource)[0];
-          hitPose = hit && hit.getPose(xrReferenceSpace);
-        }
-        // Si hit-test detecta suelo real o tras 1.2s de espera (o sin hit-test), fijar en mundo real 6DoF
-        if (hitPose || !xrHitTestSource || performance.now() - enterStartedAt > 1200) {
-          placeWorldAnchorFromXR(viewerPose, hitPose || null);
-        }
-      }
-      session.requestAnimationFrame(onXRFrame);
-    };
-
-    session.requestAnimationFrame(onXRFrame);
-  }
-
   function handleARWebXREnter() {
     if (!aSceneInstance || !aSceneInstance.is('ar-mode')) return;
     isWorldTracked = true;
     xrPlacementLocked = false;
     arAnchorLocked = false;
+    fallbackGyroActive = false;
     arView.classList.add('is-world-tracked');
     stopCamera();
 
     const anchor = getWorldAnchor();
     if (anchor) anchor.setAttribute('visible', false);
-    if (statusPill) statusPill.textContent = '📍 Anclando escenario monumental en AR 6DoF…';
-
-    xrSession = aSceneInstance.xrSession || null;
-    beginXRHitTesting(aSceneInstance).catch((error) => {
-      console.error('[Historia Viva] No se pudo iniciar el seguimiento espacial WebXR:', error);
-      if (statusPill) statusPill.textContent = '⚠️ No se pudo iniciar WebXR; usa "Fijar aquí" para continuar';
-    });
+    if (statusPill) statusPill.textContent = '🔍 Apunta al suelo y toca la pantalla para fijar a Franz Tamayo';
   }
 
   function handleARWebXRExit() {
-    stopXRHitTesting();
     if (!isWorldTracked) return;
     isWorldTracked = false;
     xrPlacementLocked = false;
     arAnchorLocked = false;
+    fallbackGyroBaseYaw = null;
     if (arView) arView.classList.remove('is-world-tracked');
 
     if (aSceneInstance && !aSceneInstance.dataset.unmounting) resumeCameraFallback();
@@ -593,6 +872,8 @@
   function mountPokeArScene() {
     if (aSceneInstance || !arSceneTemplate || !arView) return;
 
+    registerARHitTestComponent();
+    setupDOMOverlayCompatibility();
     aSceneInstance = arSceneTemplate.content.firstElementChild.cloneNode(true);
     configureDracoSupport(aSceneInstance);
     aSceneInstance.addEventListener('enter-vr', handleARWebXREnter);
@@ -628,7 +909,6 @@
   function unmountPokeArScene() {
     if (aSceneInstance) {
       aSceneInstance.dataset.unmounting = 'true';
-      stopXRHitTesting();
       try {
         if (aSceneInstance.is && (aSceneInstance.is('vr-mode') || aSceneInstance.is('ar-mode'))) {
           aSceneInstance.exitVR();
@@ -676,7 +956,9 @@
 
     canvas.addEventListener('click', (e) => {
       if (!isARLocationAvailable()) return;
-      if (e.target.closest('.pokear-hud') || e.target.closest('button')) return;
+      if (isRecentDOMOverlayTouch() || isDOMOverlayTarget(e.target)) return;
+      const hitComp = aSceneInstance.components && aSceneInstance.components['ar-hit-test-anchor'];
+      if (isWorldTracked && hitComp && !hitComp.placed) return;
 
       const rect = canvas.getBoundingClientRect();
       const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -852,6 +1134,8 @@
       window.HistoriaGeo.startGPSTracking();
       startedGPSForAR = true;
     }
+    fallbackGyroActive = false;
+    fallbackGyroBaseYaw = null;
     const orientationPermission = requestAROrientationPermission();
     const cameraReady = await startCamera();
     const orientationReady = await orientationPermission;
@@ -878,6 +1162,8 @@
     arAnchorLocked = false;
     isWorldTracked = false;
     xrPlacementLocked = false;
+    fallbackGyroActive = false;
+    fallbackGyroBaseYaw = null;
     if (arView) arView.classList.remove('is-world-tracked');
     if (startedGPSForAR && window.HistoriaGeo && typeof window.HistoriaGeo.stopGPSTracking === 'function') {
       window.HistoriaGeo.stopGPSTracking();
@@ -953,9 +1239,14 @@
     if (btnReanchor) {
       btnReanchor.addEventListener('click', () => {
         if (isWorldTracked) {
-          xrPlacementLocked = false;
-          arAnchorLocked = false;
-          if (statusPill) statusPill.textContent = '📍 Re-anclando escenario monumental frente a ti…';
+          const hitComp = aSceneInstance && aSceneInstance.components && aSceneInstance.components['ar-hit-test-anchor'];
+          if (hitComp && typeof hitComp.resetPlacement === 'function') {
+            hitComp.resetPlacement();
+          } else {
+            xrPlacementLocked = false;
+            arAnchorLocked = false;
+          }
+          if (statusPill) statusPill.textContent = '🎯 Apunta al suelo y toca la pantalla para fijar';
         } else {
           placeSceneInFrontOfCamera();
         }
