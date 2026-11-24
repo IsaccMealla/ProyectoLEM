@@ -57,28 +57,51 @@
   </script>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
-  <!-- Encabezado Principal -->
+  <!-- Cinta Institucional Superior UNIFRANZ -->
+  <div class="unifranz-topbar" role="region" aria-label="Identidad institucional UNIFRANZ">
+    <div class="unifranz-topbar-inner">
+      <span class="unifranz-topbar-badge">
+        <span class="unifranz-dot"></span> UNIVERSIDAD FRANZ TAMAYO · SEDE LA PAZ
+      </span>
+      <span class="unifranz-topbar-motto">MODELO EDUCATIVO «APRENDER HACIENDO» · INNOVACIÓN EN AR &amp; WebXR 6DoF</span>
+      <span class="unifranz-topbar-campuses">LA PAZ · EL ALTO · COCHABAMBA · SANTA CRUZ</span>
+    </div>
+  </div>
+
+  <!-- Encabezado Principal UNIFRANZ -->
   <header class="site-header">
-    <a class="brand" href="#inicio" aria-label="Historia Viva, inicio">
-      <span class="brand-mark" aria-hidden="true">HV</span>
-      <span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span>
+    <a class="brand" href="#inicio" aria-label="UNIFRANZ Historia Viva, inicio">
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="unifranz-emblem-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="44" height="44" rx="10" fill="#141824" stroke="#d93829" stroke-width="2" />
+          <path d="M13 13V26C13 32.1 17.6 36 24 36C30.4 36 35 32.1 35 26V13H29.5V25.6C29.5 29.1 27.3 31.2 24 31.2C20.7 31.2 18.5 29.1 18.5 25.6V13H13Z" fill="#ffffff" />
+          <path d="M10 40.5Q24 36.2 38 40.5" stroke="#d93829" stroke-width="3.6" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span class="brand-name">
+        <span class="brand-unifranz-word">UNIFRANZ</span>
+        <span class="brand-highlight">HISTORIA VIVA</span>
+        <small>UNIVERSIDAD FRANZ TAMAYO · LA PAZ</small>
+      </span>
     </a>
     <nav class="main-nav" aria-label="Navegación principal">
-      <a href="#cronologia">Cronología</a>
-      <a href="#mapa">Mapa GPS</a>
-      <a href="#contexto">Contexto</a>
-      <a href="#modalidades">Modalidades AR &amp; VR</a>
+      <a href="#inicio">Inicio</a>
+      <a href="#cronologia">5 Etapas</a>
+      <a href="#mapa">Mapa GPS &amp; Rutas</a>
+      <a href="#contexto">Legado Tamayo</a>
+      <a href="#modalidades">AR &amp; VR 360°</a>
     </nav>
-    <div style="display: flex; gap: 8px;">
+    <div class="header-actions">
       <button class="header-cta voice-button" id="voice-assistant-toggle" type="button" aria-pressed="false"
         title="Activar comandos por voz">
         <span aria-hidden="true">🎙️</span> Voz
       </button>
-      <button class="header-cta" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara"><span
-          aria-hidden="true">📷</span> Modo AR</button>
-      <button class="header-cta" type="button" data-open-vr
-        style="background: rgba(33,150,243,0.18); border-color: rgba(33,150,243,0.5); color: #7cc3f8;"
-        title="Iniciar Realidad Virtual 360°"><span aria-hidden="true">🥽</span> Modo VR</button>
+      <button class="header-cta header-cta-ar" type="button" data-open-ar title="Iniciar Realidad Aumentada con cámara">
+        <span aria-hidden="true">📷</span> Experiencia AR
+      </button>
+      <button class="header-cta header-cta-vr" type="button" data-open-vr title="Iniciar Realidad Virtual 360°">
+        <span aria-hidden="true">🥽</span> Modo VR 360°
+      </button>
     </div>
   </header>
 
@@ -88,41 +111,173 @@
   </div>
 
   <main id="contenido">
-    <!-- Hero / Portada Principal -->
+    <!-- Hero / Primera Vista Institucional UNIFRANZ La Paz -->
     <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-ambient-glow" aria-hidden="true"></div>
       <div class="hero-copy">
-        <p class="eyebrow"><span></span> BOLIVIA · PENSAMIENTO · EDUCACIÓN E INNOVACIÓN</p>
-        <h1 id="hero-title">Historia Viva: El Legado de Franz Tamayo y UNIFRANZ</h1>
-        <p class="hero-intro">Un viaje interactivo a través del pensamiento, la educación y el futuro de Bolivia.
-          Experimenta la historia en Realidad Aumentada (AR con cámara y marcador) o en Realidad Virtual inmersiva (VR
-          360° para smartphone o gafas Cardboard).</p>
+        <div class="unifranz-hero-pill">
+          <span class="unifranz-pill-tag">UNIFRANZ LA PAZ</span>
+          <span class="unifranz-pill-text">BIENVENIDA HISTÓRICA · AR 6DoF &amp; VR 360°</span>
+        </div>
+
+        <p class="eyebrow"><span></span> UNIVERSIDAD FRANZ TAMAYO · TRANSFORMANDO LA EDUCACIÓN EN BOLIVIA</p>
+
+        <h1 id="hero-title">
+          Bienvenidos a <em>UNIFRANZ</em>:<br>
+          El Legado Vivo de <span>Franz Tamayo</span>
+        </h1>
+
+        <p class="hero-intro">
+          Explora frente al edificio de <strong>UNIFRANZ La Paz</strong> (Calle Héroes del Acre esq. Landaeta) una
+          experiencia inmersiva de 5 etapas donde <strong>Franz Tamayo</strong> cobra vida en Realidad Aumentada
+          espacial 6DoF y Realidad Virtual 360° para presentar nuestra historia, el modelo <em>Aprender Haciendo</em>,
+          Inteligencia Artificial, Robótica y Simulación Clínica.
+        </p>
+
         <div class="hero-actions">
-          <button class="button button-gold" type="button" data-open-ar>🚀 Iniciar Experiencia AR <span
-              aria-hidden="true">↗</span></button>
-          <button class="button button-dark" type="button" data-open-vr>🥽 Iniciar Experiencia VR (360°) <span
-              aria-hidden="true">↗</span></button>
-          <a class="button button-outline" href="#mapa">📍 Mapa &amp; Rango AR <span aria-hidden="true">↓</span></a>
-          <a class="button button-outline" href="#cronologia">Explorar historia <span aria-hidden="true">↓</span></a>
+          <button class="button button-unifranz-primary" type="button" data-open-ar>
+            <span>🚀 Iniciar Experiencia AR en Vivo</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+          <button class="button button-unifranz-vr" type="button" data-open-vr>
+            <span>🥽 Explorar Campus en VR 360°</span>
+            <span aria-hidden="true">↗</span>
+          </button>
+          <a class="button button-outline" href="#mapa">📍 Mapa GPS &amp; Ruta <span aria-hidden="true">↓</span></a>
+          <a class="button button-outline" href="#cronologia">5 Etapas UNIFRANZ <span aria-hidden="true">↓</span></a>
         </div>
-        <div class="hero-meta"><span class="meta-rule"></span><span>UNA EXPERIENCIA EDUCATIVA INMERSIVA<br>REALIDAD
-            AUMENTADA &amp; REALIDAD VIRTUAL 360°</span></div>
-      </div>
-      <div class="hero-art" role="img"
-        aria-label="Ilustración editorial inspirada en Franz Tamayo y el pensamiento boliviano">
-        <div class="art-frame">
-          <div class="art-sun"></div>
-          <div class="art-statue" aria-hidden="true">
-            <div class="statue-head"></div>
-            <div class="statue-body"></div>
-            <div class="statue-pedestal"></div>
+
+        <!-- Tarjetas de Identidad Institucional UNIFRANZ en Primera Vista -->
+        <div class="unifranz-hero-stats" role="list" aria-label="Pilares institucionales UNIFRANZ">
+          <div class="unifranz-stat-card" role="listitem">
+            <span class="stat-kicker">DESDE 1993</span>
+            <strong>Sede La Paz</strong>
+            <small>Héroes del Acre esq. Landaeta</small>
           </div>
-          <div class="art-caption"><span>1879 — 1956</span><span>PENSAMIENTO BOLIVIANO</span></div>
-          <div class="art-date">FRANZ TAMAYO</div>
+          <div class="unifranz-stat-card" role="listitem">
+            <span class="stat-kicker">MODELO EDUCATIVO</span>
+            <strong>Aprender Haciendo</strong>
+            <small>Práctica desde 1er semestre</small>
+          </div>
+          <div class="unifranz-stat-card" role="listitem">
+            <span class="stat-kicker">INNOVACIÓN 3D</span>
+            <strong>5 Etapas AR &amp; VR</strong>
+            <small>IA, ROV, Salud y Puertas Abiertas</small>
+          </div>
+          <div class="unifranz-stat-card" role="listitem">
+            <span class="stat-kicker">PRESENCIA NACIONAL</span>
+            <strong>4 Sedes en Bolivia</strong>
+            <small>LPZ · EA · CBBA · SCZ</small>
+          </div>
         </div>
-        <div class="hero-stamp">AR + VR<br>UNIFRANZ <span>✳</span></div>
       </div>
-      <div class="hero-bottom"><span>BOLIVIA</span><span>COMPATIBLE CON MÓVIL Y GAFAS VR</span><span>01 — 05
-          ESCENAS</span></div>
+
+      <!-- Showcase Arquitectónico Interactivo del Campus UNIFRANZ La Paz -->
+      <div class="hero-art" role="img"
+        aria-label="Fachada institucional del edificio UNIFRANZ La Paz con experiencia holográfica de Franz Tamayo">
+        <div class="art-frame unifranz-campus-showcase">
+          <!-- Cabecera de tarjeta con logo oficial UNIFRANZ y trazo rojo -->
+          <div class="showcase-header">
+            <div class="showcase-logo-lockup">
+              <span class="showcase-unifranz-title">UNIFRANZ</span>
+              <span class="showcase-unifranz-swoosh" aria-hidden="true"></span>
+              <span class="showcase-unifranz-sub">LA PAZ · BOLIVIA</span>
+            </div>
+            <span class="showcase-live-pill"><span class="live-pulse-dot"></span> WebXR 6DoF</span>
+          </div>
+
+          <div class="art-sun"></div>
+
+          <!-- Recreación visual de la fachada achaflanada de 6 pisos de UNIFRANZ La Paz -->
+          <div class="unifranz-facade-illustration" aria-hidden="true">
+            <div class="uf-building-wrap">
+              <!-- Ala Izquierda -->
+              <div class="uf-wing uf-wing-left">
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+              </div>
+
+              <!-- Chaflán Central de 6 Pisos -->
+              <div class="uf-chamfer-center">
+                <div class="uf-roof-crown">
+                  <span class="uf-crown-logo">UNIFRANZ</span>
+                  <i class="uf-crown-curve"></i>
+                </div>
+                <div class="uf-window-grid">
+                  <span></span><span></span><span></span>
+                  <span></span><span></span><span></span>
+                  <span></span><span></span><span></span>
+                  <span></span><span></span><span></span>
+                </div>
+                <!-- Fila de 10 banderas internacionales sobre la marquesina -->
+                <div class="uf-flags-row" title="10 Banderas Internacionales de la Fachada UNIFRANZ">
+                  <i class="flag-bo"></i><i class="flag-br"></i><i class="flag-ve"></i><i class="flag-co"></i><i class="flag-pe"></i>
+                  <i class="flag-ar"></i><i class="flag-cl"></i><i class="flag-mx"></i><i class="flag-es"></i><i class="flag-us"></i>
+                </div>
+                <!-- Marquesina curva oscura "Universidad Franz Tamayo" -->
+                <div class="uf-marquee">
+                  <span>Universidad Franz Tamayo</span>
+                </div>
+                <!-- Pórtico con 2 columnas blancas y puertas de vidrio -->
+                <div class="uf-portico">
+                  <div class="uf-column"></div>
+                  <div class="uf-glass-doors">
+                    <div class="uf-portal-glow"></div>
+                  </div>
+                  <div class="uf-column"></div>
+                </div>
+              </div>
+
+              <!-- Ala Derecha -->
+              <div class="uf-wing uf-wing-right">
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+                <div class="uf-window-row"><span></span><span></span></div>
+              </div>
+            </div>
+
+            <!-- Avatar Holográfico de Franz Tamayo frente al Pórtico -->
+            <div class="uf-avatar-stage">
+              <div class="uf-holo-ring uf-holo-ring-outer"></div>
+              <div class="uf-holo-ring uf-holo-ring-inner"></div>
+              <div class="art-statue">
+                <div class="statue-head"></div>
+                <div class="statue-body"></div>
+                <div class="statue-pedestal"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Etiquetas flotantes de las etapas holográficas -->
+          <div class="showcase-floating-chips" aria-hidden="true">
+            <span class="showcase-chip chip-stage-1">🏛️ 01 · Fachada 1993</span>
+            <span class="showcase-chip chip-stage-2">⚡ 02 · Aprender Haciendo</span>
+            <span class="showcase-chip chip-stage-3">🤖 03 · IA &amp; Dron ROV</span>
+            <span class="showcase-chip chip-stage-4">🦷 04 · Simulación Clínica</span>
+          </div>
+
+          <!-- Pie interactivo del Showcase -->
+          <div class="art-caption showcase-footer">
+            <div>
+              <span class="showcase-caption-kicker">AVATAR 3D + AUDIO POSICIONAL</span>
+              <strong>Franz Tamayo en UNIFRANZ La Paz</strong>
+            </div>
+            <button type="button" class="showcase-launch-btn" data-open-ar>
+              Probar AR ↗
+            </button>
+          </div>
+        </div>
+        <div class="hero-stamp">SELLO<br><strong>UNIFRANZ</strong><br><span>1993 · LPZ</span></div>
+      </div>
+
+      <div class="hero-bottom">
+        <span>UNIVERSIDAD FRANZ TAMAYO · SEDE LA PAZ</span>
+        <span>EXPERIENCIA OFICIAL AR 6DoF &amp; VR 360°</span>
+        <span>01 — 05 ETAPAS INTERACTIVAS</span>
+      </div>
     </section>
 
     <!-- Sección de Cronología: Las 5 Escenas -->
@@ -501,14 +656,24 @@
     </section>
   </main>
 
-  <!-- Pie de Página -->
+  <!-- Pie de Página Institucional UNIFRANZ -->
   <footer class="site-footer">
     <a class="brand brand-footer" href="#inicio">
-      <span class="brand-mark" aria-hidden="true">HV</span>
-      <span class="brand-name">HISTORIA <span>VIVA</span><small>FRANZ TAMAYO · UNIFRANZ</small></span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="unifranz-emblem-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="44" height="44" rx="10" fill="#141824" stroke="#d93829" stroke-width="2" />
+          <path d="M13 13V26C13 32.1 17.6 36 24 36C30.4 36 35 32.1 35 26V13H29.5V25.6C29.5 29.1 27.3 31.2 24 31.2C20.7 31.2 18.5 29.1 18.5 25.6V13H13Z" fill="#ffffff" />
+          <path d="M10 40.5Q24 36.2 38 40.5" stroke="#d93829" stroke-width="3.6" stroke-linecap="round" />
+        </svg>
+      </span>
+      <span class="brand-name">
+        <span class="brand-unifranz-word">UNIFRANZ</span>
+        <span class="brand-highlight">HISTORIA VIVA</span>
+        <small>UNIVERSIDAD FRANZ TAMAYO · LA PAZ</small>
+      </span>
     </a>
-    <p>Un recorrido por la historia de la educación boliviana<br><strong>1879 — presente</strong></p>
-    <span class="footer-date">BOLIVIA</span>
+    <p>Universidad Franz Tamayo · Sede La Paz (Héroes del Acre esq. Landaeta)<br><strong>Transformando la educación en Bolivia · 1993 — presente</strong></p>
+    <span class="footer-date">UNIFRANZ · BOLIVIA</span>
   </footer>
 
   <!-- =========================================================================
