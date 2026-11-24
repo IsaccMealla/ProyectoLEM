@@ -2378,8 +2378,10 @@ canvas.a-canvas {
 }
 
 .ar-loading.is-hidden {
+  display: none !important;
+  visibility: hidden !important;
   opacity: 0;
-  pointer-events: none;
+  pointer-events: none !important;
 }
 
 .loader-mark {
@@ -4105,11 +4107,17 @@ canvas.a-canvas {
   pointer-events: auto !important;
 }
 
+.pokear-view.is-radar-active #pokear-scene,
+.pokear-view.is-radar-active #pokear-scene .a-canvas {
+  pointer-events: none !important;
+}
+
 /* Radar Escáner (visible cuando el usuario está fuera del sitio) */
 .pokear-radar-overlay {
   position: fixed;
   inset: 0;
-  z-index: 8;
+  z-index: 40 !important;
+  pointer-events: auto !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4121,9 +4129,13 @@ canvas.a-canvas {
 
 .pokear-radar-overlay[hidden] {
   display: none !important;
+  pointer-events: none !important;
 }
 
 .pokear-radar-scan-box {
+  position: relative;
+  z-index: 41 !important;
+  pointer-events: auto !important;
   max-width: 420px;
   width: 100%;
   text-align: center;
@@ -4135,6 +4147,12 @@ canvas.a-canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.pokear-radar-overlay button,
+.pokear-hud button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .radar-scan-rings {
@@ -4253,8 +4271,8 @@ canvas.a-canvas {
 .pokear-hud {
   position: fixed;
   inset: 0;
-  pointer-events: none;
-  z-index: 10;
+  pointer-events: none !important;
+  z-index: 80 !important;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -4262,12 +4280,13 @@ canvas.a-canvas {
 }
 
 .pokear-topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   pointer-events: auto !important;
-  z-index: 100 !important;
+  z-index: 140 !important;
 }
 
 /* Botón prominente para volver a la página principal desde AR y VR */
@@ -4422,7 +4441,9 @@ canvas.a-canvas {
 
 /* Tarjeta inferior minimalista */
 .pokear-bottom-card {
-  pointer-events: auto;
+  position: relative;
+  z-index: 130 !important;
+  pointer-events: auto !important;
   background: rgba(18, 20, 26, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -4883,8 +4904,8 @@ canvas.a-canvas {
   border: 1px solid rgba(255, 209, 102, 0.45);
   border-radius: 16px;
   padding: 10px;
-  z-index: 45;
-  pointer-events: auto;
+  z-index: 120 !important;
+  pointer-events: auto !important;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
   transition: opacity 0.25s ease, transform 0.25s ease;
 }

@@ -344,7 +344,7 @@
       coords: getSceneCoordinates(resolvedStory, sceneIdx),
       zoom: 17,
       description: 'Punto geográfico donde se habilita esta etapa de Realidad Aumentada.',
-      streets: []
+      streets: LANDMARKS.unifranz_lp.streets.slice()
     };
     const targetSelect = document.getElementById('geo-landmark-select');
     if (targetSelect) targetSelect.value = 'active-scene';
@@ -652,7 +652,10 @@
     state.distance = dist;
     state.inRange = dist <= state.radius;
 
-    recalculateShortestRoute();
+    const isWalkingAnimation = state.walkTimer !== null;
+    if (!isWalkingAnimation) {
+      recalculateShortestRoute();
+    }
 
     const payload = {
       inRange: state.inRange,
@@ -673,7 +676,9 @@
     updateMapElements();
     updateMiniMapElements();
     updateDOMUI(payload);
-    renderRouteDirectionsDOM();
+    if (!isWalkingAnimation) {
+      renderRouteDirectionsDOM();
+    }
 
     window.dispatchEvent(new CustomEvent('historia:geo-update', { detail: payload }));
 
@@ -1257,10 +1262,15 @@ function setRadius(meters) {
 
 // 🚶 Animar caminata paso a paso siguiendo los nodos de la Ruta Más Corta (Dijkstra)
 function walkShortestPath(targetSceneIdx, onArrival) {
-  if (!state.target || !state.userCoords) return;
+  if (!state.target) return;
+  if (state.isTracking) stopGPSTracking();
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
+  }
+
+  if (!state.userCoords) {
+    initInitialPosition();
   }
 
   recalculateShortestRoute();
@@ -1269,26 +1279,34 @@ function walkShortestPath(targetSceneIdx, onArrival) {
       ? state.shortestRoute.pathCoords.slice()
       : [
         [state.userCoords.lat, state.userCoords.lng],
-        [state.target.coords[0] + 0.00006, state.target.coords[1] + 0.00005]
+        [state.target.coords[0] - 0.000021, state.target.coords[1]]
       ];
 
-  // Interpolar en 24 pasos suaves a lo largo de la polilínea de la ruta más corta
+  // Limitar siempre a un máximo de 18 pasos sin importar cuántos puntos devuelva OSRM
+  const MAX_STEPS = 18;
   const interpolated = [];
-  const totalSegs = rawCoords.length - 1;
-  const stepsPerSeg = Math.max(3, Math.ceil(24 / Math.max(1, totalSegs)));
-
-  for (let s = 0; s < totalSegs; s++) {
-    const a = rawCoords[s];
-    const b = rawCoords[s + 1];
-    for (let k = 1; k <= stepsPerSeg; k++) {
-      const t = k / stepsPerSeg;
-      interpolated.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+  if (rawCoords.length <= MAX_STEPS) {
+    const totalSegs = Math.max(1, rawCoords.length - 1);
+    const stepsPerSeg = Math.max(1, Math.floor(MAX_STEPS / totalSegs));
+    for (let s = 0; s < totalSegs; s++) {
+      const a = rawCoords[s];
+      const b = rawCoords[s + 1];
+      for (let k = 1; k <= stepsPerSeg; k++) {
+        const t = k / stepsPerSeg;
+        interpolated.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+    }
+  } else {
+    for (let i = 1; i <= MAX_STEPS; i++) {
+      const idx = Math.min(rawCoords.length - 1, Math.round((i / MAX_STEPS) * (rawCoords.length - 1)));
+      interpolated.push(rawCoords[idx]);
     }
   }
 
-  // Asegurar que el último punto quede a ~10m del objetivo (dentro del geofence)
-  const destCoords =
-    typeof targetSceneIdx === 'number' ? getSceneStationCoords(targetSceneIdx) : [state.target.coords[0] + 0.00006, state.target.coords[1] + 0.00005];
+  const activeCoords = typeof targetSceneIdx === 'number'
+    ? getSceneStationCoords(targetSceneIdx)
+    : getSceneCoordinates(state.activeStory, state.selectedSceneIndex);
+  const destCoords = [activeCoords[0] - 0.000021, activeCoords[1]];
   interpolated.push(destCoords);
 
   let stepIdx = 0;
@@ -1301,19 +1319,22 @@ function walkShortestPath(targetSceneIdx, onArrival) {
           detail: { index: targetSceneIdx, storyId: state.activeStory }
         }));
       }
+      simulateInRange();
       if (typeof onArrival === 'function') onArrival();
       return;
     }
     const pt = interpolated[stepIdx++];
+    state.simulatedMovementAnchor = { lat: pt[0], lng: pt[1] };
     setUserCoordinates(pt[0], pt[1], 6, true);
-    if (state.map) state.map.panTo(pt, { animate: true, duration: 0.12 });
-    if (state.miniMap) state.miniMap.panTo(pt, { animate: true, duration: 0.12 });
-  }, 110);
+    if (state.map) state.map.panTo(pt, { animate: false });
+    if (state.miniMap) state.miniMap.panTo(pt, { animate: false });
+  }, 80);
 }
 
 // 🎯 Colocar la vista de prueba a escala humana (2.3 m frente al usuario) y dentro del rango del objetivo
 function simulateInRange() {
   if (!state.target) return;
+  if (state.isTracking) stopGPSTracking();
   if (state.walkTimer) {
     clearInterval(state.walkTimer);
     state.walkTimer = null;
@@ -1560,11 +1581,6 @@ function setupDOMListeners() {
   const arSimulateBtn = document.getElementById('ar-geo-simulate-btn');
   if (arSimulateBtn) {
     arSimulateBtn.addEventListener('click', simulateInRange);
-  }
-
-  const arWalkRouteBtn = document.getElementById('ar-radar-walk-route-btn');
-  if (arWalkRouteBtn) {
-    arWalkRouteBtn.addEventListener('click', () => walkShortestPath());
   }
 
   const arGoToMapBtn = document.getElementById('ar-geo-map-btn');

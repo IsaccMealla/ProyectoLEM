@@ -432,6 +432,7 @@
       }
     }
 
+    if (arView) arView.classList.toggle('is-radar-active', !inRange);
     if (inRange) {
       if (radarOverlay) {
         radarOverlay.classList.remove('is-active');
@@ -472,7 +473,7 @@
         radarTargetEl.textContent = targetName;
       }
 
-      if (btnAudio) btnAudio.disabled = true;
+      if (btnAudio) btnAudio.disabled = false;
     }
   }
 
@@ -1116,14 +1117,15 @@
 
     arView.setAttribute('aria-hidden', 'false');
     arView.inert = false;
+    arView.removeAttribute('inert');
     document.documentElement.classList.add('ar-active');
     document.body.classList.add('ar-active');
     document.body.style.overflow = 'hidden';
 
     if (arLoading) arLoading.classList.remove('is-hidden');
     if (statusPill) statusPill.textContent = '🔐 Solicitando permisos de cámara, ubicación y orientación…';
+    toggleMiniMapDrawer(false);
     toggleBottomCard(true);
-    toggleMiniMapDrawer(true);
 
     if (!navigator.geolocation && statusPill) {
       statusPill.textContent = '📍 Este navegador no permite acceso a la ubicación';
@@ -1139,8 +1141,10 @@
     const orientationPermission = requestAROrientationPermission();
     const cameraReady = await startCamera();
     const orientationReady = await orientationPermission;
-    if (!cameraReady) return;
     mountPokeArScene();
+    if (!cameraReady && arLoading) {
+      arLoading.classList.add('is-hidden');
+    }
     if (!orientationReady && statusPill) {
       statusPill.textContent = '🧭 Activa orientación y ubicación para fijar la fachada de UNIFRANZ';
     }
@@ -1222,61 +1226,110 @@
       }
     });
 
-    if (btnPrev) btnPrev.addEventListener('click', () => setScene(currentSceneIndex - 1, isAudioPlaying));
-    if (btnNext) btnNext.addEventListener('click', () => setScene(currentSceneIndex + 1, isAudioPlaying));
-    if (btnAudio) btnAudio.addEventListener('click', toggleAudio);
-
-    if (btnToggleMinimap) {
-      btnToggleMinimap.addEventListener('click', () => toggleMiniMapDrawer());
-    }
-    if (minimapClose) {
-      minimapClose.addEventListener('click', () => toggleMiniMapDrawer(false));
-    }
-    if (btnToggleBottomCard) {
-      btnToggleBottomCard.addEventListener('click', () => toggleBottomCard());
-    }
-
-    if (btnReanchor) {
-      btnReanchor.addEventListener('click', () => {
-        if (isWorldTracked) {
-          const hitComp = aSceneInstance && aSceneInstance.components && aSceneInstance.components['ar-hit-test-anchor'];
-          if (hitComp && typeof hitComp.resetPlacement === 'function') {
-            hitComp.resetPlacement();
-          } else {
-            xrPlacementLocked = false;
-            arAnchorLocked = false;
-          }
-          if (statusPill) statusPill.textContent = '🎯 Apunta al suelo y toca la pantalla para fijar';
-        } else {
-          placeSceneInFrontOfCamera();
-        }
-        syncSitePresence();
-        if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
-      });
-    }
-
     const triggerSimulate = () => {
       if (!window.HistoriaGeo || typeof window.HistoriaGeo.simulateInRange !== 'function') {
         console.error('[Historia Viva] No está disponible la simulación de ubicación para AR.');
         return;
+      }
+      if (typeof window.HistoriaGeo.stopGPSTracking === 'function') {
+        window.HistoriaGeo.stopGPSTracking();
+        startedGPSForAR = false;
       }
       if (typeof window.HistoriaGeo.setActiveScene === 'function') {
         window.HistoriaGeo.setActiveScene('franz', currentSceneIndex);
       }
       arFilteredCoordinates = null;
       window.HistoriaGeo.simulateInRange();
+      if (radarOverlay) {
+        radarOverlay.classList.remove('is-active');
+        radarOverlay.hidden = true;
+      }
+      if (arView) arView.classList.remove('is-radar-active');
       if (!isWorldTracked && !arAnchorLocked) {
         placeSceneInFrontOfCamera();
       }
       toggleMiniMapDrawer(false);
+      toggleBottomCard(true);
       syncSitePresence();
+      if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('success');
     };
-    if (btnSimulate) btnSimulate.addEventListener('click', triggerSimulate);
-    if (radarSimulateBtn) radarSimulateBtn.addEventListener('click', triggerSimulate);
-    if (radarWalkRouteBtn) {
-      radarWalkRouteBtn.addEventListener('click', () => {
-        if (window.HistoriaGeo && window.HistoriaGeo.walkShortestPath) {
-          window.HistoriaGeo.walkShortestPath();
+
+    const handleReanchor = () => {
+      if (!isARLocationAvailable()) {
+        triggerSimulate();
+      }
+      if (isWorldTracked) {
+        const hitComp = aSceneInstance && aSceneInstance.components && aSceneInstance.components['ar-hit-test-anchor'];
+        if (hitComp && typeof hitComp.resetPlacement === 'function') {
+          hitComp.resetPlacement();
+        } else {
+          xrPlacementLocked = false;
+          arAnchorLocked = false;
+        }
+        if (statusPill) statusPill.textContent = '🎯 Apunta al suelo y toca la pantalla para fijar';
+      } else {
+        placeSceneInFrontOfCamera();
+      }
+      syncSitePresence();
+      if (window.HistoriaFX && window.HistoriaFX.beep) window.HistoriaFX.beep('ok');
+    };
+
+    const handleWalkRoute = () => {
+      if (window.HistoriaGeo && typeof window.HistoriaGeo.walkShortestPath === 'function') {
+        window.HistoriaGeo.walkShortestPath(currentSceneIndex, () => {
+          triggerSimulate();
+        });
+      }
+    };
+
+    // Delegación centralizada en #ar-view para asegurar respuesta inmediata en botones e íconos hijos
+    if (arView) {
+      arView.addEventListener('click', (e) => {
+        const target = e.target;
+        if (!target || typeof target.closest !== 'function') return;
+        const btn = target.closest(
+          '#ar-btn-simulate, #ar-radar-simulate-btn, #ar-radar-walk-route-btn, ' +
+          '#ar-btn-reanchor, #ar-btn-toggle-minimap, #ar-minimap-close, ' +
+          '#ar-btn-toggle-bottom-card, #ar-btn-prev, #ar-btn-audio, #ar-btn-next'
+        );
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        switch (btn.id) {
+          case 'ar-btn-simulate':
+          case 'ar-radar-simulate-btn':
+            triggerSimulate();
+            break;
+          case 'ar-radar-walk-route-btn':
+            handleWalkRoute();
+            break;
+          case 'ar-btn-reanchor':
+            handleReanchor();
+            break;
+          case 'ar-btn-toggle-minimap':
+            toggleMiniMapDrawer();
+            break;
+          case 'ar-minimap-close':
+            toggleMiniMapDrawer(false);
+            break;
+          case 'ar-btn-toggle-bottom-card':
+            toggleBottomCard();
+            break;
+          case 'ar-btn-prev':
+            if (!isARLocationAvailable()) triggerSimulate();
+            setScene(currentSceneIndex - 1, isAudioPlaying);
+            break;
+          case 'ar-btn-next':
+            if (!isARLocationAvailable()) triggerSimulate();
+            setScene(currentSceneIndex + 1, isAudioPlaying);
+            break;
+          case 'ar-btn-audio':
+            if (!isARLocationAvailable()) triggerSimulate();
+            toggleAudio();
+            break;
+          default:
+            break;
         }
       });
     }
